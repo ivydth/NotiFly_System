@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Background image -->
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="&lt;TextView&#xA;    android:id=&quot;@+id/tvAppName&quot;&#xA;    android:layout_width=&quot;wrap_content&quot;&#xA;    android:layout_height=&quot;wrap_content&quot;&#xA;    android:layout_gravity=&quot;center&quot;&#xA;    android:layout_marginTop=&quot;180dp&quot;&#xA;    android:text=&quot;NOTIFLY&quot;&#xA;    android:textSize=&quot;52sp&quot;&#xA;    android:letterSpacing=&quot;0.08&quot;&#xA;    android:fontFamily=&quot;@font/fredoka_one&quot;&#xA;    android:textStyle=&quot;bold&quot;&#xA;    android:alpha=&quot;1&quot; />&#xA;&#xA;&lt;!-- GET STARTED Button -->&#xA;&lt;Button&#xA;    android:id=&quot;@+id/btnGetStarted&quot;&#xA;    android:layout_width=&quot;200dp&quot;&#xA;    android:layout_height=&quot;50dp&quot;&#xA;    android:layout_gravity=&quot;bottom|center_horizontal&quot;&#xA;    android:layout_marginBottom=&quot;80dp&quot;&#xA;    android:text=&quot;GET STARTED&quot;&#xA;    android:textColor=&quot;#64C8D2&quot;&#xA;    android:textSize=&quot;14sp&quot;&#xA;    android:letterSpacing=&quot;0.15&quot;&#xA;    android:fontFamily=&quot;sans-serif-medium&quot;&#xA;    android:background=&quot;@drawable/btn_get_started&quot;&#xA;    android:elevation=&quot;4dp&quot;&#xA;    android:alpha=&quot;1&quot; />" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="&lt;TextView&#xA;    android:id=&quot;@+id/tvAppName&quot;&#xA;    android:layout_width=&quot;wrap_content&quot;&#xA;    android:layout_height=&quot;wrap_content&quot;&#xA;    android:layout_gravity=&quot;center&quot;&#xA;    android:layout_marginTop=&quot;180dp&quot;&#xA;    android:text=&quot;NOTIFLY&quot;&#xA;    android:textSize=&quot;52sp&quot;&#xA;    android:letterSpacing=&quot;0.08&quot;&#xA;    android:fontFamily=&quot;@font/fredoka_one&quot;&#xA;    android:textStyle=&quot;bold&quot;&#xA;    android:alpha=&quot;1&quot; />&#xA;&#xA;&lt;!-- GET STARTED Button -->&#xA;&lt;Button&#xA;    android:id=&quot;@+id/btnGetStarted&quot;&#xA;    android:layout_width=&quot;200dp&quot;&#xA;    android:layout_height=&quot;50dp&quot;&#xA;    android:layout_gravity=&quot;bottom|center_horizontal&quot;&#xA;    android:layout_marginBottom=&quot;80dp&quot;&#xA;    android:text=&quot;GET STARTED&quot;&#xA;    android:textColor=&quot;#64C8D2&quot;&#xA;    android:textSize=&quot;14sp&quot;&#xA;    android:letterSpacing=&quot;0.15&quot;&#xA;    android:fontFamily=&quot;sans-serif-medium&quot;&#xA;    android:background=&quot;@drawable/btn_get_started&quot;&#xA;    android:elevation=&quot;4dp&quot;&#xA;    android:alpha=&quot;1&quot; />" />
+
+    <!-- Bird + Bell container — animated as one unit -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        android:src="@drawable/front_page" />
+
+    <FrameLayout
+        android:id="@+id/birdBellContainer"
+        android:layout_width="180dp"
+        android:layout_height="200dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="120dp">
+
+        <!-- Bird Image -->
+        <ImageView
+            android:id="@+id/imgBird"
+            android:layout_width="160dp"
+            android:layout_height="100dp"
+            android:layout_gravity="top|center_horizontal"
+            android:contentDescription="NotiFly Bird"
+            android:src="@drawable/ic_bird"
+            android:scaleType="fitCenter" />
+
+        <!-- Bell Image — hangs below the bird -->
+        <ImageView
+            android:id="@+id/imgBell"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginTop="8dp"
+            android:contentDescription="Notification Bell"
+            android:src="@drawable/ic_bell"
+            android:scaleType="fitCenter"
+            android:transformPivotY="0dp" />
+
+    </FrameLayout>
+
+    <!-- NOTIFLY text -->
+    <TextView
+        android:id="@+id/tvAppName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="180dp"
+        android:text="NOTIFLY"
+        android:textSize="52sp"
+        android:letterSpacing="0.08"
+        android:fontFamily="@font/fredoka_one"
+        android:textStyle="bold"
+        android:alpha="1" />
+
+    <!-- GET STARTED Button -->
+    <Button
+        android:id="@+id/btnGetStarted"
+        android:layout_width="200dp"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="80dp"
+        android:text="GET STARTED"
+        android:textColor="#64C8D2"
+        android:textSize="14sp"
+        android:letterSpacing="0.15"
+        android:fontFamily="sans-serif-medium"
+        android:background="@drawable/btn_get_started"
+        android:elevation="4dp"
+        android:alpha="1" />
+</FrameLayout>
