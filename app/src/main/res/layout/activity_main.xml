@@ -1,19 +1,201 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/mobile_app_background"
     tools:context=".MainActivity">
 
-    <TextView
+    <!-- Decorative dot: top-left -->
+
+
+    <!-- Logo Icon + App Name (horizontal) -->
+    <LinearLayout
+        android:id="@+id/layout_logo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="72dp">
+
+        <ImageView
+            android:id="@+id/iv_logo"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_bird"
+            android:contentDescription="NotiFly Logo" />
+
+        <TextView
+            android:id="@+id/tv_app_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="NotiFly"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.06"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+    <!-- Welcome Heading — constrained to layout_logo -->
+    <TextView
+        android:id="@+id/tv_welcome"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Welcome"
+        android:textColor="#FFFFFF"
+        android:textSize="40sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:letterSpacing="-0.01"
+        app:layout_constraintTop_toBottomOf="@id/layout_logo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="36dp" />
+
+    <!-- Subtitle — constrained to tv_welcome -->
+    <TextView
+        android:id="@+id/tv_subtitle"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:text="Manage your notifications seamlessly. Sign in or create an account to get started."
+        android:textColor="#8A9BB0"
+        android:textSize="13sp"
+        android:textAlignment="center"
+        android:lineSpacingExtra="5dp"
+        android:fontFamily="sans-serif-medium"
+        app:layout_constraintTop_toBottomOf="@id/tv_welcome"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="10dp" />
+
+    <!-- Auth Card Container — constrained to tv_subtitle -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="#132030"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_subtitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="44dp"
+        android:layout_marginStart="22dp"
+        android:layout_marginEnd="22dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:orientation="vertical"
+            android:paddingStart="22dp"
+            android:paddingTop="40dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="26dp"
+            android:background="#0B1628">
+
+            <!-- LOGIN Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_login"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:background="@drawable/bg_btn_teal_gradient"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.12"
+                android:stateListAnimator="@null"
+                android:text="LOGIN"
+                android:textColor="#0D2A2E"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                app:backgroundTint="@null"
+                app:cornerRadius="12dp"
+                app:iconGravity="start"
+                app:iconPadding="8dp"
+                app:iconTint="#0D2A2E"
+                app:rippleColor="#33000000" />
+
+            <!-- OR Divider Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="18dp"
+                android:layout_marginBottom="18dp">
+
+                <View
+                    android:id="@+id/divider_left"
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="#30FFFFFF" />
+
+                <TextView
+                    android:id="@+id/tv_or"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="OR"
+                    android:textColor="#55FFFFFF"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.08"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp" />
+
+                <View
+                    android:id="@+id/divider_right"
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="#30FFFFFF" />
+
+            </LinearLayout>
+
+            <!-- CREATE ACCOUNT Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_register"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.12"
+                android:stateListAnimator="@null"
+                android:text="CREATE ACCOUNT"
+                android:textColor="#5CE8E0"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                app:backgroundTint="@android:color/transparent"
+                app:cornerRadius="12dp"
+                app:iconGravity="start"
+                app:iconPadding="8dp"
+                app:iconTint="#5CE8E0"
+                app:rippleColor="#1A5CE8E0"
+                app:strokeColor="#5CE8E0"
+                app:strokeWidth="1.5dp" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Footer Terms Text -->
+    <TextView
+        android:id="@+id/tv_footer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="By continuing, you agree to our Terms &amp; Privacy Policy"
+        android:textColor="#40FFFFFF"
+        android:textSize="12sp"
+        android:textAlignment="center"
+        android:fontFamily="sans-serif-medium"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="28dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

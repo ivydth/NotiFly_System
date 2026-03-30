@@ -204,7 +204,8 @@
                         android:textStyle="bold"
                         android:letterSpacing="0.1"
                         android:background="@drawable/btn_teal_rounded"
-                        android:elevation="4dp" />
+                        android:elevation="4dp"
+                        app:backgroundTint="@null"/>
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
