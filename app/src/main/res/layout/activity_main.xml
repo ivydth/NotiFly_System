@@ -27,7 +27,7 @@
             android:id="@+id/iv_logo"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:src="@drawable/ic_bird"
+            android:src="@drawable/ic_logo"
             android:contentDescription="NotiFly Logo" />
 
         <TextView
@@ -35,9 +35,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="NotiFly"
+            android:textStyle="bold"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:fontFamily="sans-serif-medium"
+            android:textSize="17sp"
+            android:fontFamily="@font/fredoka_one"
             android:letterSpacing="0.06"
             android:layout_marginStart="8dp" />
 

@@ -28,17 +28,17 @@
             android:orientation="horizontal">
 
             <ImageView
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:contentDescription="@null"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_bird" />
+                android:src="@drawable/ic_logo" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/fredoka_one"
                 android:text="NotiFly"
                 android:textColor="#FFFFFF"
                 android:textSize="20sp"
