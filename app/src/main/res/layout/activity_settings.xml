@@ -1,0 +1,736 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B1628">
+
+    <!-- Place your PNG at res/drawable/bg_notifly.png -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/bg"
+        android:scaleType="centerCrop"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Status bar spacer -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="32dp" />
+
+        <!-- ═══════════════════
+             TOP BAR
+        ════════════════════ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/btnBack"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                app:cardCornerRadius="10dp"
+                app:cardBackgroundColor="#1A5BCCE8"
+                app:cardElevation="0dp"
+                android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_arrow_black"
+                    app:tint="#5BCCE8"
+                    android:contentDescription="Back" />
+
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingStart="14dp"
+                android:text="Settings"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:fontFamily="@font/fredoka_one" />
+
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:scrollbars="none"
+            android:overScrollMode="never">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="32dp">
+
+                <!-- ── SECTION: NOTIFICATIONS ── -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="14dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/fredoka_one"
+                    android:letterSpacing="0.14"
+                    android:paddingStart="2dp"
+                    android:text="NOTIFICATIONS"
+                    android:textStyle="bold"
+                    android:textAllCaps="true"
+                    android:textColor="#8A9BB0"
+                    android:textSize="12sp" />
+
+                <!-- CARD: TOGGLES -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="18dp"
+                    app:cardBackgroundColor="#D00D2A2E"
+                    app:cardElevation="4dp"
+                    android:layout_marginBottom="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <!-- Enable Notifications (Master) -->
+                        <LinearLayout
+                            android:id="@+id/rowMaster"
+                            android:layout_width="match_parent"
+                            android:layout_height="72dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="14dp"
+                            android:background="@drawable/bg_master_row_tint"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <androidx.cardview.widget.CardView
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                app:cardCornerRadius="13dp"
+                                app:cardBackgroundColor="#2D5BCCE8"
+                                app:cardElevation="0dp">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_bell"
+                                    app:tint="#5BCCE8"
+                                    android:contentDescription="@null" />
+
+                            </androidx.cardview.widget.CardView>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Enable Notifications"
+                                    android:textColor="#FFFFFF"
+                                    android:textStyle="bold"
+                                    android:textSize="15sp"
+                                    android:fontFamily="@font/fredoka_one" />
+
+                                <TextView
+                                    android:id="@+id/tvMasterDesc"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Receive updates from NotiFly"
+                                    android:textColor="#8A9BB0"
+                                    android:textSize="11.5sp"
+                                    android:layout_marginTop="2dp" />
+
+                            </LinearLayout>
+
+                            <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/switchMaster"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true"
+                                app:trackTint="@drawable/sel_track"
+                                app:thumbTint="@drawable/sel_thumb" />
+
+                        </LinearLayout>
+
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E5BCCE8"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginEnd="16dp" />
+
+                        <!-- Sound -->
+                        <LinearLayout
+                            android:id="@+id/rowSound"
+                            android:layout_width="match_parent"
+                            android:layout_height="60dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="14dp"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <androidx.cardview.widget.CardView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                app:cardCornerRadius="11dp"
+                                app:cardBackgroundColor="#2D4EB8E8"
+                                app:cardElevation="0dp">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_volume"
+                                    app:tint="#4EB8E8"
+                                    android:contentDescription="@null" />
+
+                            </androidx.cardview.widget.CardView>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:paddingStart="13dp"
+                                android:paddingEnd="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Sound"
+                                    android:textStyle="bold"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="15sp"
+                                    android:fontFamily="@font/fredoka_one" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Play audio for alerts"
+                                    android:textColor="#8A9BB0"
+                                    android:textSize="11.5sp" />
+
+                            </LinearLayout>
+
+                            <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/switchSound"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true"
+                                app:trackTint="@drawable/sel_track"
+                                app:thumbTint="@drawable/sel_thumb" />
+
+                        </LinearLayout>
+
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E5BCCE8"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginEnd="16dp" />
+
+                        <!-- Vibration -->
+                        <LinearLayout
+                            android:id="@+id/rowVibration"
+                            android:layout_width="match_parent"
+                            android:layout_height="60dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="14dp"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <androidx.cardview.widget.CardView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                app:cardCornerRadius="11dp"
+                                app:cardBackgroundColor="#2D8A9BB0"
+                                app:cardElevation="0dp">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_vibration"
+                                    app:tint="#8A9BB0"
+                                    android:contentDescription="@null" />
+
+                            </androidx.cardview.widget.CardView>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:paddingStart="13dp"
+                                android:paddingEnd="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Vibration"
+                                    android:textColor="#FFFFFF"
+                                    android:textStyle="bold"
+                                    android:textSize="15sp"
+                                    android:fontFamily="@font/fredoka_one" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Haptic feedback on notify"
+                                    android:textColor="#8A9BB0"
+                                    android:textSize="11.5sp" />
+
+                            </LinearLayout>
+
+                            <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/switchVibration"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false"
+                                app:trackTint="@drawable/sel_track"
+                                app:thumbTint="@drawable/sel_thumb" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- ── SECTION: NOTIFICATION TYPES ── -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="NOTIFICATION TYPES"
+                    android:textColor="#8A9BB0"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.14"
+                    android:fontFamily="@font/fredoka_one"
+                    android:layout_marginBottom="8dp"
+                    android:paddingStart="2dp" />
+
+                <!-- CARD: TYPES -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardNotifTypes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="18dp"
+                    app:cardBackgroundColor="#C00B1628"
+                    app:cardElevation="4dp"
+                    android:layout_marginBottom="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <!-- Announcements -->
+                        <LinearLayout
+                            android:id="@+id/rowAnnouncements"
+                            android:layout_width="match_parent"
+                            android:layout_height="66dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="14dp"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <androidx.cardview.widget.CardView
+                                android:layout_width="34dp"
+                                android:layout_height="34dp"
+                                app:cardCornerRadius="10dp"
+                                app:cardBackgroundColor="#2D5BCCE8"
+                                app:cardElevation="0dp">
+
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_announcement"
+                                    app:tint="#5BCCE8"
+                                    android:contentDescription="@null" />
+
+                            </androidx.cardview.widget.CardView>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:paddingStart="13dp"
+                                android:paddingEnd="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Announcements"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="@font/fredoka_one" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="News, updates &amp; releases"
+                                    android:textColor="#8A9BB0"
+                                    android:textSize="11.5sp"
+                                    android:layout_marginTop="2dp" />
+
+                            </LinearLayout>
+
+                            <CheckBox
+                                android:id="@+id/checkAnnouncements"
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:background="@drawable/sel_checkbox"
+                                android:button="@null"
+                                android:checked="true" />
+
+                        </LinearLayout>
+
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#151ABFB8"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginEnd="16dp" />
+
+                        <!-- Promotions -->
+                        <LinearLayout
+                            android:id="@+id/rowPromotions"
+                            android:layout_width="match_parent"
+                            android:layout_height="66dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="14dp"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <androidx.cardview.widget.CardView
+                                android:layout_width="34dp"
+                                android:layout_height="34dp"
+                                app:cardCornerRadius="10dp"
+                                app:cardBackgroundColor="#2DF5A623"
+                                app:cardElevation="0dp">
+
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_promotions"
+                                    app:tint="#F5A623"
+                                    android:contentDescription="@null" />
+
+                            </androidx.cardview.widget.CardView>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:paddingStart="13dp"
+                                android:paddingEnd="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Promotions"
+                                    android:textColor="#FFFFFF"
+                                    android:textStyle="bold"
+                                    android:textSize="15sp"
+                                    android:fontFamily="@font/fredoka_one" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Deals, discounts &amp; offers"
+                                    android:textColor="#8A9BB0"
+                                    android:textSize="11.5sp"
+                                    android:layout_marginTop="2dp" />
+
+                            </LinearLayout>
+
+                            <CheckBox
+                                android:id="@+id/checkPromotions"
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:checked="true"
+                                android:button="@null"
+                                android:background="@drawable/sel_checkbox" />
+
+                        </LinearLayout>
+
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#151ABFB8"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginEnd="16dp" />
+
+                        <!-- Alerts -->
+                        <LinearLayout
+                            android:id="@+id/rowAlerts"
+                            android:layout_width="match_parent"
+                            android:layout_height="66dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="14dp"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <androidx.cardview.widget.CardView
+                                android:layout_width="34dp"
+                                android:layout_height="34dp"
+                                app:cardCornerRadius="10dp"
+                                app:cardBackgroundColor="#2D3DD6C8"
+                                app:cardElevation="0dp">
+
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_alerts"
+                                    app:tint="#3DD6C8"
+                                    android:contentDescription="@null" />
+
+                            </androidx.cardview.widget.CardView>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:paddingStart="13dp"
+                                android:paddingEnd="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Alerts"
+                                    android:textColor="#FFFFFF"
+                                    android:textStyle="bold"
+                                    android:textSize="15sp"
+                                    android:fontFamily="@font/fredoka_one" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Urgent &amp; time-sensitive info"
+                                    android:textColor="#8A9BB0"
+                                    android:textSize="11.5sp"
+                                    android:layout_marginTop="2dp" />
+
+                            </LinearLayout>
+
+                            <CheckBox
+                                android:id="@+id/checkAlerts"
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:checked="true"
+                                android:button="@null"
+                                android:background="@drawable/sel_checkbox" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Amber Info Banner -->
+                <LinearLayout
+                    android:id="@+id/bannerInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/bg_banner_amber"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:layout_marginBottom="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💡"
+                        android:textSize="14sp"
+                        android:paddingEnd="10dp"
+                        android:paddingTop="1dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:lineSpacingMultiplier="1.5"
+                        android:text="Notification type selection is optional. Disable all types to mute non-essential messages."
+                        android:textColor="#F5A623"
+                        android:textSize="11.5sp" />
+
+                </LinearLayout>
+
+                <!-- ── SECTION: FREQUENCY ── -->
+                <TextView
+                    android:id="@+id/secFrequency"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FREQUENCY"
+                    android:textColor="#8A9BB0"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.14"
+                    android:fontFamily="@font/fredoka_one"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:paddingStart="2dp" />
+
+                <!-- CARD: FREQUENCY -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardFrequency"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="18dp"
+                    app:cardBackgroundColor="#D00D2A2E"
+                    app:cardElevation="4dp"
+                    android:layout_marginBottom="24dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="16dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Delivery Rate"
+                                android:textColor="#FFFFFF"
+                                android:textSize="15sp"
+                                android:fontFamily="@font/fredoka_one" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="How often you get notified"
+                                android:textColor="#8A9BB0"
+                                android:textSize="11.5sp"
+                                android:layout_marginTop="2dp" />
+
+                        </LinearLayout>
+
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/chipGroupFreq"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:singleSelection="true"
+                            app:selectionRequired="true"
+                            app:chipSpacingHorizontal="4dp">
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLow"
+                                android:layout_width="wrap_content"
+                                android:layout_height="32dp"
+                                android:text="Low"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/fredoka_one"
+                                android:textColor="@drawable/sel_chip_text"
+                                app:chipBackgroundColor="@drawable/sel_chip_bg"
+                                app:chipStrokeColor="@drawable/sel_chip_stroke"
+                                app:chipStrokeWidth="1dp"
+                                app:checkedIconVisible="false" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipMed"
+                                android:layout_width="wrap_content"
+                                android:layout_height="32dp"
+                                android:text="Med"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/fredoka_one"
+                                android:checked="true"
+                                android:textColor="@drawable/sel_chip_text"
+                                app:chipBackgroundColor="@drawable/sel_chip_bg"
+                                app:chipStrokeColor="@drawable/sel_chip_stroke"
+                                app:chipStrokeWidth="1dp"
+                                app:checkedIconVisible="false" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipHigh"
+                                android:layout_width="wrap_content"
+                                android:layout_height="32dp"
+                                android:text="High"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/fredoka_one"
+                                android:textColor="@drawable/sel_chip_text"
+                                app:chipBackgroundColor="@drawable/sel_chip_bg"
+                                app:chipStrokeColor="@drawable/sel_chip_stroke"
+                                app:chipStrokeWidth="1dp"
+                                app:checkedIconVisible="false" />
+
+                        </com.google.android.material.chip.ChipGroup>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- SAVE BUTTON -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSave"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="SAVE PREFERENCES"
+                    android:textStyle="bold"
+                    android:textSize="15sp"
+                    android:textColor="#0B1628"
+                    android:fontFamily="@font/fredoka_one"
+                    android:letterSpacing="0.1"
+                    app:backgroundTint="#5BCCE8"
+                    app:cornerRadius="16dp"
+                    app:elevation="0dp"
+                    app:rippleColor="#401ABFB8" />
+
+            </LinearLayout>
+        </ScrollView>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
