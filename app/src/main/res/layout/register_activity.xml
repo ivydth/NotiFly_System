@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <!-- Background -->
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/front_page"
+        app:srcCompat="@drawable/bg"
         android:scaleType="centerCrop"
         android:contentDescription="@null" />
 
@@ -67,7 +68,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="20dp"
-                app:cardBackgroundColor="#2A3A4A"
+                app:cardBackgroundColor="#2E4A5A"
                 app:cardElevation="8dp"
                 xmlns:app="http://schemas.android.com/apk/res-auto">
 

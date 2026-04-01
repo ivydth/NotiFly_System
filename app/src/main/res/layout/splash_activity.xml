@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -22,7 +23,7 @@
         android:layout_height="match_parent"
         android:contentDescription="@null"
         android:scaleType="centerCrop"
-        android:src="@drawable/front_page" />
+        app:srcCompat="@drawable/bg"/>
 
     <FrameLayout
         android:id="@+id/birdBellContainer"
@@ -38,7 +39,7 @@
             android:layout_height="100dp"
             android:layout_gravity="top|center_horizontal"
             android:contentDescription="NotiFly Bird"
-            android:src="@drawable/ic_bird"
+            android:src="@drawable/bird"
             android:scaleType="fitCenter" />
 
         <!-- Bell Image — hangs below the bird -->
@@ -49,7 +50,7 @@
             android:layout_gravity="bottom|center_horizontal"
             android:layout_marginTop="8dp"
             android:contentDescription="Notification Bell"
-            android:src="@drawable/bird"
+
             android:scaleType="fitCenter"
             android:transformPivotY="0dp" />
 
@@ -79,9 +80,11 @@
         android:text="GET STARTED"
         android:textColor="#64C8D2"
         android:textSize="14sp"
+        android:textStyle="bold"
         android:letterSpacing="0.15"
         android:fontFamily="sans-serif-medium"
         android:background="@drawable/btn_get_started"
         android:elevation="4dp"
         android:alpha="1" />
+
 </FrameLayout>
