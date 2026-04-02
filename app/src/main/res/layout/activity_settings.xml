@@ -594,7 +594,7 @@
                         android:layout_weight="1"
                         android:lineSpacingMultiplier="1.5"
                         android:text="Notification type selection is optional. Disable all types to mute non-essential messages."
-                        android:textColor="#F5A623"
+                        android:textColor="#ffffff"
                         android:textSize="11.5sp" />
 
                 </LinearLayout>
