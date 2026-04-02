@@ -621,7 +621,7 @@
                 android:id="@+id/ivBell"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_bell"
+                android:src="@drawable/ic_notif_bell"
                 android:contentDescription="Notifications"
                 app:tint="#FFFFFF" />
         </LinearLayout>

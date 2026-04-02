@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B1628">
+
+    <!-- PNG Background — same as other screens: res/drawable/bg_notifly.png -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/front_page"
+        android:scaleType="centerCrop"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Status bar spacer -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="32dp" />
+
+        <!-- ═══════════════════
+             TOP BAR
+        ════════════════════ -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="52dp">
+
+            <!-- Back button -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/btnBack"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="start|center_vertical"
+                android:layout_marginStart="18dp"
+                app:cardCornerRadius="10dp"
+                app:cardBackgroundColor="#1A5BCCE8"
+                app:cardElevation="0dp"
+                android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_arrow_black"
+                    app:tint="#5BCCE8"
+                    android:contentDescription="Back" />
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Title -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="MY PROFILE"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:fontFamily="@font/fredoka_one" />
+
+        </FrameLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="641dp"
+            android:layout_weight="1"
+            android:overScrollMode="never"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="36dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="20dp"
+                    android:paddingBottom="24dp">
+
+                    <!-- Avatar ring (gradient border via layer-list) -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:background="@drawable/bg_avatar_ring"
+                        app:cardBackgroundColor="#0D2A2E"
+                        app:cardCornerRadius="48dp"
+                        app:cardElevation="0dp">
+
+                        <TextView
+                            android:id="@+id/tvAvatarInitials"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:fontFamily="@font/fredoka_one"
+                            android:text="JD"
+                            android:textColor="#5BCCE8"
+                            android:textSize="32sp" />
+
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Display name -->
+                    <TextView
+                        android:id="@+id/tvDisplayName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:fontFamily="@font/fredoka_one"
+                        android:text="Juan dela Cruz"
+                        android:textColor="#FFFFFF"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <!-- Display email -->
+                    <TextView
+                        android:id="@+id/tvDisplayEmail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="juan@example.com"
+                        android:textColor="#8A9BB0"
+                        android:textSize="12.5sp" />
+
+                    <!-- Edit Profile button -->
+                    <TextView
+                        android:id="@+id/btnEditProfile"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_edit_avatar_btn"
+                        android:fontFamily="@font/fredoka_one"
+                        android:foreground="?attr/selectableItemBackgroundBorderless"
+                        android:paddingStart="18dp"
+                        android:paddingTop="6dp"
+                        android:paddingEnd="18dp"
+                        android:paddingBottom="6dp"
+                        android:text="Edit Profile"
+                        android:textColor="#5BCCE8"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/layoutViewMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="visible">
+
+                    <!-- Section label -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:fontFamily="@font/fredoka_one"
+                        android:letterSpacing="0.14"
+                        android:paddingStart="2dp"
+                        android:text="ACCOUNT INFO"
+                        android:textAllCaps="true"
+                        android:textColor="#8A9BB0"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                    <!-- Info card -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        app:cardBackgroundColor="#D00D2A2E"
+                        app:cardCornerRadius="18dp"
+                        app:cardElevation="4dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <!-- Name row -->
+                            <LinearLayout
+                                android:id="@+id/rowViewName"
+                                android:layout_width="match_parent"
+                                android:layout_height="64dp"
+                                android:foreground="?attr/selectableItemBackground"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="14dp">
+
+                                <androidx.cardview.widget.CardView
+                                    android:layout_width="34dp"
+                                    android:layout_height="34dp"
+                                    app:cardBackgroundColor="#2D5BCCE8"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="@null"
+                                        android:src="@drawable/ic_user"
+                                        app:tint="#5BCCE8" />
+                                </androidx.cardview.widget.CardView>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical"
+                                    android:paddingStart="13dp"
+                                    android:paddingEnd="8dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:letterSpacing="0.1"
+                                        android:text="FULL NAME"
+                                        android:textAllCaps="true"
+                                        android:textColor="#8A9BB0"
+                                        android:textSize="10sp" />
+
+                                    <TextView
+                                        android:id="@+id/tvViewName"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:fontFamily="@font/fredoka_one"
+                                        android:text="Juan dela Cruz"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="14sp" />
+                                </LinearLayout>
+
+                                <androidx.cardview.widget.CardView
+                                    android:id="@+id/btnEditName"
+                                    android:layout_width="32dp"
+                                    android:layout_height="32dp"
+                                    android:foreground="?attr/selectableItemBackgroundBorderless"
+                                    app:cardBackgroundColor="#1A5BCCE8"
+                                    app:cardCornerRadius="9dp"
+                                    app:cardElevation="0dp">
+
+                                    <ImageView
+                                        android:layout_width="14dp"
+                                        android:layout_height="14dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="Edit name"
+                                        android:src="@drawable/ic_edit"
+                                        app:tint="#5BCCE8" />
+                                </androidx.cardview.widget.CardView>
+
+                            </LinearLayout>
+
+                            <!-- Divider -->
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="2dp"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="16dp"
+                                android:background="#1E5BCCE8" />
+
+                            <!-- Email row -->
+                            <LinearLayout
+                                android:id="@+id/rowViewEmail"
+                                android:layout_width="match_parent"
+                                android:layout_height="64dp"
+                                android:foreground="?attr/selectableItemBackground"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="14dp">
+
+                                <androidx.cardview.widget.CardView
+                                    android:layout_width="34dp"
+                                    android:layout_height="34dp"
+                                    app:cardBackgroundColor="#2D3DD6C8"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="@null"
+                                        android:src="@drawable/ic_mail"
+                                        app:tint="#3DD6C8" />
+                                </androidx.cardview.widget.CardView>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical"
+                                    android:paddingStart="13dp"
+                                    android:paddingEnd="8dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:letterSpacing="0.1"
+                                        android:text="EMAIL ADDRESS"
+                                        android:textAllCaps="true"
+                                        android:textColor="#8A9BB0"
+                                        android:textSize="10sp" />
+
+                                    <TextView
+                                        android:id="@+id/tvViewEmail"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:ellipsize="end"
+                                        android:fontFamily="@font/fredoka_one"
+                                        android:maxLines="1"
+                                        android:text="juan@example.com"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="14sp" />
+                                </LinearLayout>
+
+                                <androidx.cardview.widget.CardView
+                                    android:id="@+id/btnEditEmail"
+                                    android:layout_width="32dp"
+                                    android:layout_height="32dp"
+                                    android:foreground="?attr/selectableItemBackgroundBorderless"
+                                    app:cardBackgroundColor="#1A5BCCE8"
+                                    app:cardCornerRadius="9dp"
+                                    app:cardElevation="0dp">
+
+                                    <ImageView
+                                        android:layout_width="14dp"
+                                        android:layout_height="14dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="Edit email"
+                                        android:src="@drawable/ic_edit"
+                                        app:tint="#5BCCE8" />
+                                </androidx.cardview.widget.CardView>
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Section label: Account -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:fontFamily="@font/fredoka_one"
+                        android:letterSpacing="0.14"
+                        android:paddingStart="2dp"
+                        android:text="ACCOUNT"
+                        android:textAllCaps="true"
+                        android:textColor="#8A9BB0"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                    <!-- Actions card -->
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="#C00B1628"
+                        app:cardCornerRadius="18dp"
+                        app:cardElevation="4dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <!-- Change Password -->
+                            <LinearLayout
+                                android:id="@+id/rowChangePassword"
+                                android:layout_width="match_parent"
+                                android:layout_height="60dp"
+                                android:foreground="?attr/selectableItemBackground"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="14dp">
+
+                                <androidx.cardview.widget.CardView
+                                    android:layout_width="34dp"
+                                    android:layout_height="34dp"
+                                    app:cardBackgroundColor="#2DF5A623"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="@null"
+                                        android:src="@drawable/ic_lock"
+                                        app:tint="#F5A623" />
+                                </androidx.cardview.widget.CardView>
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:fontFamily="@font/fredoka_one"
+                                    android:paddingStart="13dp"
+                                    android:text="Change Password"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="14sp" />
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_chevron_right"
+                                    app:tint="#8A9BB0" />
+
+                            </LinearLayout>
+
+                            <!-- Divider -->
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="2dp"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="16dp"
+                                android:background="#151ABFB8" />
+
+                            <!-- Log Out -->
+                            <LinearLayout
+                                android:id="@+id/rowLogOut"
+                                android:layout_width="match_parent"
+                                android:layout_height="60dp"
+                                android:foreground="?attr/selectableItemBackground"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="14dp">
+
+                                <androidx.cardview.widget.CardView
+                                    android:layout_width="34dp"
+                                    android:layout_height="34dp"
+                                    app:cardBackgroundColor="#2DE85B5B"
+                                    app:cardCornerRadius="10dp"
+                                    app:cardElevation="0dp">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:contentDescription="@null"
+                                        android:src="@drawable/ic_logout"
+                                        app:tint="#E85B5B" />
+                                </androidx.cardview.widget.CardView>
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:fontFamily="@font/fredoka_one"
+                                    android:paddingStart="13dp"
+                                    android:text="Log Out"
+                                    android:textColor="#E85B5B"
+                                    android:textSize="14sp" />
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_chevron_right"
+                                    app:tint="#8A9BB0" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                </LinearLayout>
+
+                <!-- ─────────────────────
+                     EDIT MODE
+                ──────────────────────── -->
+                <LinearLayout
+                    android:id="@+id/layoutEditMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:fontFamily="@font/fredoka_one"
+                        android:letterSpacing="0.14"
+                        android:paddingStart="2dp"
+                        android:text="EDIT PROFILE"
+                        android:textAllCaps="true"
+                        android:textColor="#8A9BB0"
+                        android:textSize="10sp" />
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="#D00D2A2E"
+                        app:cardCornerRadius="18dp"
+                        app:cardElevation="4dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <!-- Name field label -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="6dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_user"
+                                    app:tint="#5BCCE8" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:letterSpacing="0.1"
+                                    android:paddingStart="6dp"
+                                    android:text="FULL NAME"
+                                    android:textAllCaps="true"
+                                    android:textColor="#8A9BB0"
+                                    android:textSize="10sp" />
+                            </LinearLayout>
+
+                            <!-- Name input -->
+                            <EditText
+                                android:id="@+id/etName"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:layout_marginBottom="14dp"
+                                android:background="@drawable/bg_input_field"
+                                android:fontFamily="@font/fredoka_one"
+                                android:hint="Enter your full name"
+                                android:inputType="textPersonName"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:text="Juan dela Cruz"
+                                android:textColor="#FFFFFF"
+                                android:textColorHint="#708A9BB0"
+                                android:textSize="14sp" />
+
+                            <!-- Email field label -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="6dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_mail"
+                                    app:tint="#3DD6C8" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:letterSpacing="0.1"
+                                    android:paddingStart="6dp"
+                                    android:text="EMAIL ADDRESS"
+                                    android:textAllCaps="true"
+                                    android:textColor="#8A9BB0"
+                                    android:textSize="10sp" />
+                            </LinearLayout>
+
+                            <!-- Email input -->
+                            <EditText
+                                android:id="@+id/etEmail"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:layout_marginBottom="16dp"
+                                android:background="@drawable/bg_input_field"
+                                android:fontFamily="@font/fredoka_one"
+                                android:hint="Enter your email"
+                                android:inputType="textEmailAddress"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:text="juan@example.com"
+                                android:textColor="#FFFFFF"
+                                android:textColorHint="#708A9BB0"
+                                android:textSize="14sp" />
+
+                            <!-- Action buttons -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:weightSum="3">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnCancelEdit"
+                                    android:layout_width="0dp"
+                                    android:layout_height="44dp"
+                                    android:layout_marginEnd="10dp"
+                                    android:layout_weight="1"
+                                    android:fontFamily="@font/fredoka_one"
+                                    android:text="Cancel"
+                                    android:textColor="#8A9BB0"
+                                    android:textSize="13sp"
+                                    app:backgroundTint="#1A8A9BB0"
+                                    app:cornerRadius="14dp"
+                                    app:elevation="0dp"
+                                    app:strokeColor="#288A9BB0"
+                                    app:strokeWidth="1dp" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnSaveProfile"
+                                    android:layout_width="0dp"
+                                    android:layout_height="44dp"
+                                    android:layout_weight="2"
+                                    android:fontFamily="@font/fredoka_one"
+                                    android:text="Save Changes"
+                                    android:textColor="#0B1628"
+                                    android:textSize="13sp"
+                                    app:backgroundTint="#5BCCE8"
+                                    app:cornerRadius="14dp"
+                                    app:elevation="0dp"
+                                    app:rippleColor="#401ABFB8" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

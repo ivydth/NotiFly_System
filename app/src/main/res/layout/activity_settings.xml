@@ -10,7 +10,7 @@
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/bg"
+        android:src="@drawable/front_page"
         android:scaleType="centerCrop"
         android:importantForAccessibility="no" />
 
@@ -133,7 +133,7 @@
                                     android:layout_width="24dp"
                                     android:layout_height="24dp"
                                     android:layout_gravity="center"
-                                    android:src="@drawable/ic_bell"
+                                    android:src="@drawable/ic_notif_bell"
                                     app:tint="#5BCCE8"
                                     android:contentDescription="@null" />
 
@@ -595,7 +595,8 @@
                         android:lineSpacingMultiplier="1.5"
                         android:text="Notification type selection is optional. Disable all types to mute non-essential messages."
                         android:textColor="#ffffff"
-                        android:textSize="11.5sp" />
+                        android:textSize="11.5sp"
+                        android:padding="8dp"/>
 
                 </LinearLayout>
 
