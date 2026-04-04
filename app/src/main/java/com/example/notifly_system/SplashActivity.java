@@ -1,41 +1,37 @@
-package com.example.notifly_system; // 🔁 Change to your actual package name
+package com.example.notifly_system;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.airbnb.lottie.LottieAnimationView;
+import pl.droidsonroids.gif.GifImageView;
 
 public class SplashActivity extends AppCompatActivity {
 
     // ── Views ──────────────────────────────────────────────────────────────
-    private LottieAnimationView birdAnimation;
+    private GifImageView birdAnimation;
     private TextView tvAppName;
     private Button btnGetStarted;
     private View transitionOverlay;
 
-    // ── Animation state ────────────────────────────────────────────────────
-    private boolean animationsStarted = false;
-
     // ── Timing constants (ms) ──────────────────────────────────────────────
-    private static final long FLY_AROUND_DURATION = 3800;
-    private static final long RETURN_DURATION      = 700;
-    private static final long UI_FADE_IN_DELAY     = 4800;
+    private static final long FLY_AROUND_DURATION = 4000;
+    private static final long RETURN_DURATION      = 800;
+    private static final long UI_FADE_IN_DELAY     = 5000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,26 +78,26 @@ public class SplashActivity extends AppCompatActivity {
     // ══════════════════════════════════════════════════════════════════════
     private void startSplashSequence() {
         new Handler().postDelayed(() -> {
-            flyAroundScreen();       // Phase 1 – bird flies around
-            scheduleReturnToCenter();// Phase 2 – glide back
-            scheduleFadeInUI();      // Phase 3 – reveal text + button
+            flyAroundScreen();        // Phase 1 – bird flies smoothly around
+            scheduleReturnToCenter(); // Phase 2 – bird glides back
+            scheduleFadeInUI();       // Phase 3 – reveal text + button
         }, 300);
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    //  PHASE 1 — FLY AROUND THE SCREEN
+    //  PHASE 1 — SMOOTH FLY AROUND
     // ══════════════════════════════════════════════════════════════════════
     private void flyAroundScreen() {
         int sw = getResources().getDisplayMetrics().widthPixels;
         int sh = getResources().getDisplayMetrics().heightPixels;
 
         float[][] waypoints = {
-                {  sw * 0.35f, -sh * 0.30f },
-                {  sw * 0.38f,  sh * 0.20f },
-                {  sw * 0.10f,  sh * 0.38f },
-                { -sw * 0.38f,  sh * 0.25f },
-                { -sw * 0.35f, -sh * 0.28f },
-                {  0f,         -sh * 0.10f },
+                {  sw * 0.35f, -sh * 0.28f },
+                {  sw * 0.38f,  sh * 0.18f },
+                {  sw * 0.10f,  sh * 0.35f },
+                { -sw * 0.35f,  sh * 0.22f },
+                { -sw * 0.33f, -sh * 0.26f },
+                {  0f,         -sh * 0.08f },
         };
 
         long segmentDuration = FLY_AROUND_DURATION / waypoints.length;
@@ -116,12 +112,15 @@ public class SplashActivity extends AppCompatActivity {
             float toX   = waypoints[i][0];
             float toY   = waypoints[i][1];
 
-            ObjectAnimator xAnim = ObjectAnimator.ofFloat(birdAnimation, "translationX", fromX, toX);
-            ObjectAnimator yAnim = ObjectAnimator.ofFloat(birdAnimation, "translationY", fromY, toY);
+            ObjectAnimator xAnim = ObjectAnimator.ofFloat(
+                    birdAnimation, "translationX", fromX, toX);
+            ObjectAnimator yAnim = ObjectAnimator.ofFloat(
+                    birdAnimation, "translationY", fromY, toY);
+
             xAnim.setDuration(segmentDuration);
             yAnim.setDuration(segmentDuration);
-            xAnim.setInterpolator(new AccelerateDecelerateInterpolator());
-            yAnim.setInterpolator(new AccelerateDecelerateInterpolator());
+            xAnim.setInterpolator(new LinearInterpolator());
+            yAnim.setInterpolator(new LinearInterpolator());
             xAnim.setStartDelay(i * segmentDuration);
             yAnim.setStartDelay(i * segmentDuration);
 
@@ -135,26 +134,24 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    //  PHASE 2 — GLIDE BACK TO CENTER
+    //  PHASE 2 — SMOOTH GLIDE BACK TO CENTER
     // ══════════════════════════════════════════════════════════════════════
     private void scheduleReturnToCenter() {
         new Handler().postDelayed(() -> {
-            ObjectAnimator returnX  = ObjectAnimator.ofFloat(birdAnimation, "translationX", 0f);
-            ObjectAnimator returnY  = ObjectAnimator.ofFloat(birdAnimation, "translationY", 0f);
+            ObjectAnimator returnX = ObjectAnimator.ofFloat(
+                    birdAnimation, "translationX", 0f);
+            ObjectAnimator returnY = ObjectAnimator.ofFloat(
+                    birdAnimation, "translationY", 0f);
+
             returnX.setDuration(RETURN_DURATION);
             returnY.setDuration(RETURN_DURATION);
-            returnX.setInterpolator(new DecelerateInterpolator(1.8f));
-            returnY.setInterpolator(new DecelerateInterpolator(1.8f));
+            returnX.setInterpolator(new DecelerateInterpolator(2.5f));
+            returnY.setInterpolator(new DecelerateInterpolator(2.5f));
 
             AnimatorSet returnSet = new AnimatorSet();
             returnSet.playTogether(returnX, returnY);
-            returnSet.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    animationsStarted = true;
-                }
-            });
             returnSet.start();
+
         }, FLY_AROUND_DURATION);
     }
 
@@ -163,7 +160,7 @@ public class SplashActivity extends AppCompatActivity {
     // ══════════════════════════════════════════════════════════════════════
     private void scheduleFadeInUI() {
         new Handler().postDelayed(() -> {
-            // App name fade + slide up
+
             tvAppName.setTranslationY(30f);
             tvAppName.animate()
                     .alpha(1f)
@@ -172,7 +169,6 @@ public class SplashActivity extends AppCompatActivity {
                     .setInterpolator(new DecelerateInterpolator())
                     .start();
 
-            // Button fades in slightly after
             new Handler().postDelayed(() ->
                             btnGetStarted.animate()
                                     .alpha(1f)
@@ -185,13 +181,12 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    //  GET STARTED — Bird zooms toward screen and covers it
+    //  GET STARTED BUTTON
     // ══════════════════════════════════════════════════════════════════════
     private void setupGetStartedButton() {
         btnGetStarted.setOnClickListener(v -> {
             btnGetStarted.setEnabled(false);
 
-            // Button press feedback
             btnGetStarted.animate()
                     .scaleX(0.93f).scaleY(0.93f)
                     .setDuration(100)
@@ -199,57 +194,61 @@ public class SplashActivity extends AppCompatActivity {
                             btnGetStarted.animate()
                                     .scaleX(1f).scaleY(1f)
                                     .setDuration(80)
-                                    .withEndAction(this::flyAroundThenZoom)
+                                    .withEndAction(this::smoothSwoopAndZoom)
                                     .start()
                     ).start();
         });
     }
 
-    private void flyAroundThenZoom() {
+    // ══════════════════════════════════════════════════════════════════════
+    //  TRANSITION — SMOOTH SWOOP THEN ZOOM TO FILL SCREEN
+    // ══════════════════════════════════════════════════════════════════════
+    private void smoothSwoopAndZoom() {
         int sw = getResources().getDisplayMetrics().widthPixels;
         int sh = getResources().getDisplayMetrics().heightPixels;
 
-        // Quick swoop around before zooming in
-        ObjectAnimator swoopX = ObjectAnimator.ofFloat(birdAnimation, "translationX",
-                0f, sw * 0.3f, -sw * 0.3f, 0f);
-        ObjectAnimator swoopY = ObjectAnimator.ofFloat(birdAnimation, "translationY",
-                0f, -sh * 0.25f, sh * 0.1f, 0f);
-        swoopX.setDuration(1200);
-        swoopY.setDuration(1200);
-        swoopX.setInterpolator(new AccelerateDecelerateInterpolator());
-        swoopY.setInterpolator(new AccelerateDecelerateInterpolator());
+        ObjectAnimator swoopX = ObjectAnimator.ofFloat(
+                birdAnimation, "translationX", 0f, sw * 0.22f, 0f);
+        ObjectAnimator swoopY = ObjectAnimator.ofFloat(
+                birdAnimation, "translationY", 0f, -sh * 0.18f, 0f);
+
+        swoopX.setDuration(900);
+        swoopY.setDuration(900);
+        swoopX.setInterpolator(new LinearInterpolator());
+        swoopY.setInterpolator(new LinearInterpolator());
+
+        tvAppName.animate().alpha(0f).setDuration(500).start();
+        btnGetStarted.animate().alpha(0f).setDuration(500).start();
 
         AnimatorSet swoopSet = new AnimatorSet();
         swoopSet.playTogether(swoopX, swoopY);
         swoopSet.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
-                zoomToFillScreen(); // then zoom to cover screen
+                zoomToFillScreen();
             }
         });
         swoopSet.start();
-
-        // Fade out UI while swooping
-        tvAppName.animate().alpha(0f).setDuration(600).start();
-        btnGetStarted.animate().alpha(0f).setDuration(600).start();
     }
 
     private void zoomToFillScreen() {
-        // Bird zooms toward the camera to fill the screen
-        ObjectAnimator scaleX  = ObjectAnimator.ofFloat(birdAnimation, "scaleX", 1f, 40f);
-        ObjectAnimator scaleY  = ObjectAnimator.ofFloat(birdAnimation, "scaleY", 1f, 40f);
-        ObjectAnimator overlay = ObjectAnimator.ofFloat(transitionOverlay, "alpha", 0f, 1f);
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(
+                birdAnimation, "scaleX", 1f, 40f);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(
+                birdAnimation, "scaleY", 1f, 40f);
+        ObjectAnimator overlayFade = ObjectAnimator.ofFloat(
+                transitionOverlay, "alpha", 0f, 1f);
 
-        scaleX.setDuration(700);
-        scaleY.setDuration(700);
-        overlay.setDuration(700);
-        overlay.setStartDelay(300);
+        scaleX.setDuration(650);
+        scaleY.setDuration(650);
+        overlayFade.setDuration(650);
+        overlayFade.setStartDelay(250);
 
-        scaleX.setInterpolator(new AccelerateInterpolator(1.5f));
-        scaleY.setInterpolator(new AccelerateInterpolator(1.5f));
+        scaleX.setInterpolator(new AccelerateInterpolator(1.8f));
+        scaleY.setInterpolator(new AccelerateInterpolator(1.8f));
 
         AnimatorSet zoomSet = new AnimatorSet();
-        zoomSet.playTogether(scaleX, scaleY, overlay);
+        zoomSet.playTogether(scaleX, scaleY, overlayFade);
         zoomSet.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
@@ -262,13 +261,13 @@ public class SplashActivity extends AppCompatActivity {
     private void navigateToMain() {
         Intent intent = new Intent(SplashActivity.this, MainActivity.class);
         startActivity(intent);
-        overridePendingTransition(0, 0); // seamless, no default slide
+        overridePendingTransition(0, 0);
         finish();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (birdAnimation != null) birdAnimation.cancelAnimation();
+        if (birdAnimation != null) birdAnimation.setImageDrawable(null);
     }
 }

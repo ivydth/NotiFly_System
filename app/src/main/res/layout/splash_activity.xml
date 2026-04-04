@@ -26,16 +26,14 @@
         android:textStyle="bold"
         android:alpha="0" />
 
-    <!-- Lottie Bird Animation (above NOTIFLY) -->
-    <com.airbnb.lottie.LottieAnimationView
+    <!-- Bird GIF Animation (above NOTIFLY) -->
+    <pl.droidsonroids.gif.GifImageView
         android:id="@+id/birdAnimation"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
         android:layout_gravity="center"
         android:layout_marginBottom="120dp"
-        app:lottie_fileName="bird_flap.json"
-        app:lottie_autoPlay="true"
-        app:lottie_loop="true" />
+        android:src="@drawable/animated_logo"/>
 
     <!-- GET STARTED Button -->
     <Button
@@ -49,10 +47,11 @@
         android:textSize="14sp"
         android:textStyle="bold"
         android:letterSpacing="0.15"
-        android:fontFamily="sans-serif-medium"
+        android:fontFamily="@font/fredoka_one"
         android:background="@drawable/btn_get_started"
         android:elevation="4dp"
-        android:alpha="0" />
+        android:alpha="0"
+        app:backgroundTint="@null" />
 
     <!-- Transition overlay -->
     <View

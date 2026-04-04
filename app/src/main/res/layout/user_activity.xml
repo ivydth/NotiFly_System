@@ -43,10 +43,10 @@
                     android:layout_height="80dp"
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
-                    android:src="@drawable/ic_menu"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="6dp"
                     android:contentDescription="Menu"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_menu"
                     app:tint="#FFFFFF" />
 
                 <!-- App Title -->

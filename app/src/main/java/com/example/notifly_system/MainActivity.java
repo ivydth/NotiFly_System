@@ -1,24 +1,34 @@
 package com.example.notifly_system;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity {
+
+    private Button btnLogin;
+    private Button btnCreateAccount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.user_activity);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+        setContentView(R.layout.activity_main);
+
+        btnLogin = findViewById(R.id.btnLogin);
+        btnCreateAccount = findViewById(R.id.btnCreateAccount);
+
+        // Goes to Login screen
+        btnLogin.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, login_activity.class);
+            startActivity(intent);
+        });
+
+        // Goes to Register screen
+        btnCreateAccount.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, register_activity.class);
+            startActivity(intent);
         });
     }
 }

@@ -44,7 +44,7 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("androidx.core:core:1.12.0")
-    implementation("com.airbnb.android:lottie:6.4.0")
+    implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.28")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
