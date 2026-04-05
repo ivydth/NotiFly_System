@@ -4,12 +4,7 @@ plugins {
 
 android {
     namespace = "com.example.notifly_system"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
-
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.notifly_system"
@@ -35,7 +30,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 }
-
 
 dependencies {
     implementation(libs.appcompat)

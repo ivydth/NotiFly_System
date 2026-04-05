@@ -43,7 +43,7 @@
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginBottom="80dp"
         android:text="GET STARTED"
-        android:textColor="#64C8D2"
+        android:textColor="#0D2A2E"
         android:textSize="14sp"
         android:textStyle="bold"
         android:letterSpacing="0.15"
