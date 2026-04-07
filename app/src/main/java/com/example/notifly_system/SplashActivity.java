@@ -183,7 +183,7 @@ public class SplashActivity extends AppCompatActivity {
     // ══════════════════════════════════════════════════════════════════════
     //  GET STARTED BUTTON
     // ══════════════════════════════════════════════════════════════════════
-   private void setupGetStartedButton() {
+      private void setupGetStartedButton() {
     btnGetStarted.setOnClickListener(v -> {
         btnGetStarted.setEnabled(false);
         btnGetStarted.animate()
@@ -226,35 +226,28 @@ public class SplashActivity extends AppCompatActivity {
 }
 
     private void zoomToFillScreen() {
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(
-                birdAnimation, "scaleX", 1f, 40f);
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(
-                birdAnimation, "scaleY", 1f, 40f);
-        ObjectAnimator overlayFade = ObjectAnimator.ofFloat(
-                transitionOverlay, "alpha", 0f, 1f);
-
-        scaleX.setDuration(650);
-        scaleY.setDuration(650);
-        overlayFade.setDuration(650);
-        overlayFade.setStartDelay(250);
-
-        scaleX.setInterpolator(new AccelerateInterpolator(1.8f));
-        scaleY.setInterpolator(new AccelerateInterpolator(1.8f));
-
-        AnimatorSet zoomSet = new AnimatorSet();
-        zoomSet.playTogether(scaleX, scaleY, overlayFade);
-        zoomSet.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                navigateToMain();
-            }
-        });
-        zoomSet.start();
-
-        Intent intent = new Intent(SplashActivity.this, MainActivity.class);
-startActivity(intent);
-finish();
-    }
+    ObjectAnimator scaleX = ObjectAnimator.ofFloat(
+            birdAnimation, "scaleX", 1f, 40f);
+    ObjectAnimator scaleY = ObjectAnimator.ofFloat(
+            birdAnimation, "scaleY", 1f, 40f);
+    ObjectAnimator overlayFade = ObjectAnimator.ofFloat(
+            transitionOverlay, "alpha", 0f, 1f);
+    scaleX.setDuration(650);
+    scaleY.setDuration(650);
+    overlayFade.setDuration(650);
+    overlayFade.setStartDelay(250);
+    scaleX.setInterpolator(new AccelerateInterpolator(1.8f));
+    scaleY.setInterpolator(new AccelerateInterpolator(1.8f));
+    AnimatorSet zoomSet = new AnimatorSet();
+    zoomSet.playTogether(scaleX, scaleY, overlayFade);
+    zoomSet.addListener(new AnimatorListenerAdapter() {
+        @Override
+        public void onAnimationEnd(Animator animation) {
+            navigateToMain(); // ✅ only here
+        }
+    });
+    zoomSet.start();
+}
 
     private void navigateToMain() {
         Intent intent = new Intent(SplashActivity.this, MainActivity.class);
