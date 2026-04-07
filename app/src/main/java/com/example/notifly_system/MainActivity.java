@@ -21,13 +21,13 @@ public class MainActivity extends AppCompatActivity {
 
         // Goes to Login screen
         btnLogin.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, login_activity.class);
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivity(intent);
         });
 
         // Goes to Register screen
         btnCreateAccount.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, register_activity.class);
+            Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
             startActivity(intent);
         });
     }
