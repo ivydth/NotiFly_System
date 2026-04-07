@@ -193,15 +193,7 @@ public class SplashActivity extends AppCompatActivity {
                         btnGetStarted.animate()
                                 .scaleX(1f).scaleY(1f)
                                 .setDuration(80)
-                                .withEndAction(() -> {
-                                    smoothSwoopAndZoom();
-                                    // delay navigation until smoothSwoopAndZoom finishes
-                                    btnGetStarted.postDelayed(() -> {
-                                        Intent intent = new Intent(SplashActivity.this, MainActivity.class);
-                                        startActivity(intent);
-                                        finish();
-                                    }, 500); // adjust 500ms to match your smoothSwoopAndZoom duration
-                                })
+                                .withEndAction(this::smoothSwoopAndZoom)
                                 .start()
                 ).start();
     });
@@ -210,32 +202,28 @@ public class SplashActivity extends AppCompatActivity {
     //  TRANSITION — SMOOTH SWOOP THEN ZOOM TO FILL SCREEN
     // ══════════════════════════════════════════════════════════════════════
     private void smoothSwoopAndZoom() {
-        int sw = getResources().getDisplayMetrics().widthPixels;
-        int sh = getResources().getDisplayMetrics().heightPixels;
-
-        ObjectAnimator swoopX = ObjectAnimator.ofFloat(
-                birdAnimation, "translationX", 0f, sw * 0.22f, 0f);
-        ObjectAnimator swoopY = ObjectAnimator.ofFloat(
-                birdAnimation, "translationY", 0f, -sh * 0.18f, 0f);
-
-        swoopX.setDuration(900);
-        swoopY.setDuration(900);
-        swoopX.setInterpolator(new LinearInterpolator());
-        swoopY.setInterpolator(new LinearInterpolator());
-
-        tvAppName.animate().alpha(0f).setDuration(500).start();
-        btnGetStarted.animate().alpha(0f).setDuration(500).start();
-
-        AnimatorSet swoopSet = new AnimatorSet();
-        swoopSet.playTogether(swoopX, swoopY);
-        swoopSet.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                zoomToFillScreen();
-            }
-        });
-        swoopSet.start();
-    }
+    int sw = getResources().getDisplayMetrics().widthPixels;
+    int sh = getResources().getDisplayMetrics().heightPixels;
+    ObjectAnimator swoopX = ObjectAnimator.ofFloat(
+            birdAnimation, "translationX", 0f, sw * 0.22f, 0f);
+    ObjectAnimator swoopY = ObjectAnimator.ofFloat(
+            birdAnimation, "translationY", 0f, -sh * 0.18f, 0f);
+    swoopX.setDuration(900);
+    swoopY.setDuration(900);
+    swoopX.setInterpolator(new LinearInterpolator());
+    swoopY.setInterpolator(new LinearInterpolator());
+    tvAppName.animate().alpha(0f).setDuration(500).start();
+    btnGetStarted.animate().alpha(0f).setDuration(500).start();
+    AnimatorSet swoopSet = new AnimatorSet();
+    swoopSet.playTogether(swoopX, swoopY);
+    swoopSet.addListener(new AnimatorListenerAdapter() {
+        @Override
+        public void onAnimationEnd(Animator animation) {
+            zoomToFillScreen(); // navigate inside here after zoom
+        }
+    });
+    swoopSet.start();
+}
 
     private void zoomToFillScreen() {
         ObjectAnimator scaleX = ObjectAnimator.ofFloat(
@@ -262,6 +250,10 @@ public class SplashActivity extends AppCompatActivity {
             }
         });
         zoomSet.start();
+
+        Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+startActivity(intent);
+finish();
     }
 
     private void navigateToMain() {
