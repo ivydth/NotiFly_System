@@ -185,7 +185,10 @@ public class SplashActivity extends AppCompatActivity {
     // ══════════════════════════════════════════════════════════════════════
     private void setupGetStartedButton() {
         btnGetStarted.setOnClickListener(v -> {
-            btnGetStarted.setEnabled(false);
+            btnGetStarted.setEnabled(true);
+
+            Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+            startActivity(intent);
 
             btnGetStarted.animate()
                     .scaleX(0.93f).scaleY(0.93f)
