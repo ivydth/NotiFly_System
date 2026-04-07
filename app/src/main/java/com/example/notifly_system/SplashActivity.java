@@ -183,9 +183,9 @@ public class SplashActivity extends AppCompatActivity {
     // ══════════════════════════════════════════════════════════════════════
     //  GET STARTED BUTTON
     // ══════════════════════════════════════════════════════════════════════
-    private void setupGetStartedButton() {
+   private void setupGetStartedButton() {
     btnGetStarted.setOnClickListener(v -> {
-        btnGetStarted.setEnabled(false); // prevent double tap
+        btnGetStarted.setEnabled(false);
         btnGetStarted.animate()
                 .scaleX(0.93f).scaleY(0.93f)
                 .setDuration(100)
@@ -195,8 +195,12 @@ public class SplashActivity extends AppCompatActivity {
                                 .setDuration(80)
                                 .withEndAction(() -> {
                                     smoothSwoopAndZoom();
-                                    Intent intent = new Intent(SplashActivity.this, MainActivity.class);
-                                    startActivity(intent);
+                                    // delay navigation until smoothSwoopAndZoom finishes
+                                    btnGetStarted.postDelayed(() -> {
+                                        Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+                                        startActivity(intent);
+                                        finish();
+                                    }, 500); // adjust 500ms to match your smoothSwoopAndZoom duration
                                 })
                                 .start()
                 ).start();
