@@ -184,25 +184,24 @@ public class SplashActivity extends AppCompatActivity {
     //  GET STARTED BUTTON
     // ══════════════════════════════════════════════════════════════════════
     private void setupGetStartedButton() {
-        btnGetStarted.setOnClickListener(v -> {
-            btnGetStarted.setEnabled(true);
-
-            Intent intent = new Intent(SplashActivity.this, MainActivity.class);
-            startActivity(intent);
-
-            btnGetStarted.animate()
-                    .scaleX(0.93f).scaleY(0.93f)
-                    .setDuration(100)
-                    .withEndAction(() ->
-                            btnGetStarted.animate()
-                                    .scaleX(1f).scaleY(1f)
-                                    .setDuration(80)
-                                    .withEndAction(this::smoothSwoopAndZoom)
-                                    .start()
-                    ).start();
-        });
-    }
-
+    btnGetStarted.setOnClickListener(v -> {
+        btnGetStarted.setEnabled(false); // prevent double tap
+        btnGetStarted.animate()
+                .scaleX(0.93f).scaleY(0.93f)
+                .setDuration(100)
+                .withEndAction(() ->
+                        btnGetStarted.animate()
+                                .scaleX(1f).scaleY(1f)
+                                .setDuration(80)
+                                .withEndAction(() -> {
+                                    smoothSwoopAndZoom();
+                                    Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+                                    startActivity(intent);
+                                })
+                                .start()
+                ).start();
+    });
+}
     // ══════════════════════════════════════════════════════════════════════
     //  TRANSITION — SMOOTH SWOOP THEN ZOOM TO FILL SCREEN
     // ══════════════════════════════════════════════════════════════════════
