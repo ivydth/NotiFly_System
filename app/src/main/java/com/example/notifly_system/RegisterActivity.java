@@ -36,7 +36,7 @@ public class RegisterActivity extends AppCompatActivity {
 
         // initialize Firebase
         mAuth = FirebaseAuth.getInstance();
-        database = FirebaseDatabase.getInstance().getReference("users");
+        database = FirebaseDatabase.getInstance("https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("users");
 
         btnRegister.setOnClickListener(v -> registerUser());
     }
