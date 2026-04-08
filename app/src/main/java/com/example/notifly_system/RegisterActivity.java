@@ -162,7 +162,7 @@ public class RegisterActivity extends AppCompatActivity {
                         .addOnCompleteListener(task2 -> {
                             if (task2.isSuccessful()) {
                                 Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show();
-                                startActivity(new Intent(this, login_activity.class));
+                                startActivity(new Intent(this, LoginActivity.class));
                                 finish();
                             } else {
                                 Toast.makeText(this, "Failed to save user data", Toast.LENGTH_SHORT).show();
