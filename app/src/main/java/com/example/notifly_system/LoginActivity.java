@@ -40,11 +40,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // ── LOGIN BUTTON ──────────────────────────────────────────
 
-        btnLogin.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, UserActivity.class);
-        startActivity(intent);
-});;
-        
+        btnLogin.setOnClickListener(v -> loginUser());
     }
 
     private void loginUser() {
