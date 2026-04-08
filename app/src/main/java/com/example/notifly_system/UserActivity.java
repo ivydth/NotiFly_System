@@ -98,7 +98,7 @@ public class UserActivity extends AppCompatActivity {
 
         if (currentUser == null) {
             // not logged in, go back to login
-            startActivity(new Intent(this, login_activity.class));
+            startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;
         }
@@ -137,7 +137,7 @@ public class UserActivity extends AppCompatActivity {
         // check if user is still logged in
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) {
-            startActivity(new Intent(this, login_activity.class));
+            startActivity(new Intent(this, LoginActivity.class));
             finish();
         }
     }
