@@ -175,6 +175,9 @@ public class RegisterActivity extends AppCompatActivity {
                     database.child(userId).setValue(userMap)
                         .addOnCompleteListener(task2 -> {
                             if (task2.isSuccessful()) {
+                                //Send welcome email
+                                EmailHelper.sendWelcomeEmail(this, firstName, email);
+                                
                                 Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show();
                                 mAuth.signOut();
                                 startActivity(new Intent(this, MainActivity.class));
