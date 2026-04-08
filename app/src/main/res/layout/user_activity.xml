@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clipChildren="false"
-    android:clipToPadding="false">
+    android:clipToPadding="false"
+    android:fitsSystemWindows="true">
 
     <!-- Background -->
     <ImageView
@@ -19,7 +20,7 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="80dp"
+        android:paddingBottom="72dp"
         android:clipToPadding="false"
         android:background="@android:color/transparent">
 
@@ -578,6 +579,7 @@
 
     <!-- ── BOTTOM NAV BAR ── -->
     <LinearLayout
+        android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:layout_gravity="bottom"
@@ -586,7 +588,9 @@
         android:gravity="center"
         android:weightSum="3"
         android:clipChildren="false"
-        android:clipToPadding="false">
+        android:clipToPadding="false"
+        android:elevation="8dp"
+        android:fitsSystemWindows="true">
 
         <!-- Home -->
         <LinearLayout
