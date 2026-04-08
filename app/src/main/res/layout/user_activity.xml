@@ -18,6 +18,7 @@
 
     <!-- Main scrollable content -->
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingBottom="72dp"
@@ -37,7 +38,6 @@
                 android:paddingEnd="16dp"
                 android:gravity="center_vertical">
 
-                <!-- Menu -->
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/btnMenu"
                     android:layout_width="80dp"
@@ -50,7 +50,6 @@
                     android:src="@drawable/ic_menu"
                     app:tint="#FFFFFF" />
 
-                <!-- Logo + App Title centered -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -77,7 +76,6 @@
 
                 </LinearLayout>
 
-                <!-- Profile -->
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/btnProfile"
                     android:layout_width="40dp"
@@ -567,6 +565,191 @@
                         android:paddingTop="4dp"
                         android:paddingBottom="4dp"
                         android:background="@drawable/badge_green" />
+                </RelativeLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="#22FFFFFF" android:layout_marginStart="72dp" />
+
+                <!-- Row 5 — Discord (UNREAD) -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="72dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:background="@drawable/notif_row_unread_bg">
+                    <TextView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:text="D"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:background="@drawable/avatar_blue" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="60dp"
+                        android:layout_marginEnd="56dp"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Discord"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Someone mentioned you in #general"
+                            android:textColor="#CCDDEE"
+                            android:textSize="12sp"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:orientation="vertical"
+                        android:gravity="end">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Mar 29"
+                            android:textColor="#AACCDD"
+                            android:textSize="11sp" />
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_gravity="end"
+                            android:background="@drawable/dot_blue" />
+                    </LinearLayout>
+                </RelativeLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="#22FFFFFF" android:layout_marginStart="72dp" />
+
+                <!-- Row 6 — Spotify (READ) -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="72dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:background="@drawable/notif_row_read_bg">
+                    <TextView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:text="S"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:background="@drawable/avatar_teal" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="60dp"
+                        android:layout_marginEnd="56dp"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Spotify"
+                            android:textColor="#CCDDEE"
+                            android:textSize="14sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="New playlist recommended for you"
+                            android:textColor="#8899AA"
+                            android:textSize="12sp"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Mar 27"
+                        android:textColor="#8899AA"
+                        android:textSize="11sp" />
+                </RelativeLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="#22FFFFFF" android:layout_marginStart="72dp" />
+
+                <!-- Row 7 — Google (UNREAD) -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="72dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:background="@drawable/notif_row_unread_bg">
+                    <TextView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:text="G"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:background="@drawable/avatar_orange" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="60dp"
+                        android:layout_marginEnd="56dp"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Google"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Security alert: new sign-in detected"
+                            android:textColor="#CCDDEE"
+                            android:textSize="12sp"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:orientation="vertical"
+                        android:gravity="end">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Mar 27"
+                            android:textColor="#AACCDD"
+                            android:textSize="11sp" />
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_gravity="end"
+                            android:background="@drawable/dot_blue" />
+                    </LinearLayout>
                 </RelativeLayout>
 
                 <View android:layout_width="match_parent" android:layout_height="1dp"
