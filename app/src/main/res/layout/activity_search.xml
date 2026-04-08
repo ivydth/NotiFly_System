@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="#0B1628">
+
+    <!-- Status Bar Spacer (handled by windowInsets, but adding padding top) -->
+    <!-- Top Bar: Back + Search + Mic -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical"
+        android:background="#0B1628">
+
+        <!-- Back Button -->
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_arrow_black"
+            app:tint="#8A9BB0"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back" />
+
+        <!-- Search Bar -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_search_bar"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp">
+
+            <!-- Search Icon -->
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_search"
+                app:tint="#8A9BB0"
+                android:contentDescription="Search" />
+
+            <!-- Search Hint Text / EditText -->
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:hint="Search notifications..."
+                android:textColorHint="#8A9BB0"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:background="@null"
+                android:singleLine="true"
+                android:imeOptions="actionSearch"
+                android:inputType="text" />
+
+            <!-- Mic Icon -->
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_mic"
+                app:tint="#4EB8E8"
+                android:contentDescription="Voice search" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Filter Chips Row -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="12dp"
+        android:scrollbars="none"
+        android:background="#0B1628">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- All (active chip) -->
+            <TextView
+                android:id="@+id/chipAll"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="All"
+                android:textColor="#0B1628"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="@drawable/bg_chip_active"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Unread chip -->
+            <TextView
+                android:id="@+id/chipUnread"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="Unread"
+                android:textColor="#8A9BB0"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="@drawable/bg_chip_inactive"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Starred chip -->
+            <TextView
+                android:id="@+id/chipStarred"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="Starred"
+                android:textColor="#8A9BB0"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="@drawable/bg_chip_inactive"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Archived chip -->
+            <TextView
+                android:id="@+id/chipArchived"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="Archived"
+                android:textColor="#8A9BB0"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="@drawable/bg_chip_inactive"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Today chip -->
+            <TextView
+                android:id="@+id/chipToday"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="Today"
+                android:textColor="#8A9BB0"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:background="@drawable/bg_chip_inactive" />
+
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Thin Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="14dp"
+        android:background="#0D2A2E" />
+
+    <!-- "Recent searches" label -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Recent searches"
+        android:textColor="#8A9BB0"
+        android:textSize="12sp"
+        android:letterSpacing="0.05"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="6dp"
+        android:background="#0B1628" />
+
+    <!-- Recent Search Items (ScrollView wraps list) -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Item: GitHub alerts -->
+            <include layout="@layout/item_recent_search"
+                android:id="@+id/itemGitHub" />
+            <!-- Note: pass "GitHub alerts" as text in code via RecyclerView adapter -->
+
+            <!-- Item: Roblox login -->
+            <include layout="@layout/item_recent_search"
+                android:id="@+id/itemRoblox" />
+
+            <!-- Item: Benjamin Daya Cruz -->
+            <include layout="@layout/item_recent_search"
+                android:id="@+id/itemBenjamin" />
+
+            <!-- Item: Unread messages -->
+            <include layout="@layout/item_recent_search"
+                android:id="@+id/itemUnread" />
+
+            <!-- Item: Payment confirmed -->
+            <include layout="@layout/item_recent_search"
+                android:id="@+id/itemPayment" />
+
+            <!-- Item: Security alert -->
+            <include layout="@layout/item_recent_search"
+                android:id="@+id/itemSecurity" />
+
+            <!-- Item: Form submission -->
+            <include layout="@layout/item_recent_search"
+                android:id="@+id/itemForm" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>
