@@ -176,6 +176,7 @@ public class RegisterActivity extends AppCompatActivity {
                         .addOnCompleteListener(task2 -> {
                             if (task2.isSuccessful()) {
                                 Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show();
+                                mAuth.signOut();
                                 startActivity(new Intent(this, MainActivity.class));
                                 finish();
                             } else {
