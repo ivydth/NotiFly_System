@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         // if already logged in, skip welcome screen and go to dashboard
         if (mAuth.getCurrentUser() != null) {
-            startActivity(new Intent(this, DashboardActivity.class));
+            startActivity(new Intent(this, UserActivity.class));
             finish();
         }
     }
