@@ -49,16 +49,32 @@
                     android:src="@drawable/ic_menu"
                     app:tint="#FFFFFF" />
 
-                <!-- App Title -->
-                <TextView
+                <!-- Logo + App Title centered -->
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerInParent="true"
-                    android:text="NotiFly"
-                    android:textColor="#FFFFFF"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-medium" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_logo"
+                        android:scaleType="fitCenter"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="NotiFly"
+                        android:textColor="#FFFFFF"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/fredoka_one"
+                        android:layout_marginStart="8dp" />
+
+                </LinearLayout>
 
                 <!-- Profile -->
                 <androidx.appcompat.widget.AppCompatImageView
@@ -95,11 +111,11 @@
                         android:background="@drawable/banner_gradient" />
 
                     <ImageView
-                        android:layout_width="160dp"
-                        android:layout_height="160dp"
+                        android:layout_width="155dp"
+                        android:layout_height="1550dp"
                         android:layout_gravity="end|center_vertical"
                         android:layout_marginEnd="22dp"
-                        android:src="@drawable/bird"
+                        android:src="@drawable/ic_logo"
                         android:scaleType="fitCenter"
                         android:contentDescription="@null" />
 

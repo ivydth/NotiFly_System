@@ -69,8 +69,7 @@
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="20dp"
                 app:cardBackgroundColor="#2E4A5A"
-                app:cardElevation="8dp"
-                xmlns:app="http://schemas.android.com/apk/res-auto">
+                app:cardElevation="8dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -78,17 +77,38 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
-                    <!-- Full Name -->
+                    <!-- Last Name -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Full Name"
+                        android:text="Last Name"
                         android:textColor="#FFFFFF"
                         android:textSize="14sp"
                         android:layout_marginBottom="8dp" />
 
                     <EditText
-                        android:id="@+id/etFullName"
+                        android:id="@+id/etLastName"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:background="@drawable/input_field_bg"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#88FFFFFF"
+                        android:inputType="textPersonName"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- First Name -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="First Name"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp" />
+
+                    <EditText
+                        android:id="@+id/etFirstName"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:background="@drawable/input_field_bg"
@@ -118,27 +138,6 @@
                         android:textColor="#FFFFFF"
                         android:textColorHint="#88FFFFFF"
                         android:inputType="textEmailAddress"
-                        android:layout_marginBottom="16dp" />
-
-                    <!-- Contact Number -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Contact Number"
-                        android:textColor="#FFFFFF"
-                        android:textSize="14sp"
-                        android:layout_marginBottom="8dp" />
-
-                    <EditText
-                        android:id="@+id/etContactNumber"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:background="@drawable/input_field_bg"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:textColor="#FFFFFF"
-                        android:textColorHint="#88FFFFFF"
-                        android:inputType="phone"
                         android:layout_marginBottom="16dp" />
 
                     <!-- Password -->
@@ -194,12 +193,12 @@
                         android:buttonTint="#FFFFFF"
                         android:layout_marginBottom="24dp" />
 
-                    <!-- REGISTER Button -->
+                    <!-- SIGN UP Button -->
                     <Button
                         android:id="@+id/btnRegister"
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
-                        android:text="REGISTER"
+                        android:text="SIGN UP"
                         android:textColor="#FFFFFF"
                         android:textSize="16sp"
                         android:textStyle="bold"
