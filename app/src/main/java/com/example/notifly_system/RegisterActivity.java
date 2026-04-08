@@ -14,7 +14,7 @@ import java.util.HashMap;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    EditText etLastName, etFirstName, etEmail, etPassword, etConfirmPassword;
+    EditText etLastName, etFirstName, etEmail, etPassword, etConfirmPassword, etUsername;
     CheckBox cbTerms;
     Button btnRegister;
     FirebaseAuth mAuth;
@@ -26,6 +26,7 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(R.layout.register_activity);
 
         // initialize views
+        etUsername = findViewById(R.id.etUsername);
         etLastName = findViewById(R.id.etLastName);
         etFirstName = findViewById(R.id.etFirstName);
         etEmail = findViewById(R.id.etEmail);
@@ -47,9 +48,21 @@ public class RegisterActivity extends AppCompatActivity {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
         String confirmPassword = etConfirmPassword.getText().toString().trim();
+        String username = etUsername.getText().toString().trim();
 
         // ─── NAME VALIDATIONS ───────────────────────────────────────
-
+        
+        //Username
+        if (username.isEmpty()) {
+            etUsername.setError("Username is required");
+            etUsername.requestFocus();
+            return;
+        }
+        if (username.length() < 3) {
+            etUsername.setError("Username must be at least 3 characters");
+            etUsername.requestFocus();
+            return;
+        }
         // last name
         if (lastName.isEmpty()) {
             etLastName.setError("Last name is required");
@@ -153,6 +166,7 @@ public class RegisterActivity extends AppCompatActivity {
                     String userId = mAuth.getCurrentUser().getUid();
 
                     HashMap<String, Object> userMap = new HashMap<>();
+                    userMap.put("username", username);
                     userMap.put("lastName", lastName);
                     userMap.put("firstName", firstName);
                     userMap.put("email", email);
