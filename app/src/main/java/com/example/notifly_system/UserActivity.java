@@ -3,8 +3,10 @@ package com.example.notifly_system;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageView;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -16,7 +18,8 @@ import com.google.firebase.database.ValueEventListener;
 public class UserActivity extends AppCompatActivity {
 
     // Top bar
-    AppCompatImageView btnMenu, btnProfile;
+    AppCompatImageView btnMenu;
+    TextView           btnProfile; // ← now a TextView for letter avatar
 
     // Welcome banner
     TextView tvWelcomeUser;
@@ -28,12 +31,12 @@ public class UserActivity extends AppCompatActivity {
     AppCompatImageView ivHome, ivSearch, ivBell;
 
     // Firebase
-    FirebaseAuth mAuth;
+    FirebaseAuth      mAuth;
     DatabaseReference database;
 
     // User data
     String currentUsername = "User";
-    String currentEmail = "";
+    String currentEmail    = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +46,7 @@ public class UserActivity extends AppCompatActivity {
         // ── INITIALIZE VIEWS ──────────────────────────────────────
 
         btnMenu    = findViewById(R.id.btnMenu);
-        btnProfile = findViewById(R.id.btnProfile);
+        btnProfile = findViewById(R.id.btnProfile); // TextView now
 
         tvWelcomeUser = findViewById(R.id.tvWelcomeUser);
 
@@ -58,8 +61,9 @@ public class UserActivity extends AppCompatActivity {
         // ── FIREBASE ──────────────────────────────────────────────
 
         mAuth = FirebaseAuth.getInstance();
-        database = FirebaseDatabase.getInstance("https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/")
-                .getReference("users");
+        database = FirebaseDatabase.getInstance(
+                "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        ).getReference("users");
 
         // ── LOAD USER DATA ────────────────────────────────────────
 
@@ -67,28 +71,23 @@ public class UserActivity extends AppCompatActivity {
 
         // ── BUTTON LISTENERS ──────────────────────────────────────
 
-        // Menu button
         btnMenu.setOnClickListener(v -> {
             startActivity(new Intent(this, UserMenu.class));
             overridePendingTransition(0, 0);
         });
 
-        // Profile button
         btnProfile.setOnClickListener(v -> {
             startActivity(new Intent(this, ProfileActivity.class));
         });
 
-        // Bottom nav - Home
         ivHome.setOnClickListener(v -> {
             // already on home
         });
 
-        // Bottom nav - Search
         ivSearch.setOnClickListener(v -> {
             // TODO: navigate to search activity
         });
 
-        // Bottom nav - Bell
         ivBell.setOnClickListener(v -> {
             // TODO: navigate to notifications activity
         });
@@ -113,6 +112,7 @@ public class UserActivity extends AppCompatActivity {
                     String username  = snapshot.child("username").getValue(String.class);
                     String email     = snapshot.child("email").getValue(String.class);
 
+                    // ── Set welcome text ──────────────────────────
                     if (username != null && !username.isEmpty()) {
                         tvWelcomeUser.setText(username + "!");
                         currentUsername = username;
@@ -124,6 +124,12 @@ public class UserActivity extends AppCompatActivity {
                         currentUsername = "User";
                     }
 
+                    // ── Set profile avatar letter ─────────────────
+                    // Takes the first letter of username, uppercased
+                    String avatarLetter = currentUsername.substring(0, 1).toUpperCase();
+                    btnProfile.setText(avatarLetter);
+
+                    // ── Set email ─────────────────────────────────
                     currentEmail = (email != null && !email.isEmpty())
                             ? email
                             : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
@@ -133,6 +139,7 @@ public class UserActivity extends AppCompatActivity {
             @Override
             public void onCancelled(DatabaseError error) {
                 tvWelcomeUser.setText("User!");
+                btnProfile.setText("U"); // fallback letter
             }
         });
     }
