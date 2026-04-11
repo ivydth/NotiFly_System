@@ -31,6 +31,10 @@ public class UserActivity extends AppCompatActivity {
     FirebaseAuth mAuth;
     DatabaseReference database;
 
+    // User data
+    String currentUsername = "User";
+    String currentEmail = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,13 +73,13 @@ public class UserActivity extends AppCompatActivity {
 
         // Menu button
         btnMenu.setOnClickListener(v -> {
-            String currentUsername = tvWelcomeUser.getText().toString()
-            .replace("!", "").trim(); // strip the "!" suffix
             Intent intent = new Intent(this, UserMenu.class);
             intent.putExtra("username", currentUsername);
+            intent.putExtra("email", currentEmail);
             startActivity(intent);
             overridePendingTransition(0, 0);
         });
+
         // Profile button
         btnProfile.setOnClickListener(v -> {
             // TODO: navigate to profile activity
@@ -101,7 +105,6 @@ public class UserActivity extends AppCompatActivity {
         FirebaseUser currentUser = mAuth.getCurrentUser();
 
         if (currentUser == null) {
-            // not logged in, go back to login
             startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;
@@ -109,22 +112,30 @@ public class UserActivity extends AppCompatActivity {
 
         String userId = currentUser.getUid();
 
-        // fetch user data from Realtime Database
         database.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 if (snapshot.exists()) {
                     String firstName = snapshot.child("firstName").getValue(String.class);
-                    String username = snapshot.child("username").getValue(String.class);
+                    String username  = snapshot.child("username").getValue(String.class);
+                    String email     = snapshot.child("email").getValue(String.class);
 
                     // display username if available, otherwise use first name
                     if (username != null && !username.isEmpty()) {
                         tvWelcomeUser.setText(username + "!");
+                        currentUsername = username;
                     } else if (firstName != null && !firstName.isEmpty()) {
                         tvWelcomeUser.setText(firstName + "!");
+                        currentUsername = firstName;
                     } else {
                         tvWelcomeUser.setText("User!");
+                        currentUsername = "User";
                     }
+
+                    // fallback to Firebase Auth email if not in database
+                    currentEmail = (email != null && !email.isEmpty())
+                            ? email
+                            : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
                 }
             }
 
@@ -138,7 +149,6 @@ public class UserActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // check if user is still logged in
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) {
             startActivity(new Intent(this, LoginActivity.class));
