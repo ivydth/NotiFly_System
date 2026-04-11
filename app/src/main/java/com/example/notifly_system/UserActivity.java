@@ -33,6 +33,7 @@ public class UserActivity extends AppCompatActivity {
     // Firebase
     FirebaseAuth      mAuth;
     DatabaseReference database;
+    DatabaseReference presenceRef; // ✅ NEW: reference to this user's online field
 
     // User data
     String currentUsername = "User";
@@ -94,6 +95,28 @@ public class UserActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadUserData();
+        setOnlineStatus(true);  // ✅ User is now on the app
+    }
+
+    // ── Runs when user leaves the screen ──────────────────────────
+    @Override
+    protected void onPause() {
+        super.onPause();
+        setOnlineStatus(false); // ✅ User left the app
+    }
+
+    // ── Sets online/offline in Firebase ───────────────────────────
+    private void setOnlineStatus(boolean isOnline) {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) return;
+
+        presenceRef = database.child(currentUser.getUid()).child("online");
+        presenceRef.setValue(isOnline);
+
+        // ✅ If app crashes or loses internet, Firebase auto-sets offline
+        if (isOnline) {
+            presenceRef.onDisconnect().setValue(false);
+        }
     }
 
     private void loadUserData() {
