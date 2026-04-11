@@ -3,6 +3,7 @@ package com.example.notifly_system;
 import android.animation.ValueAnimator;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,12 +34,23 @@ public class UserMenu extends AppCompatActivity {
 
         drawerPanel = findViewById(R.id.drawer_panel);
 
+        // Hide completely off screen before first draw
+        drawerPanel.setTranslationX(-9999f);
+
         initViews();
         setActiveItem(navDashboard);
         setClickListeners();
 
-        // Slide in on start
-        drawerPanel.post(() -> openDrawer());
+        // Wait for layout to be fully measured then animate in
+        drawerPanel.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                drawerPanel.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                // Set exactly behind its real width now that we know it
+                drawerPanel.setTranslationX(-drawerPanel.getWidth());
+                openDrawer();
+            }
+        });
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -112,8 +124,8 @@ public class UserMenu extends AppCompatActivity {
     }
 
     public void openDrawer() {
-        int panelWidth = drawerPanel.getWidth();
-        ValueAnimator animator = ValueAnimator.ofFloat(-panelWidth, 0f);
+        float from = drawerPanel.getTranslationX();
+        ValueAnimator animator = ValueAnimator.ofFloat(from, 0f);
         animator.setDuration(350);
         animator.setInterpolator(new DecelerateInterpolator(2f));
         animator.addUpdateListener(a -> drawerPanel.setTranslationX((float) a.getAnimatedValue()));
@@ -122,7 +134,7 @@ public class UserMenu extends AppCompatActivity {
     }
 
     public void closeDrawer() {
-        int panelWidth = drawerPanel.getWidth();
+        float panelWidth = drawerPanel.getWidth();
         ValueAnimator animator = ValueAnimator.ofFloat(0f, -panelWidth);
         animator.setDuration(300);
         animator.setInterpolator(new DecelerateInterpolator(2f));
