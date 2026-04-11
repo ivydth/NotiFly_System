@@ -38,24 +38,23 @@ public class UserMenu extends AppCompatActivity {
         setActiveItem(navDashboard);
         setClickListeners();
 
+        drawerLayout.setScrimColor(android.graphics.Color.TRANSPARENT);
+
         drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
             @Override
             public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
                 float interpolated = new DecelerateInterpolator(2f).getInterpolation(slideOffset);
-                drawerView.setTranslationX(drawerView.getWidth() * (1 - interpolated));
-                drawerView.setAlpha(slideOffset);
+                drawerView.setTranslationX(-drawerView.getWidth() * (1 - interpolated));
             }
 
             @Override
             public void onDrawerOpened(@NonNull View drawerView) {
                 drawerView.setTranslationX(0);
-                drawerView.setAlpha(1f);
             }
 
             @Override
             public void onDrawerClosed(@NonNull View drawerView) {
-                drawerView.setTranslationX(drawerView.getWidth());
-                drawerView.setAlpha(0f);
+                drawerView.setTranslationX(-drawerView.getWidth());
             }
 
             @Override
