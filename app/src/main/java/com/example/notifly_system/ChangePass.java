@@ -17,7 +17,17 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
+import org.json.JSONObject;
+
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.regex.Pattern;
 
 public class ChangePass extends AppCompatActivity {
@@ -38,7 +48,8 @@ public class ChangePass extends AppCompatActivity {
     TextView tvForgotPassword;
 
     // Firebase
-    FirebaseAuth mAuth;
+    FirebaseAuth     mAuth;
+    DatabaseReference mDatabase;
 
     // Toggle states
     boolean isCurrentVisible = false;
@@ -46,11 +57,15 @@ public class ChangePass extends AppCompatActivity {
     boolean isConfirmVisible = false;
 
     // ── PASSWORD RULES ────────────────────────────────────────────
-    // At least 8 characters, 1 uppercase, 1 digit, 1 special character
     private static final int     MIN_LENGTH    = 8;
     private static final Pattern HAS_UPPERCASE = Pattern.compile("[A-Z]");
     private static final Pattern HAS_DIGIT     = Pattern.compile("[0-9]");
     private static final Pattern HAS_SPECIAL   = Pattern.compile("[^a-zA-Z0-9]");
+
+    // ── EMAILJS CREDENTIALS ───────────────────────────────────────
+    private static final String EMAILJS_SERVICE_ID  = "service_i8crmql";
+    private static final String EMAILJS_TEMPLATE_ID = "template_0wzz2sp";
+    private static final String EMAILJS_PUBLIC_KEY  = "juGO7uo9O6udgw2xl";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,7 +86,8 @@ public class ChangePass extends AppCompatActivity {
 
         // ── FIREBASE ──────────────────────────────────────────────
 
-        mAuth = FirebaseAuth.getInstance();
+        mAuth     = FirebaseAuth.getInstance();
+        mDatabase = FirebaseDatabase.getInstance().getReference();
 
         // ── LISTENERS ─────────────────────────────────────────────
 
@@ -93,7 +109,6 @@ public class ChangePass extends AppCompatActivity {
         });
 
         btnChangePassword.setOnClickListener(v -> changePassword());
-
         tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
     }
 
@@ -113,7 +128,6 @@ public class ChangePass extends AppCompatActivity {
 
     // ─────────────────────────────────────────────────────────────
     // Password strength validation
-    // Returns null if valid, or a specific error message if not
     // ─────────────────────────────────────────────────────────────
     private String getPasswordError(String password) {
         if (password.length() < MIN_LENGTH) {
@@ -128,7 +142,7 @@ public class ChangePass extends AppCompatActivity {
         if (!HAS_SPECIAL.matcher(password).find()) {
             return "Password must contain at least 1 special character (e.g. @, #, $)";
         }
-        return null; // All rules passed
+        return null;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -138,8 +152,6 @@ public class ChangePass extends AppCompatActivity {
         String currentPassword = etCurrentPassword.getText().toString().trim();
         String newPassword     = etNewPassword.getText().toString().trim();
         String confirmPassword = etConfirmPassword.getText().toString().trim();
-
-        // ── VALIDATIONS ───────────────────────────────────────────
 
         if (currentPassword.isEmpty()) {
             etCurrentPassword.setError("Current password is required");
@@ -153,7 +165,6 @@ public class ChangePass extends AppCompatActivity {
             return;
         }
 
-        // Strength check
         String passwordError = getPasswordError(newPassword);
         if (passwordError != null) {
             etNewPassword.setError(passwordError);
@@ -178,8 +189,6 @@ public class ChangePass extends AppCompatActivity {
             etNewPassword.requestFocus();
             return;
         }
-
-        // ── REAUTHENTICATE THEN UPDATE ────────────────────────────
 
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null || currentUser.getEmail() == null) {
@@ -209,7 +218,7 @@ public class ChangePass extends AppCompatActivity {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Forgot password — confirm before sending reset email
+    // Forgot password — confirm before sending
     // ─────────────────────────────────────────────────────────────
     private void showForgotPasswordDialog() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
@@ -229,17 +238,112 @@ public class ChangePass extends AppCompatActivity {
             .show();
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Step 1 — Firebase sends reset email
+    // Step 2 — Fetch username from Realtime Database
+    // Step 3 — EmailJS sends branded notification email
+    // ─────────────────────────────────────────────────────────────
     private void sendPasswordResetEmail(String email) {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) return;
+
+        // Step 1: Firebase sends the actual reset link email
         mAuth.sendPasswordResetEmail(email)
             .addOnSuccessListener(unused -> {
-                new AlertDialog.Builder(this)
-                    .setTitle("Email Sent!")
-                    .setMessage("A password reset link has been sent to:\n\n" + email + "\n\nCheck your inbox and follow the instructions, then log in with your new password.")
-                    .setPositiveButton("OK", (dialog, which) -> finish())
-                    .show();
+
+                // Step 2: Fetch username from Realtime Database
+                String userId = currentUser.getUid();
+                mDatabase.child("users").child(userId).child("username")
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot snapshot) {
+                            String username = snapshot.getValue(String.class);
+
+                            // Fallback if username is null
+                            if (username == null || username.isEmpty()) {
+                                username = "User";
+                            }
+
+                            // Step 3: Send EmailJS notification
+                            sendEmailJS(email, username);
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError error) {
+                            // Still send EmailJS even if username fetch fails
+                            sendEmailJS(email, "User");
+                        }
+                    });
             })
             .addOnFailureListener(e -> {
-                Toast.makeText(this, "Failed to send reset email. Please try again.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Failed to send reset email. Please try again.",
+                        Toast.LENGTH_SHORT).show();
             });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // EmailJS API call — runs on a background thread
+    // ─────────────────────────────────────────────────────────────
+    private void sendEmailJS(String email, String username) {
+        new Thread(() -> {
+            try {
+                URL url = new URL("https://api.emailjs.com/api/v1.0/email/send");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("origin", "http://localhost");
+                conn.setDoOutput(true);
+
+                // Build JSON payload
+                JSONObject templateParams = new JSONObject();
+                templateParams.put("to_email", email);
+                templateParams.put("username", username);
+
+                JSONObject payload = new JSONObject();
+                payload.put("service_id",  EMAILJS_SERVICE_ID);
+                payload.put("template_id", EMAILJS_TEMPLATE_ID);
+                payload.put("user_id",     EMAILJS_PUBLIC_KEY);
+                payload.put("template_params", templateParams);
+
+                // Send request
+                OutputStream os = conn.getOutputStream();
+                os.write(payload.toString().getBytes());
+                os.flush();
+                os.close();
+
+                int responseCode = conn.getResponseCode();
+
+                // Back to main thread for UI
+                runOnUiThread(() -> {
+                    if (responseCode == 200) {
+                        // Success — show confirmation dialog
+                        new AlertDialog.Builder(this)
+                            .setTitle("Email Sent!")
+                            .setMessage("A password reset link has been sent to:\n\n" + email +
+                                        "\n\nCheck your inbox and follow the instructions.")
+                            .setPositiveButton("OK", (dialog, which) -> finish())
+                            .show();
+                    } else {
+                        // Firebase email was sent, EmailJS just failed silently
+                        Toast.makeText(this,
+                                "Reset email sent. Check your inbox.",
+                                Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                });
+
+                conn.disconnect();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> {
+                    // Firebase email was still sent, so still notify user
+                    Toast.makeText(this,
+                            "Reset email sent. Check your inbox.",
+                            Toast.LENGTH_SHORT).show();
+                    finish();
+                });
+            }
+        }).start();
     }
 }
