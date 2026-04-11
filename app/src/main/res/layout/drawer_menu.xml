@@ -5,17 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- Main content — user_activity behind the drawer -->
     <include
-    layout="@layout/user_activity"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent" />
-
-    <!-- Main content placeholder -->
-    <FrameLayout
-        android:id="@+id/fragment_container"
+        layout="@layout/user_activity"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#0B1628" />
+        android:layout_height="match_parent" />
 
     <!-- Drawer Panel -->
     <LinearLayout
