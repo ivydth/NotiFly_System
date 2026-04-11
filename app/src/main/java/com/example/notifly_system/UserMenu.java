@@ -2,10 +2,12 @@ package com.example.notifly_system;
 
 import android.os.Bundle;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -14,19 +16,15 @@ public class UserMenu extends AppCompatActivity {
 
     private DrawerLayout drawerLayout;
 
-    // Main section
     private View navDashboard;
     private View navNotifications;
     private View navAllInboxes;
     private View navUnread;
     private View navAnnouncements;
     private View navPromotions;
-
-    // Options section
     private View navSettings;
     private View navArchive;
 
-    // Badge
     private TextView badgeNotifications;
 
     @Override
@@ -39,6 +37,30 @@ public class UserMenu extends AppCompatActivity {
         initViews();
         setActiveItem(navDashboard);
         setClickListeners();
+
+        drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
+            @Override
+            public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
+                float interpolated = new DecelerateInterpolator(2f).getInterpolation(slideOffset);
+                drawerView.setTranslationX(drawerView.getWidth() * (interpolated - 1));
+                drawerView.setAlpha(slideOffset);
+            }
+
+            @Override
+            public void onDrawerOpened(@NonNull View drawerView) {
+                drawerView.setTranslationX(0);
+                drawerView.setAlpha(1f);
+            }
+
+            @Override
+            public void onDrawerClosed(@NonNull View drawerView) {
+                drawerView.setTranslationX(-drawerView.getWidth());
+                drawerView.setAlpha(0f);
+            }
+
+            @Override
+            public void onDrawerStateChanged(int newState) {}
+        });
 
         drawerLayout.openDrawer(GravityCompat.START);
 
@@ -56,19 +78,15 @@ public class UserMenu extends AppCompatActivity {
     }
 
     private void initViews() {
-        // Main section nav items
-        navDashboard      = findViewById(R.id.nav_dashboard);
-        navNotifications  = findViewById(R.id.nav_notifications);
-        navAllInboxes     = findViewById(R.id.nav_all_inboxes);
-        navUnread         = findViewById(R.id.nav_unread);
-        navAnnouncements  = findViewById(R.id.nav_announcements);
-        navPromotions     = findViewById(R.id.nav_promotions);
+        navDashboard     = findViewById(R.id.nav_dashboard);
+        navNotifications = findViewById(R.id.nav_notifications);
+        navAllInboxes    = findViewById(R.id.nav_all_inboxes);
+        navUnread        = findViewById(R.id.nav_unread);
+        navAnnouncements = findViewById(R.id.nav_announcements);
+        navPromotions    = findViewById(R.id.nav_promotions);
+        navSettings      = findViewById(R.id.nav_settings);
+        navArchive       = findViewById(R.id.nav_archive);
 
-        // Options section nav items
-        navSettings = findViewById(R.id.nav_settings);
-        navArchive  = findViewById(R.id.nav_archive);
-
-        // Badge
         badgeNotifications = findViewById(R.id.badge_notifications);
     }
 
@@ -118,15 +136,8 @@ public class UserMenu extends AppCompatActivity {
         });
     }
 
-    // -------------------------------------------------------------------------
-    // Navigation handlers — replace Toast stubs with your actual Fragment/Intent
-    // -------------------------------------------------------------------------
-
     private void onNavDashboardClicked() {
         Toast.makeText(this, "Dashboard", Toast.LENGTH_SHORT).show();
-        // e.g. getSupportFragmentManager().beginTransaction()
-        //          .replace(R.id.fragment_container, new DashboardFragment())
-        //          .commit();
     }
 
     private void onNavNotificationsClicked() {
@@ -157,10 +168,6 @@ public class UserMenu extends AppCompatActivity {
         Toast.makeText(this, "Archive", Toast.LENGTH_SHORT).show();
     }
 
-    // -------------------------------------------------------------------------
-    // Active state helper
-    // -------------------------------------------------------------------------
-
     private void setActiveItem(View activeView) {
         View[] items = {navDashboard, navNotifications, navSettings, navArchive};
         for (View item : items) {
@@ -183,7 +190,6 @@ public class UserMenu extends AppCompatActivity {
         }
     }
 
-    /** Walks the immediate children of a ViewGroup to find the first TextView. */
     private TextView getFirstTextView(View view) {
         if (view instanceof android.view.ViewGroup) {
             android.view.ViewGroup group = (android.view.ViewGroup) view;
@@ -195,11 +201,6 @@ public class UserMenu extends AppCompatActivity {
         return null;
     }
 
-    // -------------------------------------------------------------------------
-    // Badge helpers
-    // -------------------------------------------------------------------------
-
-    /** Update the notification badge count. Pass 0 to hide it. */
     public void setNotificationBadge(int count) {
         if (badgeNotifications == null) return;
         if (count <= 0) {
@@ -209,10 +210,6 @@ public class UserMenu extends AppCompatActivity {
             badgeNotifications.setText(count > 99 ? "99+" : String.valueOf(count));
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Drawer helpers
-    // -------------------------------------------------------------------------
 
     private void closeDrawer() {
         if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
