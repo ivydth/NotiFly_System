@@ -1,1 +1,369 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B1628">
 
+    <!-- Background -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/front_page"
+        android:scaleType="centerCrop"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Status bar spacer -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="32dp" />
+
+        <!-- ═══════════════════
+             TOP BAR
+        ════════════════════ -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="52dp">
+
+            <!-- Back button -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/btnBack"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="start|center_vertical"
+                android:layout_marginStart="18dp"
+                app:cardCornerRadius="10dp"
+                app:cardBackgroundColor="#1A5BCCE8"
+                app:cardElevation="0dp"
+                android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_arrow_black"
+                    app:tint="#5BCCE8"
+                    android:contentDescription="Back" />
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Title -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="CHANGE PASSWORD"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:fontFamily="@font/fredoka_one" />
+
+        </FrameLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:overScrollMode="never"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:paddingTop="24dp"
+                android:paddingBottom="36dp">
+
+                <!-- Lock icon header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingBottom="28dp">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        app:cardBackgroundColor="#1A5BCCE8"
+                        app:cardCornerRadius="36dp"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_lock"
+                            android:contentDescription="@null"
+                            app:tint="#5BCCE8" />
+
+                    </androidx.cardview.widget.CardView>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="Update Password"
+                        android:textColor="#FFFFFF"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/fredoka_one" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Enter your current password and choose a new one"
+                        android:textColor="#8A9BB0"
+                        android:textSize="12sp"
+                        android:gravity="center" />
+
+                </LinearLayout>
+
+                <!-- Section label -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/fredoka_one"
+                    android:letterSpacing="0.14"
+                    android:paddingStart="2dp"
+                    android:text="PASSWORD INFO"
+                    android:textAllCaps="true"
+                    android:textColor="#8A9BB0"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <!-- Password card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    app:cardBackgroundColor="#D00D2A2E"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="4dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <!-- Current Password label -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_lock"
+                                app:tint="#F5A623" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:letterSpacing="0.1"
+                                android:paddingStart="6dp"
+                                android:text="CURRENT PASSWORD"
+                                android:textAllCaps="true"
+                                android:textColor="#8A9BB0"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <!-- Current Password input -->
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:layout_marginBottom="14dp">
+
+                            <EditText
+                                android:id="@+id/etCurrentPassword"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_input_field"
+                                android:fontFamily="@font/fredoka_one"
+                                android:hint="Enter current password"
+                                android:inputType="textPassword"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="48dp"
+                                android:textColor="#FFFFFF"
+                                android:textColorHint="#708A9BB0"
+                                android:textSize="14sp" />
+
+                            <ImageView
+                                android:id="@+id/ivToggleCurrentPassword"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="end|center_vertical"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_eye_off"
+                                android:contentDescription="Toggle password"
+                                app:tint="#8A9BB0" />
+
+                        </FrameLayout>
+
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E5BCCE8"
+                            android:layout_marginBottom="14dp" />
+
+                        <!-- New Password label -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_lock"
+                                app:tint="#5BCCE8" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:letterSpacing="0.1"
+                                android:paddingStart="6dp"
+                                android:text="NEW PASSWORD"
+                                android:textAllCaps="true"
+                                android:textColor="#8A9BB0"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <!-- New Password input -->
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:layout_marginBottom="14dp">
+
+                            <EditText
+                                android:id="@+id/etNewPassword"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_input_field"
+                                android:fontFamily="@font/fredoka_one"
+                                android:hint="Enter new password"
+                                android:inputType="textPassword"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="48dp"
+                                android:textColor="#FFFFFF"
+                                android:textColorHint="#708A9BB0"
+                                android:textSize="14sp" />
+
+                            <ImageView
+                                android:id="@+id/ivToggleNewPassword"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="end|center_vertical"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_eye_off"
+                                android:contentDescription="Toggle password"
+                                app:tint="#8A9BB0" />
+
+                        </FrameLayout>
+
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E5BCCE8"
+                            android:layout_marginBottom="14dp" />
+
+                        <!-- Confirm Password label -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_lock"
+                                app:tint="#3DD6C8" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:letterSpacing="0.1"
+                                android:paddingStart="6dp"
+                                android:text="CONFIRM NEW PASSWORD"
+                                android:textAllCaps="true"
+                                android:textColor="#8A9BB0"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <!-- Confirm Password input -->
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:layout_marginBottom="6dp">
+
+                            <EditText
+                                android:id="@+id/etConfirmPassword"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_input_field"
+                                android:fontFamily="@font/fredoka_one"
+                                android:hint="Confirm new password"
+                                android:inputType="textPassword"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="48dp"
+                                android:textColor="#FFFFFF"
+                                android:textColorHint="#708A9BB0"
+                                android:textSize="14sp" />
+
+                            <ImageView
+                                android:id="@+id/ivToggleConfirmPassword"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="end|center_vertical"
+                                android:layout_marginEnd="14dp"
+                                android:src="@drawable/ic_eye_off"
+                                android:contentDescription="Toggle password"
+                                app:tint="#8A9BB0" />
+
+                        </FrameLayout>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Save button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnChangePassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:fontFamily="@font/fredoka_one"
+                    android:text="Update Password"
+                    android:textColor="#0B1628"
+                    android:textSize="15sp"
+                    app:backgroundTint="#5BCCE8"
+                    app:cornerRadius="16dp"
+                    app:elevation="0dp"
+                    app:rippleColor="#401ABFB8" />
+
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
