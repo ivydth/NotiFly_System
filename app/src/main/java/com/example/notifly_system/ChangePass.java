@@ -1,6 +1,5 @@
 package com.example.notifly_system;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
@@ -46,14 +45,14 @@ public class ChangePass extends AppCompatActivity {
 
         // ── INITIALIZE VIEWS ──────────────────────────────────────
 
-        btnBack               = findViewById(R.id.btnBack);
-        etCurrentPassword     = findViewById(R.id.etCurrentPassword);
-        etNewPassword         = findViewById(R.id.etNewPassword);
-        etConfirmPassword     = findViewById(R.id.etConfirmPassword);
+        btnBack                 = findViewById(R.id.btnBack);
+        etCurrentPassword       = findViewById(R.id.etCurrentPassword);
+        etNewPassword           = findViewById(R.id.etNewPassword);
+        etConfirmPassword       = findViewById(R.id.etConfirmPassword);
         ivToggleCurrentPassword = findViewById(R.id.ivToggleCurrentPassword);
         ivToggleNewPassword     = findViewById(R.id.ivToggleNewPassword);
         ivToggleConfirmPassword = findViewById(R.id.ivToggleConfirmPassword);
-        btnChangePassword     = findViewById(R.id.btnChangePassword);
+        btnChangePassword       = findViewById(R.id.btnChangePassword);
 
         // ── FIREBASE ──────────────────────────────────────────────
 
@@ -63,7 +62,6 @@ public class ChangePass extends AppCompatActivity {
 
         btnBack.setOnClickListener(v -> finish());
 
-        // Eye toggles
         ivToggleCurrentPassword.setOnClickListener(v -> {
             isCurrentVisible = !isCurrentVisible;
             togglePasswordVisibility(etCurrentPassword, ivToggleCurrentPassword, isCurrentVisible);
@@ -79,7 +77,6 @@ public class ChangePass extends AppCompatActivity {
             togglePasswordVisibility(etConfirmPassword, ivToggleConfirmPassword, isConfirmVisible);
         });
 
-        // Save button
         btnChangePassword.setOnClickListener(v -> changePassword());
     }
 
@@ -91,7 +88,6 @@ public class ChangePass extends AppCompatActivity {
             field.setTransformationMethod(PasswordTransformationMethod.getInstance());
             icon.setImageResource(R.drawable.ic_eye_off);
         }
-        // keep cursor at end
         field.setSelection(field.getText().length());
     }
 
@@ -146,14 +142,12 @@ public class ChangePass extends AppCompatActivity {
             return;
         }
 
-        // reauthenticate first — required by Firebase before sensitive operations
         AuthCredential credential = EmailAuthProvider.getCredential(
                 currentUser.getEmail(), currentPassword
         );
 
         currentUser.reauthenticate(credential)
             .addOnSuccessListener(unused -> {
-                // reauthentication passed — now update password
                 currentUser.updatePassword(newPassword)
                     .addOnSuccessListener(unused2 -> {
                         Toast.makeText(this, "Password updated successfully!", Toast.LENGTH_SHORT).show();
@@ -164,7 +158,6 @@ public class ChangePass extends AppCompatActivity {
                     });
             })
             .addOnFailureListener(e -> {
-                // wrong current password
                 etCurrentPassword.setError("Incorrect current password");
                 etCurrentPassword.requestFocus();
             });
