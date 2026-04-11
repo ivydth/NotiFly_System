@@ -186,7 +186,7 @@
                         <FrameLayout
                             android:layout_width="match_parent"
                             android:layout_height="48dp"
-                            android:layout_marginBottom="14dp">
+                            android:layout_marginBottom="6dp">
 
                             <EditText
                                 android:id="@+id/etCurrentPassword"
@@ -213,6 +213,19 @@
                                 app:tint="#8A9BB0" />
 
                         </FrameLayout>
+
+                        <!-- ── Forgot Password link ── -->
+                        <TextView
+                            android:id="@+id/tvForgotPassword"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="14dp"
+                            android:paddingStart="2dp"
+                            android:text="Forgot current password?"
+                            android:textColor="#5BCCE8"
+                            android:textSize="11sp"
+                            android:clickable="true"
+                            android:focusable="true" />
 
                         <!-- Divider -->
                         <View
