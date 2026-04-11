@@ -32,7 +32,7 @@ public class UserMenu extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main); // Replace with your actual layout that includes the drawer
+        setContentView(R.layout.drawer_menu); // Replace with your actual layout that includes the drawer
 
         drawerLayout = findViewById(R.id.drawer_layout); // Your DrawerLayout ID in the parent layout
 
