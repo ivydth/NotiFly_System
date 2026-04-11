@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Main content — user_activity behind the drawer -->
+    <!-- Main content visible behind the drawer -->
     <include
         layout="@layout/user_activity"
         android:layout_width="match_parent"
@@ -13,16 +13,15 @@
 
     <!-- Drawer Panel -->
     <LinearLayout
+        android:id="@+id/drawer_panel"
         android:layout_width="280dp"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:background="#0D2A2E"
         android:layout_gravity="start">
 
-        <!-- Header -->
         <include layout="@layout/drawer_header" />
 
-        <!-- Scrollable Menu -->
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -35,7 +34,6 @@
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp">
 
-                <!-- MAIN label -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -49,7 +47,6 @@
                     android:paddingTop="12dp"
                     android:paddingBottom="6dp" />
 
-                <!-- Dashboard -->
                 <LinearLayout
                     android:id="@+id/nav_dashboard"
                     android:layout_width="match_parent"
@@ -83,7 +80,6 @@
 
                 </LinearLayout>
 
-                <!-- Notifications -->
                 <LinearLayout
                     android:id="@+id/nav_notifications"
                     android:layout_width="match_parent"
@@ -133,7 +129,6 @@
 
                 </LinearLayout>
 
-                <!-- All Inboxes sub-item -->
                 <LinearLayout
                     android:id="@+id/nav_all_inboxes"
                     android:layout_width="match_parent"
@@ -165,7 +160,6 @@
 
                 </LinearLayout>
 
-                <!-- Unread -->
                 <LinearLayout
                     android:id="@+id/nav_unread"
                     android:layout_width="match_parent"
@@ -197,7 +191,6 @@
 
                 </LinearLayout>
 
-                <!-- Announcements -->
                 <LinearLayout
                     android:id="@+id/nav_announcements"
                     android:layout_width="match_parent"
@@ -229,7 +222,6 @@
 
                 </LinearLayout>
 
-                <!-- Promotions -->
                 <LinearLayout
                     android:id="@+id/nav_promotions"
                     android:layout_width="match_parent"
@@ -261,7 +253,6 @@
 
                 </LinearLayout>
 
-                <!-- Divider -->
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
@@ -271,7 +262,6 @@
                     android:layout_marginStart="20dp"
                     android:layout_marginEnd="20dp" />
 
-                <!-- OPTIONS label -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -284,7 +274,6 @@
                     android:paddingEnd="20dp"
                     android:paddingBottom="6dp" />
 
-                <!-- Settings -->
                 <LinearLayout
                     android:id="@+id/nav_settings"
                     android:layout_width="match_parent"
@@ -324,7 +313,6 @@
 
                 </LinearLayout>
 
-                <!-- Archive -->
                 <LinearLayout
                     android:id="@+id/nav_archive"
                     android:layout_width="match_parent"
