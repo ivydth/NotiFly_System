@@ -52,6 +52,12 @@ public class UserMenu extends AppCompatActivity {
             }
         });
 
+        String username = getIntent().getStringExtra("username");
+        TextView tvDrawerUsername = findViewById(R.id.tv_drawer_username);
+        if (tvDrawerUsername != null) {
+        tvDrawerUsername.setText(username != null && !username.isEmpty() ? username : "User");
+        }
+
         // Clicking outside the drawer (on the background) closes it
         rootLayout.setOnClickListener(v -> closeDrawer());
 
