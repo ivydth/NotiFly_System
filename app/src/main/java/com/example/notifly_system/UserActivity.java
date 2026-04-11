@@ -19,7 +19,7 @@ public class UserActivity extends AppCompatActivity {
 
     // Top bar
     AppCompatImageView btnMenu;
-    TextView           btnProfile; // ← now a TextView for letter avatar
+    TextView           btnProfile;
 
     // Welcome banner
     TextView tvWelcomeUser;
@@ -46,7 +46,7 @@ public class UserActivity extends AppCompatActivity {
         // ── INITIALIZE VIEWS ──────────────────────────────────────
 
         btnMenu    = findViewById(R.id.btnMenu);
-        btnProfile = findViewById(R.id.btnProfile); // TextView now
+        btnProfile = findViewById(R.id.btnProfile);
 
         tvWelcomeUser = findViewById(R.id.tvWelcomeUser);
 
@@ -64,10 +64,6 @@ public class UserActivity extends AppCompatActivity {
         database = FirebaseDatabase.getInstance(
                 "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
         ).getReference("users");
-
-        // ── LOAD USER DATA ────────────────────────────────────────
-
-        loadUserData();
 
         // ── BUTTON LISTENERS ──────────────────────────────────────
 
@@ -91,6 +87,13 @@ public class UserActivity extends AppCompatActivity {
         ivBell.setOnClickListener(v -> {
             // TODO: navigate to notifications activity
         });
+    }
+
+    // ── Runs every time the screen comes back into view ────────────
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadUserData();
     }
 
     private void loadUserData() {
@@ -125,7 +128,6 @@ public class UserActivity extends AppCompatActivity {
                     }
 
                     // ── Set profile avatar letter ─────────────────
-                    // Takes the first letter of username, uppercased
                     String avatarLetter = currentUsername.substring(0, 1).toUpperCase();
                     btnProfile.setText(avatarLetter);
 
@@ -139,7 +141,7 @@ public class UserActivity extends AppCompatActivity {
             @Override
             public void onCancelled(DatabaseError error) {
                 tvWelcomeUser.setText("User!");
-                btnProfile.setText("U"); // fallback letter
+                btnProfile.setText("U");
             }
         });
     }
