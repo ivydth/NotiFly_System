@@ -5,7 +5,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -32,13 +32,25 @@ public class UserMenu extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.drawer_menu); // Replace with your actual layout that includes the drawer
+        setContentView(R.layout.drawer_menu);
 
-        drawerLayout = findViewById(R.id.drawer_layout); // Your DrawerLayout ID in the parent layout
+        drawerLayout = findViewById(R.id.drawer_layout);
 
         initViews();
         setActiveItem(navDashboard);
         setClickListeners();
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
     }
 
     private void initViews() {
@@ -145,13 +157,7 @@ public class UserMenu extends AppCompatActivity {
 
     // -------------------------------------------------------------------------
     // Active state helper
-    // Toggles the active background (@drawable/nav_item_active_bg) on the
-    // selected top-level item and resets all others.
-    // Sub-items (All Inboxes, Unread, Announcements, Promotions) use a
-    // selectableItemBackground so they are excluded from active tracking.
     // -------------------------------------------------------------------------
-
-    private final View[] topLevelItems = new View[0]; // populated lazily below
 
     private void setActiveItem(View activeView) {
         View[] items = {navDashboard, navNotifications, navSettings, navArchive};
@@ -159,7 +165,6 @@ public class UserMenu extends AppCompatActivity {
             if (item == null) continue;
             if (item == activeView) {
                 item.setBackgroundResource(R.drawable.nav_item_active_bg);
-                // Tint label teal for the active item
                 TextView label = getFirstTextView(item);
                 if (label != null) {
                     label.setTextColor(android.graphics.Color.parseColor("#1ABFB8"));
@@ -216,15 +221,6 @@ public class UserMenu extends AppCompatActivity {
     public void openDrawer() {
         if (drawerLayout != null) {
             drawerLayout.openDrawer(GravityCompat.START);
-        }
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
-        drawerLayout.closeDrawer(GravityCompat.START);
-        } else {
-        getOnBackPressedDispatcher().onBackPressed();
         }
     }
 }
