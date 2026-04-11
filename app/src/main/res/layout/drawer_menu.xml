@@ -1,356 +1,373 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="280dp"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#0D2A2E"
-    android:layout_gravity="start">
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    <!-- Header -->
-    <include layout="@layout/drawer_header" />
-
-    <!-- Scrollable Menu -->
-    <ScrollView
+    <!-- Main content placeholder -->
+    <FrameLayout
+        android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:background="#0B1628" />
 
-        <LinearLayout
+    <!-- Drawer Panel -->
+    <LinearLayout
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#0D2A2E"
+        android:layout_gravity="start">
+
+        <!-- Header -->
+        <include layout="@layout/drawer_header" />
+
+        <!-- Scrollable Menu -->
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp">
+            android:layout_height="match_parent"
+            android:fillViewport="true">
 
-            <!-- MAIN label -->
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="MAIN"
-                android:textColor="#8A9BB0"
-                android:textSize="11sp"
-                android:letterSpacing="0.12"
-                android:textStyle="bold"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="6dp" />
+                android:orientation="vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
 
-            <!-- Dashboard -->
-            <LinearLayout
-                android:id="@+id/nav_dashboard"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/nav_item_active_bg"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@drawable/outline_home_24"
-                    android:background="@drawable/nav_icon_bg_teal"
-                    android:padding="8dp"
-                    android:contentDescription="@null"
-                    />
-
+                <!-- MAIN label -->
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Dashboard"
-                    android:textColor="#1ABFB8"
-                    android:textSize="14sp"
+                    android:text="MAIN"
+                    android:textColor="#8A9BB0"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.12"
                     android:textStyle="bold"
-                    android:layout_marginStart="12dp" />
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="6dp" />
 
-            </LinearLayout>
-
-            <!-- Notifications -->
-            <LinearLayout
-                android:id="@+id/nav_notifications"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="2dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@drawable/ic_notif_bell"
-                    android:background="@drawable/nav_icon_bg_blue"
-                    android:padding="8dp"
-                    android:contentDescription="@null" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Notifications"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:layout_marginStart="12dp" />
-
-                <TextView
-                    android:id="@+id/badge_notifications"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="8"
-                    android:textColor="#0B1628"
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:paddingStart="6dp"
-                    android:paddingEnd="6dp"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:background="@drawable/badge_teal"
-                    android:gravity="center" />
-
-            </LinearLayout>
-
-            <!-- All Inboxes sub-item -->
-            <LinearLayout
-                android:id="@+id/nav_all_inboxes"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="24dp"
-                android:paddingEnd="12dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="2dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true">
-
-                <View
-                    android:layout_width="2dp"
-                    android:layout_height="20dp"
-                    android:background="#1ABFB8"
-                    android:layout_marginEnd="14dp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="All Inboxes"
-                    android:textColor="#FFFFFF"
-                    android:textSize="13sp" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/nav_unread"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="24dp"
-                android:paddingEnd="12dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="2dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true">
-
-                <View
-                    android:layout_width="2dp"
-                    android:layout_height="20dp"
-                    android:background="#1ABFB8"
-                    android:layout_marginEnd="14dp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Unread"
-                    android:textColor="#FFFFFF"
-                    android:textSize="13sp" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/nav_announcements"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="24dp"
-                android:paddingEnd="12dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="2dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true">
-
-                <View
-                    android:layout_width="2dp"
-                    android:layout_height="20dp"
-                    android:background="#1ABFB8"
-                    android:layout_marginEnd="14dp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Announcements"
-                    android:textColor="#FFFFFF"
-                    android:textSize="13sp" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/nav_promotions"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="24dp"
-                android:paddingEnd="12dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="2dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true">
-
-                <View
-                    android:layout_width="2dp"
-                    android:layout_height="20dp"
-                    android:background="#1ABFB8"
-                    android:layout_marginEnd="14dp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Promotions"
-                    android:textColor="#FFFFFF"
-                    android:textSize="13sp" />
-
-            </LinearLayout>
-
-            <!-- Divider -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#261ABFB8"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp"
-                android:layout_marginStart="20dp"
-                android:layout_marginEnd="20dp" />
-
-            <!-- OPTIONS label -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="OPTIONS"
-                android:textColor="#8A9BB0"
-                android:textSize="11sp"
-                android:letterSpacing="0.12"
-                android:textStyle="bold"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:paddingBottom="6dp" />
-
-            <!-- Settings -->
-            <LinearLayout
-                android:id="@+id/nav_settings"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="2dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true">
-
+                <!-- Dashboard -->
                 <LinearLayout
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="@drawable/nav_icon_bg_teal"
-                    android:gravity="center">
+                    android:id="@+id/nav_dashboard"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/nav_item_active_bg"
+                    android:clickable="true"
+                    android:focusable="true">
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_settings"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:src="@drawable/outline_home_24"
+                        android:background="@drawable/nav_icon_bg_teal"
+                        android:padding="8dp"
                         android:contentDescription="@null" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Dashboard"
+                        android:textColor="#1ABFB8"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_marginStart="12dp" />
 
                 </LinearLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Settings"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:layout_marginStart="12dp" />
-
-            </LinearLayout>
-
-            <!-- Archive -->
-            <LinearLayout
-                android:id="@+id/nav_archive"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="2dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true">
-
+                <!-- Notifications -->
                 <LinearLayout
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="@drawable/nav_icon_bg_blue"
-                    android:gravity="center">
+                    android:id="@+id/nav_notifications"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true">
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/outline_archive_24"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:src="@drawable/ic_notif_bell"
+                        android:background="@drawable/nav_icon_bg_blue"
+                        android:padding="8dp"
                         android:contentDescription="@null" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Notifications"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:layout_marginStart="12dp" />
+
+                    <TextView
+                        android:id="@+id/badge_notifications"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="8"
+                        android:textColor="#0B1628"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="6dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:background="@drawable/badge_teal"
+                        android:gravity="center" />
 
                 </LinearLayout>
 
+                <!-- All Inboxes sub-item -->
+                <LinearLayout
+                    android:id="@+id/nav_all_inboxes"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="12dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <View
+                        android:layout_width="2dp"
+                        android:layout_height="20dp"
+                        android:background="#1ABFB8"
+                        android:layout_marginEnd="14dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="All Inboxes"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+                <!-- Unread -->
+                <LinearLayout
+                    android:id="@+id/nav_unread"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="12dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <View
+                        android:layout_width="2dp"
+                        android:layout_height="20dp"
+                        android:background="#1ABFB8"
+                        android:layout_marginEnd="14dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Unread"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+                <!-- Announcements -->
+                <LinearLayout
+                    android:id="@+id/nav_announcements"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="12dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <View
+                        android:layout_width="2dp"
+                        android:layout_height="20dp"
+                        android:background="#1ABFB8"
+                        android:layout_marginEnd="14dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Announcements"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+                <!-- Promotions -->
+                <LinearLayout
+                    android:id="@+id/nav_promotions"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="12dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <View
+                        android:layout_width="2dp"
+                        android:layout_height="20dp"
+                        android:background="#1ABFB8"
+                        android:layout_marginEnd="14dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Promotions"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#261ABFB8"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp" />
+
+                <!-- OPTIONS label -->
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Archive"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:layout_marginStart="12dp" />
+                    android:text="OPTIONS"
+                    android:textColor="#8A9BB0"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.12"
+                    android:textStyle="bold"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingBottom="6dp" />
+
+                <!-- Settings -->
+                <LinearLayout
+                    android:id="@+id/nav_settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/nav_icon_bg_teal"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_settings"
+                            android:contentDescription="@null" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Settings"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:layout_marginStart="12dp" />
+
+                </LinearLayout>
+
+                <!-- Archive -->
+                <LinearLayout
+                    android:id="@+id/nav_archive"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/nav_icon_bg_blue"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/outline_archive_24"
+                            android:contentDescription="@null" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Archive"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:layout_marginStart="12dp" />
+
+                </LinearLayout>
 
             </LinearLayout>
+        </ScrollView>
 
-        </LinearLayout>
-    </ScrollView>
+    </LinearLayout>
 
-</LinearLayout>
+</androidx.drawerlayout.widget.DrawerLayout>
