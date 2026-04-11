@@ -9,6 +9,17 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class ProfileActivity extends AppCompatActivity {
 
     // Avatar & display
@@ -31,10 +42,14 @@ public class ProfileActivity extends AppCompatActivity {
     // Back
     View btnBack;
 
+    // Firebase
+    FirebaseAuth mAuth;
+    DatabaseReference database;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_profile);
+        setContentView(R.layout.profile_activity);
 
         // ── INITIALIZE VIEWS ──────────────────────────────────────
 
@@ -59,58 +74,90 @@ public class ProfileActivity extends AppCompatActivity {
         rowLogOut         = findViewById(R.id.rowLogOut);
         btnBack           = findViewById(R.id.btnBack);
 
-        // ── LOAD PLACEHOLDER DATA ─────────────────────────────────
+        // ── FIREBASE ──────────────────────────────────────────────
 
-        // TODO: replace with Firebase fetch later
-        String name  = "Juan dela Cruz";
-        String email = "juan@example.com";
-        populateViews(name, email);
+        mAuth    = FirebaseAuth.getInstance();
+        database = FirebaseDatabase.getInstance("https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/")
+                .getReference("users");
+
+        // ── LOAD USER DATA ────────────────────────────────────────
+
+        loadUserData();
 
         // ── LISTENERS ─────────────────────────────────────────────
 
-        // Back
         btnBack.setOnClickListener(v -> finish());
 
-        // Edit Profile button / edit name / edit email — all open edit mode
         btnEditProfile.setOnClickListener(v -> openEditMode());
         btnEditName.setOnClickListener(v -> openEditMode());
         btnEditEmail.setOnClickListener(v -> openEditMode());
 
-        // Cancel — go back to view mode
         btnCancelEdit.setOnClickListener(v -> closeEditMode());
 
-        // Save Changes
         btnSaveProfile.setOnClickListener(v -> saveProfile());
 
-        // Change Password
         rowChangePassword.setOnClickListener(v -> {
             // TODO: navigate to ChangePasswordActivity
             Toast.makeText(this, "Change Password coming soon", Toast.LENGTH_SHORT).show();
         });
 
-        // Log Out
         rowLogOut.setOnClickListener(v -> {
-            // TODO: add Firebase sign out + redirect to LoginActivity
-            Toast.makeText(this, "Log Out coming soon", Toast.LENGTH_SHORT).show();
+            mAuth.signOut();
+            startActivity(new Intent(this, LoginActivity.class));
+            finishAffinity();
+        });
+    }
+
+    private void loadUserData() {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) return;
+
+        String userId = currentUser.getUid();
+
+        database.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (!snapshot.exists()) return;
+
+                String firstName = snapshot.child("firstName").getValue(String.class);
+                String username  = snapshot.child("username").getValue(String.class);
+                String email     = snapshot.child("email").getValue(String.class);
+
+                // resolve display name
+                String displayName;
+                if (username != null && !username.isEmpty()) {
+                    displayName = username;
+                } else if (firstName != null && !firstName.isEmpty()) {
+                    displayName = firstName;
+                } else {
+                    displayName = "User";
+                }
+
+                // fallback to Firebase Auth email
+                String displayEmail = (email != null && !email.isEmpty())
+                        ? email
+                        : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
+
+                populateViews(displayName, displayEmail);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                populateViews("User", "");
+            }
         });
     }
 
     private void populateViews(String name, String email) {
-        // Avatar initials — first letter of name
         String initial = (name != null && !name.isEmpty())
                 ? String.valueOf(name.charAt(0)).toUpperCase()
                 : "?";
-        tvAvatarInitials.setText(initial);
 
-        // Display section
+        tvAvatarInitials.setText(initial);
         tvDisplayName.setText(name);
         tvDisplayEmail.setText(email);
-
-        // View mode rows
         tvViewName.setText(name);
         tvViewEmail.setText(email);
-
-        // Pre-fill edit fields
         etName.setText(name);
         etEmail.setText(email);
     }
@@ -147,11 +194,36 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
-        // Update UI immediately
-        populateViews(newName, newEmail);
-        closeEditMode();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) return;
 
-        // TODO: save to Firebase here
-        Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show();
+        String userId = currentUser.getUid();
+
+        // ── SAVE TO FIREBASE ──────────────────────────────────────
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("username", newName);
+        updates.put("email", newEmail);
+
+        database.child(userId).updateChildren(updates)
+            .addOnSuccessListener(unused -> {
+                // update Firebase Auth email too
+                currentUser.updateEmail(newEmail)
+                    .addOnSuccessListener(unused2 -> {
+                        populateViews(newName, newEmail);
+                        closeEditMode();
+                        Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        // database updated but Auth email failed
+                        // still update UI since DB was saved
+                        populateViews(newName, newEmail);
+                        closeEditMode();
+                        Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show();
+                    });
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(this, "Failed to update profile. Try again.", Toast.LENGTH_SHORT).show();
+            });
     }
 }
