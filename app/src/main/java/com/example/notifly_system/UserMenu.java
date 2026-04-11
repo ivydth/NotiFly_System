@@ -40,6 +40,8 @@ public class UserMenu extends AppCompatActivity {
         setActiveItem(navDashboard);
         setClickListeners();
 
+        drawerLayout.openDrawer(GravityCompat.START);
+
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
