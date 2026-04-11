@@ -97,8 +97,7 @@ public class ProfileActivity extends AppCompatActivity {
         btnSaveProfile.setOnClickListener(v -> saveProfile());
 
         rowChangePassword.setOnClickListener(v -> {
-            // TODO: navigate to ChangePasswordActivity
-            Toast.makeText(this, "Change Password coming soon", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, ChangePass.class));
         });
 
         rowLogOut.setOnClickListener(v -> {
