@@ -31,7 +31,6 @@
             android:layout_width="match_parent"
             android:layout_height="52dp">
 
-            <!-- Back button -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/btnBack"
                 android:layout_width="36dp"
@@ -53,7 +52,6 @@
 
             </androidx.cardview.widget.CardView>
 
-            <!-- Title -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -181,6 +179,7 @@
                                 android:textAllCaps="true"
                                 android:textColor="#8A9BB0"
                                 android:textSize="10sp" />
+
                         </LinearLayout>
 
                         <!-- Current Password input -->
@@ -246,6 +245,7 @@
                                 android:textAllCaps="true"
                                 android:textColor="#8A9BB0"
                                 android:textSize="10sp" />
+
                         </LinearLayout>
 
                         <!-- New Password input -->
@@ -311,6 +311,7 @@
                                 android:textAllCaps="true"
                                 android:textColor="#8A9BB0"
                                 android:textSize="10sp" />
+
                         </LinearLayout>
 
                         <!-- Confirm Password input -->
