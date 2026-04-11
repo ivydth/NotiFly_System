@@ -103,7 +103,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         rowLogOut.setOnClickListener(v -> {
             mAuth.signOut();
-            startActivity(new Intent(this, LoginActivity.class));
+            startActivity(new Intent(this, MainActivity.class));
             finishAffinity();
         });
     }
