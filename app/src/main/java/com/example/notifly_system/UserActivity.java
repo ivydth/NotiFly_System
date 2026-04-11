@@ -69,10 +69,10 @@ public class UserActivity extends AppCompatActivity {
 
         // Menu button
         btnMenu.setOnClickListener(v -> {
-                Intent intent = new Intent(this, UserMenu.class);
+            Intent intent = new Intent(this, UserMenu.class);
             startActivity(intent);
+            overridePendingTransition(0, 0);
         });
-
         // Profile button
         btnProfile.setOnClickListener(v -> {
             // TODO: navigate to profile activity

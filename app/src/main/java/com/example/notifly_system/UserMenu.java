@@ -1,6 +1,7 @@
 package com.example.notifly_system;
 
 import android.animation.ValueAnimator;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -30,23 +31,20 @@ public class UserMenu extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        overridePendingTransition(0, 0);
         setContentView(R.layout.drawer_menu);
 
         drawerPanel = findViewById(R.id.drawer_panel);
-
-        // Hide completely off screen before first draw
         drawerPanel.setTranslationX(-9999f);
 
         initViews();
         setActiveItem(navDashboard);
         setClickListeners();
 
-        // Wait for layout to be fully measured then animate in
         drawerPanel.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
                 drawerPanel.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                // Set exactly behind its real width now that we know it
                 drawerPanel.setTranslationX(-drawerPanel.getWidth());
                 openDrawer();
             }
@@ -63,6 +61,12 @@ public class UserMenu extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, 0);
     }
 
     private void initViews() {
