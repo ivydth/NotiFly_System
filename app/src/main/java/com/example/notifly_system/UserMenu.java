@@ -1,6 +1,11 @@
 package com.example.notifly_system;
 
 import android.animation.ValueAnimator;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.RippleDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -10,6 +15,14 @@ import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class UserMenu extends AppCompatActivity {
 
@@ -28,6 +41,15 @@ public class UserMenu extends AppCompatActivity {
 
     private TextView badgeNotifications;
 
+    // Header views
+    private TextView tvDrawerUsername;
+    private TextView tvDrawerEmail;
+    private TextView tvAvatar;
+
+    // Firebase
+    private FirebaseAuth mAuth;
+    private DatabaseReference database;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,6 +62,7 @@ public class UserMenu extends AppCompatActivity {
         drawerPanel.setTranslationX(-9999f);
 
         initViews();
+        loadUserData();
         setActiveItem(navDashboard);
         setClickListeners();
 
@@ -52,28 +75,7 @@ public class UserMenu extends AppCompatActivity {
             }
         });
 
-        String username = getIntent().getStringExtra("username");
-        String email = getIntent().getStringExtra("email");
-
-        TextView tvDrawerUsername = findViewById(R.id.tv_drawer_username);
-        TextView tvDrawerEmail    = findViewById(R.id.tv_drawer_email);
-        TextView tvAvatar         = findViewById(R.id.tv_avatar);
-
-        if (tvDrawerUsername != null)
-            tvDrawerUsername.setText(username != null && !username.isEmpty() ? username : "User");
-
-        if (tvDrawerEmail != null)
-            tvDrawerEmail.setText(email != null && !email.isEmpty() ? email : "");
-
-        if (tvAvatar != null)
-            tvAvatar.setText(username != null && !username.isEmpty()
-            ? String.valueOf(username.charAt(0)).toUpperCase()
-            : "U");
-        
-        // Clicking outside the drawer (on the background) closes it
         rootLayout.setOnClickListener(v -> closeDrawer());
-
-        // Prevent clicks on the drawer panel from closing it
         drawerPanel.setOnClickListener(v -> {});
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -105,6 +107,79 @@ public class UserMenu extends AppCompatActivity {
         navSettings      = findViewById(R.id.nav_settings);
         navArchive       = findViewById(R.id.nav_archive);
         badgeNotifications = findViewById(R.id.badge_notifications);
+
+        tvDrawerUsername = findViewById(R.id.tv_drawer_username);
+        tvDrawerEmail    = findViewById(R.id.tv_drawer_email);
+        tvAvatar         = findViewById(R.id.tv_avatar);
+
+        applyRipple(navDashboard);
+        applyRipple(navNotifications);
+        applyRipple(navAllInboxes);
+        applyRipple(navUnread);
+        applyRipple(navAnnouncements);
+        applyRipple(navPromotions);
+        applyRipple(navSettings);
+        applyRipple(navArchive);
+    }
+
+    private void loadUserData() {
+        mAuth    = FirebaseAuth.getInstance();
+        database = FirebaseDatabase.getInstance("https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/")
+                .getReference("users");
+
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) return;
+
+        String userId = currentUser.getUid();
+
+        database.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (!snapshot.exists()) return;
+
+                String firstName = snapshot.child("firstName").getValue(String.class);
+                String username  = snapshot.child("username").getValue(String.class);
+                String email     = snapshot.child("email").getValue(String.class);
+
+                // resolve display name
+                String displayName;
+                if (username != null && !username.isEmpty()) {
+                    displayName = username;
+                } else if (firstName != null && !firstName.isEmpty()) {
+                    displayName = firstName;
+                } else {
+                    displayName = "User";
+                }
+
+                // fallback to Firebase Auth email
+                String displayEmail = (email != null && !email.isEmpty())
+                        ? email
+                        : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
+
+                // set header views
+                if (tvDrawerUsername != null)
+                    tvDrawerUsername.setText(displayName);
+
+                if (tvDrawerEmail != null)
+                    tvDrawerEmail.setText(displayEmail);
+
+                if (tvAvatar != null)
+                    tvAvatar.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                if (tvDrawerUsername != null) tvDrawerUsername.setText("User");
+                if (tvAvatar != null) tvAvatar.setText("U");
+            }
+        });
+    }
+
+    private void applyRipple(View view) {
+        ColorStateList rippleColor = ColorStateList.valueOf(Color.parseColor("#521ABFB8"));
+        Drawable existingBg = view.getBackground();
+        RippleDrawable ripple = new RippleDrawable(rippleColor, existingBg, null);
+        view.setBackground(ripple);
     }
 
     private void setClickListeners() {
@@ -150,7 +225,6 @@ public class UserMenu extends AppCompatActivity {
         animator.setDuration(300);
         animator.setInterpolator(new DecelerateInterpolator(2f));
         animator.addUpdateListener(a -> drawerPanel.setTranslationX((float) a.getAnimatedValue()));
-        // finish activity after slide out so live UserActivity is visible again
         animator.addListener(new android.animation.AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(android.animation.Animator animation) {
@@ -206,18 +280,20 @@ public class UserMenu extends AppCompatActivity {
         for (View item : items) {
             if (item == null) continue;
             if (item == activeView) {
-                item.setBackgroundResource(R.drawable.nav_item_active_bg);
+                Drawable activeBg = getDrawable(R.drawable.nav_item_active_bg);
+                ColorStateList rippleColor = ColorStateList.valueOf(Color.parseColor("#521ABFB8"));
+                item.setBackground(new RippleDrawable(rippleColor, activeBg, null));
                 TextView label = getFirstTextView(item);
                 if (label != null) {
-                    label.setTextColor(android.graphics.Color.parseColor("#1ABFB8"));
-                    label.setTypeface(label.getTypeface(), android.graphics.Typeface.BOLD);
+                    label.setTextColor(Color.parseColor("#1ABFB8"));
+                    label.setTypeface(label.getTypeface(), Typeface.BOLD);
                 }
             } else {
-                item.setBackgroundResource(android.R.color.transparent);
+                applyRipple(item);
                 TextView label = getFirstTextView(item);
                 if (label != null) {
                     label.setTextColor(getColor(android.R.color.white));
-                    label.setTypeface(android.graphics.Typeface.DEFAULT);
+                    label.setTypeface(Typeface.DEFAULT);
                 }
             }
         }
