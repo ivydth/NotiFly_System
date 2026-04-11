@@ -6,8 +6,10 @@ import android.text.method.PasswordTransformationMethod;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
@@ -32,6 +34,9 @@ public class ChangePass extends AppCompatActivity {
     // Save button
     View btnChangePassword;
 
+    // Forgot password link
+    TextView tvForgotPassword;
+
     // Firebase
     FirebaseAuth mAuth;
 
@@ -42,10 +47,10 @@ public class ChangePass extends AppCompatActivity {
 
     // ── PASSWORD RULES ────────────────────────────────────────────
     // At least 8 characters, 1 uppercase, 1 digit, 1 special character
-    private static final int    MIN_LENGTH       = 8;
-    private static final Pattern HAS_UPPERCASE   = Pattern.compile("[A-Z]");
-    private static final Pattern HAS_DIGIT       = Pattern.compile("[0-9]");
-    private static final Pattern HAS_SPECIAL     = Pattern.compile("[^a-zA-Z0-9]");
+    private static final int     MIN_LENGTH    = 8;
+    private static final Pattern HAS_UPPERCASE = Pattern.compile("[A-Z]");
+    private static final Pattern HAS_DIGIT     = Pattern.compile("[0-9]");
+    private static final Pattern HAS_SPECIAL   = Pattern.compile("[^a-zA-Z0-9]");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +67,7 @@ public class ChangePass extends AppCompatActivity {
         ivToggleNewPassword     = findViewById(R.id.ivToggleNewPassword);
         ivToggleConfirmPassword = findViewById(R.id.ivToggleConfirmPassword);
         btnChangePassword       = findViewById(R.id.btnChangePassword);
+        tvForgotPassword        = findViewById(R.id.tvForgotPassword);
 
         // ── FIREBASE ──────────────────────────────────────────────
 
@@ -87,8 +93,13 @@ public class ChangePass extends AppCompatActivity {
         });
 
         btnChangePassword.setOnClickListener(v -> changePassword());
+
+        tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Toggle password visibility
+    // ─────────────────────────────────────────────────────────────
     private void togglePasswordVisibility(EditText field, ImageView icon, boolean isVisible) {
         if (isVisible) {
             field.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
@@ -100,10 +111,10 @@ public class ChangePass extends AppCompatActivity {
         field.setSelection(field.getText().length());
     }
 
-    /**
-     * Validates the new password against all strength rules.
-     * Returns null if valid, or an error message string if invalid.
-     */
+    // ─────────────────────────────────────────────────────────────
+    // Password strength validation
+    // Returns null if valid, or a specific error message if not
+    // ─────────────────────────────────────────────────────────────
     private String getPasswordError(String password) {
         if (password.length() < MIN_LENGTH) {
             return "Password must be at least 8 characters";
@@ -120,6 +131,9 @@ public class ChangePass extends AppCompatActivity {
         return null; // All rules passed
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Change password flow
+    // ─────────────────────────────────────────────────────────────
     private void changePassword() {
         String currentPassword = etCurrentPassword.getText().toString().trim();
         String newPassword     = etNewPassword.getText().toString().trim();
@@ -139,7 +153,7 @@ public class ChangePass extends AppCompatActivity {
             return;
         }
 
-        // Run strength check
+        // Strength check
         String passwordError = getPasswordError(newPassword);
         if (passwordError != null) {
             etNewPassword.setError(passwordError);
@@ -191,6 +205,41 @@ public class ChangePass extends AppCompatActivity {
             .addOnFailureListener(e -> {
                 etCurrentPassword.setError("Incorrect current password");
                 etCurrentPassword.requestFocus();
+            });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Forgot password — confirm before sending reset email
+    // ─────────────────────────────────────────────────────────────
+    private void showForgotPasswordDialog() {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+
+        if (currentUser == null || currentUser.getEmail() == null) {
+            Toast.makeText(this, "No account found. Please log in again.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String email = currentUser.getEmail();
+
+        new AlertDialog.Builder(this)
+            .setTitle("Forgot Password?")
+            .setMessage("A password reset link will be sent to:\n\n" + email + "\n\nDo you want to continue?")
+            .setPositiveButton("Send Reset Link", (dialog, which) -> sendPasswordResetEmail(email))
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void sendPasswordResetEmail(String email) {
+        mAuth.sendPasswordResetEmail(email)
+            .addOnSuccessListener(unused -> {
+                new AlertDialog.Builder(this)
+                    .setTitle("Email Sent!")
+                    .setMessage("A password reset link has been sent to:\n\n" + email + "\n\nCheck your inbox and follow the instructions, then log in with your new password.")
+                    .setPositiveButton("OK", (dialog, which) -> finish())
+                    .show();
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(this, "Failed to send reset email. Please try again.", Toast.LENGTH_SHORT).show();
             });
     }
 }
