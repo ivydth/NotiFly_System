@@ -1,5 +1,6 @@
 package com.example.notifly_system;
 
+import android.animation.ValueAnimator;
 import android.os.Bundle;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
@@ -7,14 +8,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
 
 public class UserMenu extends AppCompatActivity {
 
-    private DrawerLayout drawerLayout;
+    private View drawerPanel;
+    private boolean isDrawerOpen = false;
 
     private View navDashboard;
     private View navNotifications;
@@ -32,44 +31,20 @@ public class UserMenu extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.drawer_menu);
 
-        drawerLayout = findViewById(R.id.drawer_layout);
-
-        // Disable the dark scrim so background stays fully visible
-        drawerLayout.setScrimColor(android.graphics.Color.TRANSPARENT);
+        drawerPanel = findViewById(R.id.drawer_panel);
 
         initViews();
         setActiveItem(navDashboard);
         setClickListeners();
 
-        drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
-            @Override
-            public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
-                // Slide drawer in from left — negative start, 0 when fully open
-                float interpolated = new DecelerateInterpolator(2f).getInterpolation(slideOffset);
-                drawerView.setTranslationX(-drawerView.getWidth() * (1f - interpolated));
-            }
-
-            @Override
-            public void onDrawerOpened(@NonNull View drawerView) {
-                drawerView.setTranslationX(0f);
-            }
-
-            @Override
-            public void onDrawerClosed(@NonNull View drawerView) {
-                drawerView.setTranslationX(-drawerView.getWidth());
-            }
-
-            @Override
-            public void onDrawerStateChanged(int newState) {}
-        });
-
-        drawerLayout.openDrawer(GravityCompat.START);
+        // Slide in on start
+        drawerPanel.post(() -> openDrawer());
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                    drawerLayout.closeDrawer(GravityCompat.START);
+                if (isDrawerOpen) {
+                    closeDrawer();
                 } else {
                     setEnabled(false);
                     getOnBackPressedDispatcher().onBackPressed();
@@ -87,7 +62,6 @@ public class UserMenu extends AppCompatActivity {
         navPromotions    = findViewById(R.id.nav_promotions);
         navSettings      = findViewById(R.id.nav_settings);
         navArchive       = findViewById(R.id.nav_archive);
-
         badgeNotifications = findViewById(R.id.badge_notifications);
     }
 
@@ -135,6 +109,26 @@ public class UserMenu extends AppCompatActivity {
             onNavArchiveClicked();
             closeDrawer();
         });
+    }
+
+    public void openDrawer() {
+        int panelWidth = drawerPanel.getWidth();
+        ValueAnimator animator = ValueAnimator.ofFloat(-panelWidth, 0f);
+        animator.setDuration(350);
+        animator.setInterpolator(new DecelerateInterpolator(2f));
+        animator.addUpdateListener(a -> drawerPanel.setTranslationX((float) a.getAnimatedValue()));
+        animator.start();
+        isDrawerOpen = true;
+    }
+
+    public void closeDrawer() {
+        int panelWidth = drawerPanel.getWidth();
+        ValueAnimator animator = ValueAnimator.ofFloat(0f, -panelWidth);
+        animator.setDuration(300);
+        animator.setInterpolator(new DecelerateInterpolator(2f));
+        animator.addUpdateListener(a -> drawerPanel.setTranslationX((float) a.getAnimatedValue()));
+        animator.start();
+        isDrawerOpen = false;
     }
 
     private void onNavDashboardClicked() {
@@ -209,18 +203,6 @@ public class UserMenu extends AppCompatActivity {
         } else {
             badgeNotifications.setVisibility(View.VISIBLE);
             badgeNotifications.setText(count > 99 ? "99+" : String.valueOf(count));
-        }
-    }
-
-    private void closeDrawer() {
-        if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START);
-        }
-    }
-
-    public void openDrawer() {
-        if (drawerLayout != null) {
-            drawerLayout.openDrawer(GravityCompat.START);
         }
     }
 }
