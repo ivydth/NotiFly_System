@@ -42,7 +42,7 @@ public class UserMenu extends AppCompatActivity {
             @Override
             public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
                 float interpolated = new DecelerateInterpolator(2f).getInterpolation(slideOffset);
-                drawerView.setTranslationX(drawerView.getWidth() * (interpolated - 1));
+                drawerView.setTranslationX(drawerView.getWidth() * (1 - interpolated));
                 drawerView.setAlpha(slideOffset);
             }
 
@@ -54,7 +54,7 @@ public class UserMenu extends AppCompatActivity {
 
             @Override
             public void onDrawerClosed(@NonNull View drawerView) {
-                drawerView.setTranslationX(-drawerView.getWidth());
+                drawerView.setTranslationX(drawerView.getWidth());
                 drawerView.setAlpha(0f);
             }
 
