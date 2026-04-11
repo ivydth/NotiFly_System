@@ -162,7 +162,7 @@ public class UserMenu extends AppCompatActivity {
                 // Tint label teal for the active item
                 TextView label = getFirstTextView(item);
                 if (label != null) {
-                    label.setTextColor(getColor(R.color.teal_primary)); // #1ABFB8
+                    label.setTextColor(android.graphics.Color.parseColor("#1ABFB8"));
                     label.setTypeface(label.getTypeface(), android.graphics.Typeface.BOLD);
                 }
             } else {
@@ -222,9 +222,9 @@ public class UserMenu extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START);
+        drawerLayout.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+        getOnBackPressedDispatcher().onBackPressed();
         }
     }
 }
