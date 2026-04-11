@@ -16,6 +16,8 @@ import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.regex.Pattern;
+
 public class ChangePass extends AppCompatActivity {
 
     // Back
@@ -37,6 +39,13 @@ public class ChangePass extends AppCompatActivity {
     boolean isCurrentVisible = false;
     boolean isNewVisible     = false;
     boolean isConfirmVisible = false;
+
+    // ── PASSWORD RULES ────────────────────────────────────────────
+    // At least 8 characters, 1 uppercase, 1 digit, 1 special character
+    private static final int    MIN_LENGTH       = 8;
+    private static final Pattern HAS_UPPERCASE   = Pattern.compile("[A-Z]");
+    private static final Pattern HAS_DIGIT       = Pattern.compile("[0-9]");
+    private static final Pattern HAS_SPECIAL     = Pattern.compile("[^a-zA-Z0-9]");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,6 +100,26 @@ public class ChangePass extends AppCompatActivity {
         field.setSelection(field.getText().length());
     }
 
+    /**
+     * Validates the new password against all strength rules.
+     * Returns null if valid, or an error message string if invalid.
+     */
+    private String getPasswordError(String password) {
+        if (password.length() < MIN_LENGTH) {
+            return "Password must be at least 8 characters";
+        }
+        if (!HAS_UPPERCASE.matcher(password).find()) {
+            return "Password must contain at least 1 uppercase letter";
+        }
+        if (!HAS_DIGIT.matcher(password).find()) {
+            return "Password must contain at least 1 number";
+        }
+        if (!HAS_SPECIAL.matcher(password).find()) {
+            return "Password must contain at least 1 special character (e.g. @, #, $)";
+        }
+        return null; // All rules passed
+    }
+
     private void changePassword() {
         String currentPassword = etCurrentPassword.getText().toString().trim();
         String newPassword     = etNewPassword.getText().toString().trim();
@@ -110,8 +139,10 @@ public class ChangePass extends AppCompatActivity {
             return;
         }
 
-        if (newPassword.length() < 6) {
-            etNewPassword.setError("Password must be at least 6 characters");
+        // Run strength check
+        String passwordError = getPasswordError(newPassword);
+        if (passwordError != null) {
+            etNewPassword.setError(passwordError);
             etNewPassword.requestFocus();
             return;
         }
