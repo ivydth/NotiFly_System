@@ -1,7 +1,6 @@
 package com.example.notifly_system;
 
 import android.animation.ValueAnimator;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -15,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class UserMenu extends AppCompatActivity {
 
     private View drawerPanel;
+    private View rootLayout;
     private boolean isDrawerOpen = false;
 
     private View navDashboard;
@@ -35,6 +35,8 @@ public class UserMenu extends AppCompatActivity {
         setContentView(R.layout.drawer_menu);
 
         drawerPanel = findViewById(R.id.drawer_panel);
+        rootLayout  = findViewById(R.id.root_layout);
+
         drawerPanel.setTranslationX(-9999f);
 
         initViews();
@@ -49,6 +51,12 @@ public class UserMenu extends AppCompatActivity {
                 openDrawer();
             }
         });
+
+        // Clicking outside the drawer (on the background) closes it
+        rootLayout.setOnClickListener(v -> closeDrawer());
+
+        // Prevent clicks on the drawer panel from closing it
+        drawerPanel.setOnClickListener(v -> {});
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -85,45 +93,26 @@ public class UserMenu extends AppCompatActivity {
         navDashboard.setOnClickListener(v -> {
             setActiveItem(navDashboard);
             onNavDashboardClicked();
-            closeDrawer();
         });
 
         navNotifications.setOnClickListener(v -> {
             setActiveItem(navNotifications);
             onNavNotificationsClicked();
-            closeDrawer();
         });
 
-        navAllInboxes.setOnClickListener(v -> {
-            onNavAllInboxesClicked();
-            closeDrawer();
-        });
-
-        navUnread.setOnClickListener(v -> {
-            onNavUnreadClicked();
-            closeDrawer();
-        });
-
-        navAnnouncements.setOnClickListener(v -> {
-            onNavAnnouncementsClicked();
-            closeDrawer();
-        });
-
-        navPromotions.setOnClickListener(v -> {
-            onNavPromotionsClicked();
-            closeDrawer();
-        });
+        navAllInboxes.setOnClickListener(v -> onNavAllInboxesClicked());
+        navUnread.setOnClickListener(v -> onNavUnreadClicked());
+        navAnnouncements.setOnClickListener(v -> onNavAnnouncementsClicked());
+        navPromotions.setOnClickListener(v -> onNavPromotionsClicked());
 
         navSettings.setOnClickListener(v -> {
             setActiveItem(navSettings);
             onNavSettingsClicked();
-            closeDrawer();
         });
 
         navArchive.setOnClickListener(v -> {
             setActiveItem(navArchive);
             onNavArchiveClicked();
-            closeDrawer();
         });
     }
 
@@ -143,40 +132,55 @@ public class UserMenu extends AppCompatActivity {
         animator.setDuration(300);
         animator.setInterpolator(new DecelerateInterpolator(2f));
         animator.addUpdateListener(a -> drawerPanel.setTranslationX((float) a.getAnimatedValue()));
+        // finish activity after slide out so live UserActivity is visible again
+        animator.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                finish();
+            }
+        });
         animator.start();
         isDrawerOpen = false;
     }
 
     private void onNavDashboardClicked() {
         Toast.makeText(this, "Dashboard", Toast.LENGTH_SHORT).show();
+        closeDrawer();
     }
 
     private void onNavNotificationsClicked() {
         Toast.makeText(this, "Notifications", Toast.LENGTH_SHORT).show();
+        closeDrawer();
     }
 
     private void onNavAllInboxesClicked() {
         Toast.makeText(this, "All Inboxes", Toast.LENGTH_SHORT).show();
+        closeDrawer();
     }
 
     private void onNavUnreadClicked() {
         Toast.makeText(this, "Unread", Toast.LENGTH_SHORT).show();
+        closeDrawer();
     }
 
     private void onNavAnnouncementsClicked() {
         Toast.makeText(this, "Announcements", Toast.LENGTH_SHORT).show();
+        closeDrawer();
     }
 
     private void onNavPromotionsClicked() {
         Toast.makeText(this, "Promotions", Toast.LENGTH_SHORT).show();
+        closeDrawer();
     }
 
     private void onNavSettingsClicked() {
         Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show();
+        closeDrawer();
     }
 
     private void onNavArchiveClicked() {
         Toast.makeText(this, "Archive", Toast.LENGTH_SHORT).show();
+        closeDrawer();
     }
 
     private void setActiveItem(View activeView) {
