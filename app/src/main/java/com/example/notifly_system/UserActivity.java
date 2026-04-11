@@ -69,7 +69,8 @@ public class UserActivity extends AppCompatActivity {
 
         // Menu button
         btnMenu.setOnClickListener(v -> {
-            // TODO: open drawer or menu
+                Intent intent = new Intent(this, UserMenu.class);
+            startActivity(intent);
         });
 
         // Profile button
