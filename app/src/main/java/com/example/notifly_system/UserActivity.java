@@ -69,7 +69,10 @@ public class UserActivity extends AppCompatActivity {
 
         // Menu button
         btnMenu.setOnClickListener(v -> {
+            String currentUsername = tvWelcomeUser.getText().toString()
+            .replace("!", "").trim(); // strip the "!" suffix
             Intent intent = new Intent(this, UserMenu.class);
+            intent.putExtra("username", currentUsername);
             startActivity(intent);
             overridePendingTransition(0, 0);
         });
