@@ -61,8 +61,13 @@ public class UserMenu extends AppCompatActivity {
 
         drawerPanel.setTranslationX(-9999f);
 
+        // ── INITIALIZE FIREBASE HERE (once) ───────────────────────
+        mAuth    = FirebaseAuth.getInstance();
+        database = FirebaseDatabase.getInstance(
+                "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        ).getReference("users");
+
         initViews();
-        loadUserData();
         setActiveItem(navDashboard);
         setClickListeners();
 
@@ -89,6 +94,13 @@ public class UserMenu extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    // ── Runs every time the drawer comes back into view ────────────
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadUserData();
     }
 
     @Override
@@ -123,10 +135,6 @@ public class UserMenu extends AppCompatActivity {
     }
 
     private void loadUserData() {
-        mAuth    = FirebaseAuth.getInstance();
-        database = FirebaseDatabase.getInstance("https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/")
-                .getReference("users");
-
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
 
@@ -141,7 +149,7 @@ public class UserMenu extends AppCompatActivity {
                 String username  = snapshot.child("username").getValue(String.class);
                 String email     = snapshot.child("email").getValue(String.class);
 
-                // resolve display name
+                // ── Resolve display name ──────────────────────────
                 String displayName;
                 if (username != null && !username.isEmpty()) {
                     displayName = username;
@@ -151,12 +159,12 @@ public class UserMenu extends AppCompatActivity {
                     displayName = "User";
                 }
 
-                // fallback to Firebase Auth email
+                // ── Resolve display email ─────────────────────────
                 String displayEmail = (email != null && !email.isEmpty())
                         ? email
                         : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
 
-                // set header views
+                // ── Update header views ───────────────────────────
                 if (tvDrawerUsername != null)
                     tvDrawerUsername.setText(displayName);
 
@@ -171,6 +179,7 @@ public class UserMenu extends AppCompatActivity {
             public void onCancelled(DatabaseError error) {
                 if (tvDrawerUsername != null) tvDrawerUsername.setText("User");
                 if (tvAvatar != null) tvAvatar.setText("U");
+                if (tvDrawerEmail != null) tvDrawerEmail.setText("");
             }
         });
     }
