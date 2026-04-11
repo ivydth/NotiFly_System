@@ -34,22 +34,24 @@ public class UserMenu extends AppCompatActivity {
 
         drawerLayout = findViewById(R.id.drawer_layout);
 
+        // Disable the dark scrim so background stays fully visible
+        drawerLayout.setScrimColor(android.graphics.Color.TRANSPARENT);
+
         initViews();
         setActiveItem(navDashboard);
         setClickListeners();
 
-        drawerLayout.setScrimColor(android.graphics.Color.TRANSPARENT);
-
         drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
             @Override
             public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
+                // Slide drawer in from left — negative start, 0 when fully open
                 float interpolated = new DecelerateInterpolator(2f).getInterpolation(slideOffset);
-                drawerView.setTranslationX(-drawerView.getWidth() * (1 - interpolated));
+                drawerView.setTranslationX(-drawerView.getWidth() * (1f - interpolated));
             }
 
             @Override
             public void onDrawerOpened(@NonNull View drawerView) {
-                drawerView.setTranslationX(0);
+                drawerView.setTranslationX(0f);
             }
 
             @Override
