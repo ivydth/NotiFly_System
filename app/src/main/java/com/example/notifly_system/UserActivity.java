@@ -42,22 +42,18 @@ public class UserActivity extends AppCompatActivity {
 
         // ── INITIALIZE VIEWS ──────────────────────────────────────
 
-        // Top bar
-        btnMenu = findViewById(R.id.btnMenu);
+        btnMenu    = findViewById(R.id.btnMenu);
         btnProfile = findViewById(R.id.btnProfile);
 
-        // Welcome banner
         tvWelcomeUser = findViewById(R.id.tvWelcomeUser);
 
-        // Summary counts
-        tvTotalCount = findViewById(R.id.tvTotalCount);
-        tvUnreadCount = findViewById(R.id.tvUnreadCount);
+        tvTotalCount   = findViewById(R.id.tvTotalCount);
+        tvUnreadCount  = findViewById(R.id.tvUnreadCount);
         tvStarredCount = findViewById(R.id.tvStarredCount);
 
-        // Bottom nav
-        ivHome = findViewById(R.id.ivHome);
+        ivHome   = findViewById(R.id.ivHome);
         ivSearch = findViewById(R.id.ivSearch);
-        ivBell = findViewById(R.id.ivBell);
+        ivBell   = findViewById(R.id.ivBell);
 
         // ── FIREBASE ──────────────────────────────────────────────
 
@@ -73,21 +69,18 @@ public class UserActivity extends AppCompatActivity {
 
         // Menu button
         btnMenu.setOnClickListener(v -> {
-            Intent intent = new Intent(this, UserMenu.class);
-            intent.putExtra("username", currentUsername);
-            intent.putExtra("email", currentEmail);
-            startActivity(intent);
+            startActivity(new Intent(this, UserMenu.class));
             overridePendingTransition(0, 0);
         });
 
         // Profile button
         btnProfile.setOnClickListener(v -> {
-            // TODO: navigate to profile activity
+            startActivity(new Intent(this, ProfileActivity.class));
         });
 
         // Bottom nav - Home
         ivHome.setOnClickListener(v -> {
-            // already on home, do nothing or refresh
+            // already on home
         });
 
         // Bottom nav - Search
@@ -120,7 +113,6 @@ public class UserActivity extends AppCompatActivity {
                     String username  = snapshot.child("username").getValue(String.class);
                     String email     = snapshot.child("email").getValue(String.class);
 
-                    // display username if available, otherwise use first name
                     if (username != null && !username.isEmpty()) {
                         tvWelcomeUser.setText(username + "!");
                         currentUsername = username;
@@ -132,7 +124,6 @@ public class UserActivity extends AppCompatActivity {
                         currentUsername = "User";
                     }
 
-                    // fallback to Firebase Auth email if not in database
                     currentEmail = (email != null && !email.isEmpty())
                             ? email
                             : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
