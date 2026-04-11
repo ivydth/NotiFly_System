@@ -23,11 +23,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import org.json.JSONObject;
-
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 public class ChangePass extends AppCompatActivity {
@@ -48,7 +43,7 @@ public class ChangePass extends AppCompatActivity {
     TextView tvForgotPassword;
 
     // Firebase
-    FirebaseAuth     mAuth;
+    FirebaseAuth      mAuth;
     DatabaseReference mDatabase;
 
     // Toggle states
@@ -61,11 +56,6 @@ public class ChangePass extends AppCompatActivity {
     private static final Pattern HAS_UPPERCASE = Pattern.compile("[A-Z]");
     private static final Pattern HAS_DIGIT     = Pattern.compile("[0-9]");
     private static final Pattern HAS_SPECIAL   = Pattern.compile("[^a-zA-Z0-9]");
-
-    // ── EMAILJS CREDENTIALS ───────────────────────────────────────
-    private static final String EMAILJS_SERVICE_ID  = "service_i8crmql";
-    private static final String EMAILJS_TEMPLATE_ID = "template_0wzz2sp";
-    private static final String EMAILJS_PUBLIC_KEY  = "juGO7uo9O6udgw2xl";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,7 +77,9 @@ public class ChangePass extends AppCompatActivity {
         // ── FIREBASE ──────────────────────────────────────────────
 
         mAuth     = FirebaseAuth.getInstance();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
+        mDatabase = FirebaseDatabase.getInstance(
+                "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        ).getReference("users");
 
         // ── LISTENERS ─────────────────────────────────────────────
 
@@ -239,7 +231,7 @@ public class ChangePass extends AppCompatActivity {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Step 1 — Firebase sends reset email
+    // Step 1 — Firebase sends reset link email
     // Step 2 — Fetch username from Realtime Database
     // Step 3 — EmailJS sends branded notification email
     // ─────────────────────────────────────────────────────────────
@@ -247,103 +239,53 @@ public class ChangePass extends AppCompatActivity {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
 
-        // Step 1: Firebase sends the actual reset link email
+        // Step 1: Firebase sends the actual reset link
         mAuth.sendPasswordResetEmail(email)
             .addOnSuccessListener(unused -> {
 
                 // Step 2: Fetch username from Realtime Database
                 String userId = currentUser.getUid();
-                mDatabase.child("users").child(userId).child("username")
+                mDatabase.child(userId).child("username")
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot snapshot) {
                             String username = snapshot.getValue(String.class);
-
-                            // Fallback if username is null
                             if (username == null || username.isEmpty()) {
                                 username = "User";
                             }
 
-                            // Step 3: Send EmailJS notification
-                            sendEmailJS(email, username);
+                            // Step 3: EmailJS sends branded notification
+                            EmailHelper.sendPasswordResetEmail(
+                                    ChangePass.this, username, email
+                            );
+
+                            // Show confirmation and close
+                            new AlertDialog.Builder(ChangePass.this)
+                                .setTitle("Email Sent!")
+                                .setMessage("A password reset link has been sent to:\n\n"
+                                        + email
+                                        + "\n\nCheck your inbox and follow the instructions.")
+                                .setPositiveButton("OK", (dialog, which) -> finish())
+                                .show();
                         }
 
                         @Override
                         public void onCancelled(DatabaseError error) {
-                            // Still send EmailJS even if username fetch fails
-                            sendEmailJS(email, "User");
+                            // Fallback — still send EmailJS with generic name
+                            EmailHelper.sendPasswordResetEmail(
+                                    ChangePass.this, "User", email
+                            );
+                            Toast.makeText(ChangePass.this,
+                                    "Reset email sent. Check your inbox.",
+                                    Toast.LENGTH_SHORT).show();
+                            finish();
                         }
                     });
             })
             .addOnFailureListener(e -> {
-                Toast.makeText(this, "Failed to send reset email. Please try again.",
+                Toast.makeText(this,
+                        "Failed to send reset email. Please try again.",
                         Toast.LENGTH_SHORT).show();
             });
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // EmailJS API call — runs on a background thread
-    // ─────────────────────────────────────────────────────────────
-    private void sendEmailJS(String email, String username) {
-        new Thread(() -> {
-            try {
-                URL url = new URL("https://api.emailjs.com/api/v1.0/email/send");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.setRequestProperty("origin", "http://localhost");
-                conn.setDoOutput(true);
-
-                // Build JSON payload
-                JSONObject templateParams = new JSONObject();
-                templateParams.put("to_email", email);
-                templateParams.put("username", username);
-
-                JSONObject payload = new JSONObject();
-                payload.put("service_id",  EMAILJS_SERVICE_ID);
-                payload.put("template_id", EMAILJS_TEMPLATE_ID);
-                payload.put("user_id",     EMAILJS_PUBLIC_KEY);
-                payload.put("template_params", templateParams);
-
-                // Send request
-                OutputStream os = conn.getOutputStream();
-                os.write(payload.toString().getBytes());
-                os.flush();
-                os.close();
-
-                int responseCode = conn.getResponseCode();
-
-                // Back to main thread for UI
-                runOnUiThread(() -> {
-                    if (responseCode == 200) {
-                        // Success — show confirmation dialog
-                        new AlertDialog.Builder(this)
-                            .setTitle("Email Sent!")
-                            .setMessage("A password reset link has been sent to:\n\n" + email +
-                                        "\n\nCheck your inbox and follow the instructions.")
-                            .setPositiveButton("OK", (dialog, which) -> finish())
-                            .show();
-                    } else {
-                        // Firebase email was sent, EmailJS just failed silently
-                        Toast.makeText(this,
-                                "Reset email sent. Check your inbox.",
-                                Toast.LENGTH_SHORT).show();
-                        finish();
-                    }
-                });
-
-                conn.disconnect();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(() -> {
-                    // Firebase email was still sent, so still notify user
-                    Toast.makeText(this,
-                            "Reset email sent. Check your inbox.",
-                            Toast.LENGTH_SHORT).show();
-                    finish();
-                });
-            }
-        }).start();
     }
 }
