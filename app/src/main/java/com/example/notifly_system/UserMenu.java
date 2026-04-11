@@ -56,12 +56,19 @@ public class UserMenu extends AppCompatActivity {
         String email = getIntent().getStringExtra("email");
 
         TextView tvDrawerUsername = findViewById(R.id.tv_drawer_username);
-        TextView tvDrawerEmail = findViewById(R.id.tv_drawer_email);
+        TextView tvDrawerEmail    = findViewById(R.id.tv_drawer_email);
+        TextView tvAvatar         = findViewById(R.id.tv_avatar);
 
         if (tvDrawerUsername != null)
             tvDrawerUsername.setText(username != null && !username.isEmpty() ? username : "User");
+
         if (tvDrawerEmail != null)
             tvDrawerEmail.setText(email != null && !email.isEmpty() ? email : "");
+
+        if (tvAvatar != null)
+            tvAvatar.setText(username != null && !username.isEmpty()
+            ? String.valueOf(username.charAt(0)).toUpperCase()
+            : "U");
         
         // Clicking outside the drawer (on the background) closes it
         rootLayout.setOnClickListener(v -> closeDrawer());
