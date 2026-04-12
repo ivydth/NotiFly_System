@@ -83,7 +83,7 @@ public class NotifActivity1 extends AppCompatActivity {
         });
 
         ivBell.setOnClickListener(v -> {
-            // already on this screen
+            startActivity(new Intent(this, NotifActivity1.class));
         });
 
         // ── LOAD NOTIFICATIONS ────────────────────────────────────
