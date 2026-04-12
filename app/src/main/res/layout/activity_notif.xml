@@ -150,6 +150,7 @@
 
                             </LinearLayout>
 
+                            <!-- Unread dot — hidden once read -->
                             <View
                                 android:id="@+id/unreadDot"
                                 android:layout_width="10dp"
@@ -195,7 +196,7 @@
                             android:id="@+id/tvNotifTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Please verify your device"
+                            android:text="Notification Title"
                             android:textColor="#FFFFFF"
                             android:textSize="18sp"
                             android:textStyle="bold"
@@ -239,7 +240,7 @@
                             android:id="@+id/tvFullMessage"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Hey! We noticed a sign-in attempt to your account from a new device or location. If this was you, you can safely ignore this message. If you did not sign in, please secure your account immediately by changing your password."
+                            android:text="Full notification message appears here."
                             android:textColor="#CCE8FF"
                             android:textSize="14sp"
                             android:lineSpacingExtra="4dp"
@@ -291,9 +292,7 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
-                <!-- ── ACTION BUTTONS CARD ── -->
-                <!-- Wrapped in a card so both buttons feel like
-                     one cohesive section, not floating elements -->
+                <!-- ACTION BUTTONS CARD -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -308,7 +307,6 @@
                         android:orientation="vertical"
                         android:padding="16dp">
 
-                        <!-- Section label -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -320,7 +318,7 @@
                             android:textStyle="bold"
                             android:layout_marginBottom="14dp" />
 
-                        <!-- Mark as Read — primary teal -->
+                        <!-- Mark as Read -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnMarkRead"
                             android:layout_width="match_parent"
@@ -339,20 +337,20 @@
                             app:iconPadding="8dp"
                             app:rippleColor="#401ABFB8" />
 
-                        <!-- Divider between buttons -->
+                        <!-- Divider -->
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
                             android:background="#1E5BCCE8"
                             android:layout_marginBottom="10dp" />
 
-                        <!-- Delete — subtle danger red, not aggressive -->
+                        <!-- Dismiss — just closes the screen, nothing is deleted -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnDelete"
                             android:layout_width="match_parent"
                             android:layout_height="50dp"
                             android:fontFamily="@font/fredoka_one"
-                            android:text="Delete Notification"
+                            android:text="Dismiss"
                             android:textColor="#FF6B6B"
                             android:textSize="15sp"
                             app:backgroundTint="#1AFF4444"
