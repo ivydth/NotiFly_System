@@ -116,7 +116,7 @@ public class UserMenu extends AppCompatActivity {
         navAllInboxes    = findViewById(R.id.nav_all_inboxes);
         navUnread        = findViewById(R.id.nav_unread);
         navAnnouncements = findViewById(R.id.nav_announcements);
-        navEvents    = findViewById(R.id.nav_events);
+        navEvents        = findViewById(R.id.nav_events);
         navSettings      = findViewById(R.id.nav_settings);
         navArchive       = findViewById(R.id.nav_archive);
         badgeNotifications = findViewById(R.id.badge_notifications);
@@ -205,10 +205,11 @@ public class UserMenu extends AppCompatActivity {
 
         navAllInboxes.setOnClickListener(v -> onNavAllInboxesClicked());
 
-        // ✅ FIXED: Unread now navigates to UnrActivity
         navUnread.setOnClickListener(v -> onNavUnreadClicked());
 
         navAnnouncements.setOnClickListener(v -> onNavAnnouncementsClicked());
+
+        // ✅ FIXED: was calling onEventsClicked(), now correctly calls onNavEventsClicked()
         navEvents.setOnClickListener(v -> onNavEventsClicked());
 
         navSettings.setOnClickListener(v -> {
@@ -263,7 +264,6 @@ public class UserMenu extends AppCompatActivity {
         closeDrawer();
     }
 
-    // ✅ FIXED: navigates to UnrActivity (userdbunread_activity layout)
     private void onNavUnreadClicked() {
         startActivity(new Intent(this, UnrActivity.class));
         closeDrawer();
@@ -274,8 +274,9 @@ public class UserMenu extends AppCompatActivity {
         closeDrawer();
     }
 
-    private void onEventsClicked() {
-        Toast.makeText(this, "Events", Toast.LENGTH_SHORT).show();
+    // ✅ FIXED: renamed from onEventsClicked() to onNavEventsClicked()
+    private void onNavEventsClicked() {
+        startActivity(new Intent(this, EventsActivity.class));
         closeDrawer();
     }
 
