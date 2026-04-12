@@ -36,7 +36,7 @@ public class UserMenu extends AppCompatActivity {
     private View navAllInboxes;
     private View navUnread;
     private View navAnnouncements;
-    private View navPromotions;
+    private View navEvents;
     private View navSettings;
     private View navArchive;
 
