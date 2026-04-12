@@ -1,36 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The FrameLayout is the actual RecyclerView item root.
-    viewGlow sits BEHIND the CardView and is larger than it,
-    so its colored blur bleeds out like a halo underneath.
+    item_summary_card.xml
+
+    Root is a FrameLayout with clipChildren=false so the glow
+    can bleed outside the card boundaries.
+
+    Layer order (bottom → top):
+      1. GlowView  — radial gradient glow, sits below and behind the card
+      2. CardView  — the actual card content
 -->
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="108dp"
-    android:layout_height="88dp"
+    android:layout_width="112dp"
+    android:layout_height="100dp"
     android:layout_marginEnd="6dp"
     android:clipChildren="false"
     android:clipToPadding="false">
 
     <!--
-        Glow layer — larger than the card, centered behind it.
-        Its background color and alpha are set in Java at runtime.
-        Starts fully transparent; animates to visible on press.
+        GlowView — wider and taller than the card so the gradient
+        bleeds outward on all sides. Starts invisible (alpha=0).
+        Alpha and color are set from Java at runtime.
     -->
-    <View
+    <com.example.notifly_system.GlowView
         android:id="@+id/viewGlow"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:layout_marginStart="-6dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="-6dp"
-        android:layout_marginBottom="-10dp"
-        android:alpha="0"
-        android:background="@drawable/glow_shape" />
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginStart="-10dp"
+        android:layout_marginEnd="-10dp"
+        android:layout_marginTop="18dp"
+        android:layout_marginBottom="-12dp"
+        android:alpha="0" />
 
-    <!-- The actual card — sits on top of the glow -->
+    <!-- CardView — sits on top of the glow -->
     <androidx.cardview.widget.CardView
         android:id="@+id/summaryCard"
         android:layout_width="100dp"
