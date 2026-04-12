@@ -5,7 +5,6 @@ import java.util.List;
 
 public class NotificationStore {
 
-    // ── Change listener ───────────────────────────────────────────────────────
     public interface StoreListener {
         void onStoreChanged();
     }
@@ -21,8 +20,6 @@ public class NotificationStore {
         return instance;
     }
 
-    // ── Listener management ───────────────────────────────────────────────────
-
     public synchronized void addListener(StoreListener l) {
         if (!listeners.contains(l)) listeners.add(l);
     }
@@ -34,8 +31,6 @@ public class NotificationStore {
     private void notifyListeners() {
         for (StoreListener l : new ArrayList<>(listeners)) l.onStoreChanged();
     }
-
-    // ── Sample seed data ──────────────────────────────────────────────────────
 
     private void seedSampleData() {
         items.add(new NotificationItem(
@@ -59,8 +54,6 @@ public class NotificationStore {
                 "Wed", "Starred", true, R.drawable.avatar_teal);
         items.add(starred);
     }
-
-    // ── Queries ───────────────────────────────────────────────────────────────
 
     public synchronized List<NotificationItem> getAll() {
         return new ArrayList<>(items);
@@ -98,8 +91,6 @@ public class NotificationStore {
         }
         return count;
     }
-
-    // ── Mutations ─────────────────────────────────────────────────────────────
 
     public synchronized void add(NotificationItem item) {
         for (NotificationItem n : items) {
