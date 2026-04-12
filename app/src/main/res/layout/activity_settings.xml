@@ -426,9 +426,9 @@
                             android:layout_marginStart="16dp"
                             android:layout_marginEnd="16dp" />
 
-                        <!-- Promotions -->
+                        <!-- Events -->
                         <LinearLayout
-                            android:id="@+id/rowPromotions"
+                            android:id="@+id/rowEvents"
                             android:layout_width="match_parent"
                             android:layout_height="66dp"
                             android:orientation="horizontal"
@@ -448,7 +448,7 @@
                                     android:layout_width="18dp"
                                     android:layout_height="18dp"
                                     android:layout_gravity="center"
-                                    android:src="@drawable/ic_promotions"
+                                    android:src="@drawable/ic_events"
                                     app:tint="#F5A623"
                                     android:contentDescription="@null" />
 
@@ -465,7 +465,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Promotions"
+                                    android:text="Events"
                                     android:textColor="#FFFFFF"
                                     android:textStyle="bold"
                                     android:textSize="15sp"
@@ -482,7 +482,7 @@
                             </LinearLayout>
 
                             <CheckBox
-                                android:id="@+id/checkPromotions"
+                                android:id="@+id/checkEvents"
                                 android:layout_width="22dp"
                                 android:layout_height="22dp"
                                 android:checked="true"
