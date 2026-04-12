@@ -471,10 +471,11 @@
                                     android:textSize="15sp"
                                     android:fontFamily="@font/fredoka_one" />
 
+                                <!-- ✅ FIXED: subtitle updated from Promotions to Events -->
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Deals, discounts &amp; offers"
+                                    android:text="Upcoming events &amp; activities"
                                     android:textColor="#8A9BB0"
                                     android:textSize="11.5sp"
                                     android:layout_marginTop="2dp" />
