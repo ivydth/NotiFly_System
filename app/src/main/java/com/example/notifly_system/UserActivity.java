@@ -16,6 +16,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageView;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
@@ -86,10 +87,10 @@ public class UserActivity extends AppCompatActivity {
         btnMenu    = findViewById(R.id.btnMenu);
         btnProfile = findViewById(R.id.btnProfile);
 
-        tvWelcomeUser        = findViewById(R.id.tvWelcomeUser);
-        rvSummaryCards       = findViewById(R.id.rvSummaryCards);
-        tvSectionTitle       = findViewById(R.id.tvSectionTitle);
-        tvEmptyState         = findViewById(R.id.tvEmptyState);
+        tvWelcomeUser          = findViewById(R.id.tvWelcomeUser);
+        rvSummaryCards         = findViewById(R.id.rvSummaryCards);
+        tvSectionTitle         = findViewById(R.id.tvSectionTitle);
+        tvEmptyState           = findViewById(R.id.tvEmptyState);
         notificationsContainer = findViewById(R.id.notificationsContainer);
 
         ivHome   = findViewById(R.id.ivHome);
@@ -145,11 +146,7 @@ public class UserActivity extends AppCompatActivity {
 
     // ── Called when a summary card is tapped ──────────────────────
     private void onCardTapped(int position) {
-        // Update section title
         tvSectionTitle.setText(SECTION_TITLES[position]);
-
-        // Update empty state message
-        // (only visible when no dynamic rows have been added)
         tvEmptyState.setText(EMPTY_MESSAGES[position]);
 
         // TODO: when you have real data, clear notificationsContainer
@@ -203,7 +200,6 @@ public class UserActivity extends AppCompatActivity {
                     String username  = snapshot.child("username").getValue(String.class);
                     String email     = snapshot.child("email").getValue(String.class);
 
-                    // ── Set welcome text ──────────────────────────
                     if (username != null && !username.isEmpty()) {
                         tvWelcomeUser.setText(username + "!");
                         currentUsername = username;
@@ -215,11 +211,9 @@ public class UserActivity extends AppCompatActivity {
                         currentUsername = "User";
                     }
 
-                    // ── Set profile avatar letter ─────────────────
                     String avatarLetter = currentUsername.substring(0, 1).toUpperCase();
                     btnProfile.setText(avatarLetter);
 
-                    // ── Set email ─────────────────────────────────
                     currentEmail = (email != null && !email.isEmpty())
                             ? email
                             : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
@@ -245,25 +239,27 @@ public class UserActivity extends AppCompatActivity {
     }
 
     // ══════════════════════════════════════════════════════════════
-    // Lift animation — card floats up then settles back down
+    // Lift animation — stays lifted while selected, drops on deselect
     // ══════════════════════════════════════════════════════════════
     private static void animateLift(View card) {
-        // Phase 1: lift up
-        ObjectAnimator liftY    = ObjectAnimator.ofFloat(card, "translationY", 0f, -18f);
-        ObjectAnimator liftElev = ObjectAnimator.ofFloat(card, "elevation", 4f, 14f);
-        liftY.setDuration(150);
-        liftElev.setDuration(150);
-
-        // Phase 2: settle back down
-        ObjectAnimator dropY    = ObjectAnimator.ofFloat(card, "translationY", -18f, 0f);
-        ObjectAnimator dropElev = ObjectAnimator.ofFloat(card, "elevation", 14f, 4f);
-        dropY.setDuration(200);
-        dropElev.setDuration(200);
-        dropY.setStartDelay(150);
-        dropElev.setStartDelay(150);
+        ObjectAnimator liftY    = ObjectAnimator.ofFloat(card, "translationY", 0f, -16f);
+        ObjectAnimator liftElev = ObjectAnimator.ofFloat(card, "elevation", 4f, 16f);
+        liftY.setDuration(180);
+        liftElev.setDuration(180);
 
         AnimatorSet set = new AnimatorSet();
-        set.playTogether(liftY, liftElev, dropY, dropElev);
+        set.playTogether(liftY, liftElev);
+        set.start();
+    }
+
+    private static void animateDrop(View card) {
+        ObjectAnimator dropY    = ObjectAnimator.ofFloat(card, "translationY", -16f, 0f);
+        ObjectAnimator dropElev = ObjectAnimator.ofFloat(card, "elevation", 16f, 4f);
+        dropY.setDuration(200);
+        dropElev.setDuration(200);
+
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(dropY, dropElev);
         set.start();
     }
 
@@ -295,9 +291,17 @@ public class UserActivity extends AppCompatActivity {
     static class SummaryCardAdapter
             extends RecyclerView.Adapter<SummaryCardAdapter.CardViewHolder> {
 
-        private final Context               context;
-        private final List<SummaryCard>     items;
-        private final OnCardTappedListener  listener;
+        private final Context              context;
+        private final List<SummaryCard>    items;
+        private final OnCardTappedListener listener;
+
+        // Tracks which card is currently selected (-1 = none)
+        private int selectedPosition = -1;
+
+        // Touch tracking to distinguish tap from swipe
+        private float touchStartX = 0f;
+        private float touchStartY = 0f;
+        private static final int DRAG_THRESHOLD_DP = 10;
 
         SummaryCardAdapter(Context context, List<SummaryCard> items,
                            OnCardTappedListener listener) {
@@ -316,18 +320,72 @@ public class UserActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull CardViewHolder holder, int position) {
-            SummaryCard card = items.get(position);
+            SummaryCard card     = items.get(position);
+            boolean     selected = (position == selectedPosition);
+
             holder.tvCount.setText(card.count);
             holder.tvCount.setTextColor(Color.parseColor(card.colorHex));
             holder.tvLabel.setText(card.label);
 
-            // ── Lift animation + tap callback on touch ────────────
-            holder.itemView.setOnTouchListener((v, event) -> {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    animateLift(v);
-                    // Notify the activity which card was tapped
-                    if (listener != null) listener.onTapped(position);
+            // ── Apply lifted/normal state immediately on bind ─────
+            holder.itemView.setTranslationY(selected ? -16f : 0f);
+            holder.itemView.setElevation(selected ? 16f : 4f);
+
+            // ── Underglow: card background color tint when selected
+            if (holder.itemView instanceof CardView) {
+                CardView cv = (CardView) holder.itemView;
+                if (selected) {
+                    // Blend card color with a faint tint of the card's accent color
+                    int accent = Color.parseColor(card.colorHex);
+                    int r = (int) (0x1E + 0.15f * (Color.red(accent)   - 0x1E));
+                    int g = (int) (0x3A + 0.15f * (Color.green(accent) - 0x3A));
+                    int b = (int) (0x4A + 0.15f * (Color.blue(accent)  - 0x4A));
+                    cv.setCardBackgroundColor(Color.rgb(
+                            Math.max(0, Math.min(255, r)),
+                            Math.max(0, Math.min(255, g)),
+                            Math.max(0, Math.min(255, b))
+                    ));
+                } else {
+                    cv.setCardBackgroundColor(Color.parseColor("#1E3A4A"));
                 }
+            }
+
+            // ── Drag threshold in px ──────────────────────────────
+            float density  = context.getResources().getDisplayMetrics().density;
+            float threshold = DRAG_THRESHOLD_DP * density;
+
+            // ── Touch listener: only trigger on confirmed tap ─────
+            holder.itemView.setOnTouchListener((v, event) -> {
+                switch (event.getAction()) {
+
+                    case MotionEvent.ACTION_DOWN:
+                        touchStartX = event.getRawX();
+                        touchStartY = event.getRawY();
+                        break;
+
+                    case MotionEvent.ACTION_UP:
+                        float dx = Math.abs(event.getRawX() - touchStartX);
+                        float dy = Math.abs(event.getRawY() - touchStartY);
+
+                        // Only treat it as a tap if finger barely moved
+                        if (dx < threshold && dy < threshold) {
+                            int prev = selectedPosition;
+                            selectedPosition = position;
+
+                            // Drop the previously selected card
+                            if (prev != -1 && prev != position) {
+                                notifyItemChanged(prev);
+                            }
+
+                            // Lift this card
+                            animateLift(v);
+                            notifyItemChanged(position);
+
+                            if (listener != null) listener.onTapped(position);
+                        }
+                        break;
+                }
+                // Return false so RecyclerView still handles horizontal swipes
                 return false;
             });
         }
@@ -335,7 +393,6 @@ public class UserActivity extends AppCompatActivity {
         @Override
         public int getItemCount() { return items.size(); }
 
-        // Public helper so the Activity can update counts later
         public void updateCount(int position, String newCount) {
             items.get(position).count = newCount;
             notifyItemChanged(position);
