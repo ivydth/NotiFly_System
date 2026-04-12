@@ -28,6 +28,8 @@
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp">
 
+                <!-- ── MAIN ─────────────────────────────────────── -->
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -41,6 +43,7 @@
                     android:paddingTop="12dp"
                     android:paddingBottom="6dp" />
 
+                <!-- Dashboard -->
                 <LinearLayout
                     android:id="@+id/nav_dashboard"
                     android:layout_width="match_parent"
@@ -74,6 +77,7 @@
 
                 </LinearLayout>
 
+                <!-- Notifications (with total badge) -->
                 <LinearLayout
                     android:id="@+id/nav_notifications"
                     android:layout_width="match_parent"
@@ -106,6 +110,7 @@
                         android:textSize="14sp"
                         android:layout_marginStart="12dp" />
 
+                    <!-- Total unread badge — driven by badgeNotifications -->
                     <TextView
                         android:id="@+id/badge_notifications"
                         android:layout_width="wrap_content"
@@ -119,10 +124,12 @@
                         android:paddingTop="2dp"
                         android:paddingBottom="2dp"
                         android:background="@drawable/badge_teal"
-                        android:gravity="center" />
+                        android:gravity="center"
+                        android:visibility="gone" />
 
                 </LinearLayout>
 
+                <!-- All Inboxes -->
                 <LinearLayout
                     android:id="@+id/nav_all_inboxes"
                     android:layout_width="match_parent"
@@ -154,6 +161,7 @@
 
                 </LinearLayout>
 
+                <!-- Unread (with badge) -->
                 <LinearLayout
                     android:id="@+id/nav_unread"
                     android:layout_width="match_parent"
@@ -183,8 +191,25 @@
                         android:textColor="#FFFFFF"
                         android:textSize="13sp" />
 
+                    <!-- badge_unread — referenced in Java -->
+                    <TextView
+                        android:id="@+id/badge_unread"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#0B1628"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="6dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:background="@drawable/badge_teal"
+                        android:gravity="center"
+                        android:visibility="gone" />
+
                 </LinearLayout>
 
+                <!-- Announcements (with badge) -->
                 <LinearLayout
                     android:id="@+id/nav_announcements"
                     android:layout_width="match_parent"
@@ -214,8 +239,25 @@
                         android:textColor="#FFFFFF"
                         android:textSize="13sp" />
 
+                    <!-- badge_announcements — referenced in Java -->
+                    <TextView
+                        android:id="@+id/badge_announcements"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#0B1628"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="6dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:background="@drawable/badge_teal"
+                        android:gravity="center"
+                        android:visibility="gone" />
+
                 </LinearLayout>
 
+                <!-- Events (with badge) -->
                 <LinearLayout
                     android:id="@+id/nav_events"
                     android:layout_width="match_parent"
@@ -245,8 +287,25 @@
                         android:textColor="#FFFFFF"
                         android:textSize="13sp" />
 
+                    <!-- badge_events — referenced in Java -->
+                    <TextView
+                        android:id="@+id/badge_events"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#0B1628"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="6dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:background="@drawable/badge_teal"
+                        android:gravity="center"
+                        android:visibility="gone" />
+
                 </LinearLayout>
 
+                <!-- Divider -->
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
@@ -255,6 +314,8 @@
                     android:layout_marginBottom="8dp"
                     android:layout_marginStart="20dp"
                     android:layout_marginEnd="20dp" />
+
+                <!-- ── OPTIONS ───────────────────────────────────── -->
 
                 <TextView
                     android:layout_width="match_parent"
@@ -268,6 +329,7 @@
                     android:paddingEnd="20dp"
                     android:paddingBottom="6dp" />
 
+                <!-- Settings -->
                 <LinearLayout
                     android:id="@+id/nav_settings"
                     android:layout_width="match_parent"
@@ -307,6 +369,7 @@
 
                 </LinearLayout>
 
+                <!-- Archive -->
                 <LinearLayout
                     android:id="@+id/nav_archive"
                     android:layout_width="match_parent"
