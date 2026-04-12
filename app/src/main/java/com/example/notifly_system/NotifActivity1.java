@@ -43,7 +43,7 @@ public class NotifActivity1 extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.userdbtotalnotif);
+        setContentView(R.layout.userdbtotalnotif_activity;
 
         // ── INITIALIZE VIEWS ──────────────────────────────────────
         btnMenu    = findViewById(R.id.btnMenu);
