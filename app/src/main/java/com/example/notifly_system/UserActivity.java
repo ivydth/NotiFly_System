@@ -86,7 +86,7 @@ public class UserActivity extends AppCompatActivity {
         });
 
         ivBell.setOnClickListener(v -> {
-            startActivity(new Intent(this, UnrActivity.class));
+            startActivity(new Intent(this, NotifActivity1.class));
         });
     }
 
