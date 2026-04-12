@@ -116,7 +116,7 @@ public class UserMenu extends AppCompatActivity {
         navAllInboxes    = findViewById(R.id.nav_all_inboxes);
         navUnread        = findViewById(R.id.nav_unread);
         navAnnouncements = findViewById(R.id.nav_announcements);
-        navPromotions    = findViewById(R.id.nav_promotions);
+        navEvents    = findViewById(R.id.nav_events);
         navSettings      = findViewById(R.id.nav_settings);
         navArchive       = findViewById(R.id.nav_archive);
         badgeNotifications = findViewById(R.id.badge_notifications);
@@ -130,7 +130,7 @@ public class UserMenu extends AppCompatActivity {
         applyRipple(navAllInboxes);
         applyRipple(navUnread);
         applyRipple(navAnnouncements);
-        applyRipple(navPromotions);
+        applyRipple(navEvents);
         applyRipple(navSettings);
         applyRipple(navArchive);
     }
