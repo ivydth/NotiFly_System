@@ -5,56 +5,60 @@ import java.util.List;
 
 public class NotificationStore {
 
-    private static NotificationStore instance;
-    private final List<NotificationItem> items = new ArrayList<>();
-
-    private NotificationStore() {
-        seedSampleData();
+    // ── Change listener ───────────────────────────────────────────────────────
+    public interface StoreListener {
+        void onStoreChanged();
     }
+
+    private static NotificationStore instance;
+    private final List<NotificationItem> items     = new ArrayList<>();
+    private final List<StoreListener>    listeners = new ArrayList<>();
+
+    private NotificationStore() { seedSampleData(); }
 
     public static synchronized NotificationStore getInstance() {
         if (instance == null) instance = new NotificationStore();
         return instance;
     }
 
-    // ── Sample data — one notification per category ───────────────────────────
+    // ── Listener management ───────────────────────────────────────────────────
+
+    public synchronized void addListener(StoreListener l) {
+        if (!listeners.contains(l)) listeners.add(l);
+    }
+
+    public synchronized void removeListener(StoreListener l) {
+        listeners.remove(l);
+    }
+
+    private void notifyListeners() {
+        for (StoreListener l : new ArrayList<>(listeners)) l.onStoreChanged();
+    }
+
+    // ── Sample seed data ──────────────────────────────────────────────────────
 
     private void seedSampleData() {
         items.add(new NotificationItem(
-                "1",
-                "System",
+                "1", "System",
                 "You have 3 unread messages waiting.",
-                "Now",
-                "Unread",
-                false,
-                R.drawable.avatar_teal));
+                "Now", "Unread", false, R.drawable.avatar_teal));
 
         items.add(new NotificationItem(
-                "2",
-                "Admin",
+                "2", "Admin",
                 "Scheduled maintenance on Sunday 10 PM.",
-                "Mon",
-                "Announcements",
-                false,
-                R.drawable.avatar_teal));
+                "Mon", "Announcements", false, R.drawable.avatar_teal));
 
         items.add(new NotificationItem(
-                "3",
-                "Events Bot",
+                "3", "Events Bot",
                 "Team meeting tomorrow at 9 AM.",
-                "Tue",
-                "Events",
-                false,
-                R.drawable.avatar_teal));
+                "Tue", "Events", false, R.drawable.avatar_teal));
 
-        items.add(new NotificationItem(
-                "4",
-                "You",
+        // This one starts as starred — originalCategory stays "Starred"
+        NotificationItem starred = new NotificationItem(
+                "4", "You",
                 "You starred this important reminder.",
-                "Wed",
-                "Starred",
-                true,
-                R.drawable.avatar_teal));
+                "Wed", "Starred", true, R.drawable.avatar_teal);
+        items.add(starred);
     }
 
     // ── Queries ───────────────────────────────────────────────────────────────
@@ -63,10 +67,14 @@ public class NotificationStore {
         return new ArrayList<>(items);
     }
 
+    /**
+     * Returns items whose originalCategory matches — so starred items
+     * always stay visible in their home list.
+     */
     public synchronized List<NotificationItem> getByCategory(String category) {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
-            if (n.category.equalsIgnoreCase(category)) result.add(n);
+            if (n.originalCategory.equalsIgnoreCase(category)) result.add(n);
         }
         return result;
     }
@@ -79,32 +87,73 @@ public class NotificationStore {
         return result;
     }
 
+    /** Unread = items in the "Unread" originalCategory that haven't been read yet */
+    public synchronized List<NotificationItem> getUnread() {
+        List<NotificationItem> result = new ArrayList<>();
+        for (NotificationItem n : items) {
+            if (n.originalCategory.equalsIgnoreCase("Unread") && !n.isRead)
+                result.add(n);
+        }
+        return result;
+    }
+
+    /** Count of unread (not-yet-read) items */
+    public synchronized int getUnreadCount() {
+        int count = 0;
+        for (NotificationItem n : items) {
+            if (n.originalCategory.equalsIgnoreCase("Unread") && !n.isRead) count++;
+        }
+        return count;
+    }
+
     // ── Mutations ─────────────────────────────────────────────────────────────
 
     public synchronized void add(NotificationItem item) {
         for (NotificationItem n : items) {
-            if (n.id.equals(item.id)) return;
+            if (n.id.equals(item.id)) return; // no duplicates
         }
         items.add(item);
+        notifyListeners();
     }
 
+    /**
+     * Star an item — category field becomes "Starred" for display
+     * but originalCategory is untouched so it stays in its home list.
+     */
     public synchronized void star(String id) {
         for (NotificationItem n : items) {
             if (n.id.equals(id)) {
                 n.isStarred = true;
                 n.category  = "Starred";
+                notifyListeners();
                 return;
             }
         }
     }
 
+    /**
+     * Unstar — restore category to originalCategory so it goes back home.
+     */
     public synchronized void unstar(String id) {
         for (NotificationItem n : items) {
             if (n.id.equals(id)) {
                 n.isStarred = false;
-                if (n.category.equalsIgnoreCase("Starred")) {
-                    n.category = "Unread";
-                }
+                n.category  = n.originalCategory; // restore home category
+                notifyListeners();
+                return;
+            }
+        }
+    }
+
+    /**
+     * Mark a single item as read and notify listeners so
+     * the Unread card count decrements immediately.
+     */
+    public synchronized void markRead(String id) {
+        for (NotificationItem n : items) {
+            if (n.id.equals(id) && !n.isRead) {
+                n.isRead = true;
+                notifyListeners();
                 return;
             }
         }
