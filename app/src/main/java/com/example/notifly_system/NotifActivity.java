@@ -12,7 +12,8 @@ import com.google.android.material.button.MaterialButton;
 
 public class NotifActivity extends AppCompatActivity {
 
-    // Views
+    public static final String EXTRA_NOTIF_ID = "extra_notif_id";
+
     private CardView       btnBack;
     private TextView       tvSenderName;
     private TextView       tvDate;
@@ -23,12 +24,7 @@ public class NotifActivity extends AppCompatActivity {
     private MaterialButton btnMarkRead;
     private MaterialButton btnDelete;
 
-    // The item being viewed
     private NotificationItem currentItem;
-
-    public static final String EXTRA_NOTIF_ID = "extra_notif_id";
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,8 +35,6 @@ public class NotifActivity extends AppCompatActivity {
         loadNotificationData();
         setupClickListeners();
     }
-
-    // ── Init ──────────────────────────────────────────────────────────────────
 
     private void initViews() {
         btnBack       = findViewById(R.id.btnBack);
@@ -72,7 +66,6 @@ public class NotifActivity extends AppCompatActivity {
             return;
         }
 
-        // Populate views
         tvSenderName.setText(currentItem.senderName);
         tvDate.setText(currentItem.dateLabel);
         tvFullDate.setText(currentItem.dateLabel);
@@ -88,10 +81,7 @@ public class NotifActivity extends AppCompatActivity {
         updateReadState(currentItem.isRead);
     }
 
-    // ── Click listeners ───────────────────────────────────────────────────────
-
     private void setupClickListeners() {
-
         btnBack.setOnClickListener(v -> onBackPressed());
 
         btnMarkRead.setOnClickListener(v -> {
@@ -105,14 +95,12 @@ public class NotifActivity extends AppCompatActivity {
             }
         });
 
-        // Delete button just dismisses the screen — notification is kept in the store
+        // Dismiss — just closes the screen, notification stays in store
         btnDelete.setOnClickListener(v -> {
             Toast.makeText(this, "Notification dismissed", Toast.LENGTH_SHORT).show();
             finish();
         });
     }
-
-    // ── UI state ──────────────────────────────────────────────────────────────
 
     private void updateReadState(boolean read) {
         if (read) {
