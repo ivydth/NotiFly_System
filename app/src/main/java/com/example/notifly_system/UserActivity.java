@@ -5,6 +5,7 @@ import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -111,6 +112,10 @@ public class UserActivity extends AppCompatActivity {
         rvSummaryCards.setAdapter(summaryAdapter);
         new PagerSnapHelper().attachToRecyclerView(rvSummaryCards);
 
+        // Allow the glow to bleed outside the RecyclerView bounds
+        rvSummaryCards.setClipChildren(false);
+        rvSummaryCards.setClipToPadding(false);
+
         // ── FIREBASE ──────────────────────────────────────────────
 
         mAuth = FirebaseAuth.getInstance();
@@ -147,6 +152,7 @@ public class UserActivity extends AppCompatActivity {
         }
         tvSectionTitle.setText(SECTION_TITLES[position]);
         tvEmptyState.setText(EMPTY_MESSAGES[position]);
+        // TODO: filter notificationsContainer by category here
     }
 
     @Override
@@ -165,52 +171,45 @@ public class UserActivity extends AppCompatActivity {
     private void setOnlineStatus(boolean isOnline) {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
-
         presenceRef = database.child(currentUser.getUid()).child("online");
         presenceRef.setValue(isOnline);
-
-        if (isOnline) {
-            presenceRef.onDisconnect().setValue(false);
-        }
+        if (isOnline) presenceRef.onDisconnect().setValue(false);
     }
 
     private void loadUserData() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
-
         if (currentUser == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;
         }
 
-        String userId = currentUser.getUid();
-
-        database.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+        database.child(currentUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    String firstName = snapshot.child("firstName").getValue(String.class);
-                    String username  = snapshot.child("username").getValue(String.class);
-                    String email     = snapshot.child("email").getValue(String.class);
+                if (!snapshot.exists()) return;
 
-                    if (username != null && !username.isEmpty()) {
-                        tvWelcomeUser.setText(username + "!");
-                        currentUsername = username;
-                    } else if (firstName != null && !firstName.isEmpty()) {
-                        tvWelcomeUser.setText(firstName + "!");
-                        currentUsername = firstName;
-                    } else {
-                        tvWelcomeUser.setText("User!");
-                        currentUsername = "User";
-                    }
+                String firstName = snapshot.child("firstName").getValue(String.class);
+                String username  = snapshot.child("username").getValue(String.class);
+                String email     = snapshot.child("email").getValue(String.class);
 
-                    String avatarLetter = currentUsername.substring(0, 1).toUpperCase();
-                    btnProfile.setText(avatarLetter);
-
-                    currentEmail = (email != null && !email.isEmpty())
-                            ? email
-                            : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
+                if (username != null && !username.isEmpty()) {
+                    tvWelcomeUser.setText(username + "!");
+                    currentUsername = username;
+                } else if (firstName != null && !firstName.isEmpty()) {
+                    tvWelcomeUser.setText(firstName + "!");
+                    currentUsername = firstName;
+                } else {
+                    tvWelcomeUser.setText("User!");
+                    currentUsername = "User";
                 }
+
+                btnProfile.setText(currentUsername.substring(0, 1).toUpperCase());
+
+                currentEmail = (email != null && !email.isEmpty())
+                        ? email
+                        : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
             }
 
             @Override
@@ -224,33 +223,33 @@ public class UserActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
+        if (mAuth.getCurrentUser() == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
         }
     }
 
-    // ── Lift/drop animations ───────────────────────────────────────
+    // ── Animations ────────────────────────────────────────────────
 
-    static void animateLift(View card) {
-        ObjectAnimator liftY    = ObjectAnimator.ofFloat(card, "translationY", card.getTranslationY(), -16f);
-        ObjectAnimator liftElev = ObjectAnimator.ofFloat(card, "elevation", card.getElevation(), 20f);
-        liftY.setDuration(180);
-        liftElev.setDuration(180);
-        AnimatorSet liftSet = new AnimatorSet();
-        liftSet.playTogether(liftY, liftElev);
-        liftSet.start();
+    static void animateLift(View root) {
+        // root is the FrameLayout wrapper — lift the whole thing
+        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), -14f);
+        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation",    root.getElevation(),    20f);
+        ty.setDuration(180);
+        elev.setDuration(180);
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(ty, elev);
+        set.start();
     }
 
-    static void animateDrop(View card) {
-        ObjectAnimator dropY    = ObjectAnimator.ofFloat(card, "translationY", card.getTranslationY(), 0f);
-        ObjectAnimator dropElev = ObjectAnimator.ofFloat(card, "elevation", card.getElevation(), 4f);
-        dropY.setDuration(200);
-        dropElev.setDuration(200);
-        AnimatorSet dropSet = new AnimatorSet();
-        dropSet.playTogether(dropY, dropElev);
-        dropSet.start();
+    static void animateDrop(View root) {
+        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), 0f);
+        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation",    root.getElevation(),    4f);
+        ty.setDuration(200);
+        elev.setDuration(200);
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(ty, elev);
+        set.start();
     }
 
     // ── Interfaces / Models ────────────────────────────────────────
@@ -286,7 +285,6 @@ public class UserActivity extends AppCompatActivity {
         private float   touchStartY      = 0f;
         private boolean isDragging       = false;
 
-        // How many dp the finger must travel before we call it a scroll
         private static final int DRAG_THRESHOLD_DP = 8;
 
         SummaryCardAdapter(Context context, List<SummaryCard> items,
@@ -313,12 +311,13 @@ public class UserActivity extends AppCompatActivity {
             holder.tvCount.setTextColor(Color.parseColor(card.colorHex));
             holder.tvLabel.setText(card.label);
 
-            // Snap the visual state immediately on bind (handles RecyclerView rebinds)
-            applySelectedState(holder.itemView, card, selected, false);
+            // Snap state instantly on bind (no animation — handles RecyclerView rebinds)
+            applyState(holder, card, selected, false);
 
             float threshold = DRAG_THRESHOLD_DP
                     * context.getResources().getDisplayMetrics().density;
 
+            // Attach touch listener to the root FrameLayout
             holder.itemView.setOnTouchListener((v, event) -> {
                 int pos = holder.getAdapterPosition();
                 if (pos == RecyclerView.NO_ID) return false;
@@ -326,55 +325,40 @@ public class UserActivity extends AppCompatActivity {
                 switch (event.getAction()) {
 
                     case MotionEvent.ACTION_DOWN:
-                        // Record where the finger landed and reset drag flag
                         touchStartX = event.getRawX();
                         touchStartY = event.getRawY();
                         isDragging  = false;
-
-                        // Tell the parent not to intercept yet — we'll decide
+                        // Claim the gesture so we get MOVE/UP
                         v.getParent().requestDisallowInterceptTouchEvent(true);
-                        return true; // consume DOWN so we get MOVE/UP
+                        return true;
 
                     case MotionEvent.ACTION_MOVE:
-                        float mdx = Math.abs(event.getRawX() - touchStartX);
-                        float mdy = Math.abs(event.getRawY() - touchStartY);
-
-                        if (!isDragging && mdx > threshold) {
-                            // Clearly a horizontal scroll — hand control back to RecyclerView
+                        float dx = Math.abs(event.getRawX() - touchStartX);
+                        float dy = Math.abs(event.getRawY() - touchStartY);
+                        if (!isDragging && dx > threshold) {
+                            // Horizontal scroll detected — hand gesture back to RecyclerView
                             isDragging = true;
                             v.getParent().requestDisallowInterceptTouchEvent(false);
-
-                            // Drop any card that was lifted before we realised it was a scroll
-                            if (selectedPosition == pos) {
-                                selectedPosition = -1;
-                                applySelectedState(v, card, false, true);
-                                notifyItemChanged(pos);
-                                if (listener != null) listener.onTapped(-1);
-                            }
-                        } else if (!isDragging && mdy > threshold) {
-                            // Vertical scroll — also hand back
+                        } else if (!isDragging && dy > threshold) {
                             isDragging = true;
                             v.getParent().requestDisallowInterceptTouchEvent(false);
                         }
-                        return !isDragging; // consume only while we still own the gesture
+                        return !isDragging;
 
                     case MotionEvent.ACTION_UP:
                         v.getParent().requestDisallowInterceptTouchEvent(false);
-
                         if (!isDragging) {
-                            // Confirmed tap — toggle selection
                             int prev = selectedPosition;
-
                             if (prev == pos) {
-                                // Tap on already-selected card → deselect
+                                // Tap selected card → deselect
                                 selectedPosition = -1;
-                                applySelectedState(v, card, false, true);
+                                applyState(holder, card, false, true);
                                 notifyItemChanged(pos);
                                 if (listener != null) listener.onTapped(-1);
                             } else {
-                                // Select this card, deselect previous
+                                // Select this card
                                 selectedPosition = pos;
-                                applySelectedState(v, card, true, true);
+                                applyState(holder, card, true, true);
                                 notifyItemChanged(pos);
                                 if (prev != -1) notifyItemChanged(prev);
                                 if (listener != null) listener.onTapped(pos);
@@ -384,16 +368,10 @@ public class UserActivity extends AppCompatActivity {
                         return true;
 
                     case MotionEvent.ACTION_CANCEL:
+                        // RecyclerView took over (e.g. fling) — do NOT drop the selection.
+                        // The card stays lifted because the user didn't intentionally deselect.
                         v.getParent().requestDisallowInterceptTouchEvent(false);
                         isDragging = false;
-
-                        // Drop the card if it got lifted before the cancel
-                        if (selectedPosition == pos) {
-                            selectedPosition = -1;
-                            applySelectedState(v, card, false, true);
-                            notifyItemChanged(pos);
-                            if (listener != null) listener.onTapped(-1);
-                        }
                         return true;
                 }
                 return false;
@@ -401,54 +379,64 @@ public class UserActivity extends AppCompatActivity {
         }
 
         /**
-         * Applies the lifted/normal visual state to a card.
+         * Applies lifted/normal visual state to a card.
          *
-         * @param view     the card's root view (CardView)
-         * @param card     the data model (for accent colour)
-         * @param selected true = lifted + underglow, false = normal
-         * @param animate  true = animate the lift/drop, false = snap instantly
+         * @param holder   the ViewHolder whose views we update
+         * @param card     data model (for accent colour)
+         * @param selected true = lifted + glow on, false = normal
+         * @param animate  true = animate, false = snap immediately
          */
-        private void applySelectedState(View view, SummaryCard card,
-                                        boolean selected, boolean animate) {
-            // ── Lift ──────────────────────────────────────────────
+        private void applyState(CardViewHolder holder, SummaryCard card,
+                                boolean selected, boolean animate) {
+
+            View root = holder.itemView; // FrameLayout
+
+            // ── 1. Lift the whole FrameLayout ─────────────────────
             if (animate) {
-                if (selected) animateLift(view);
-                else          animateDrop(view);
+                if (selected) animateLift(root);
+                else          animateDrop(root);
             } else {
-                view.setTranslationY(selected ? -16f : 0f);
-                view.setElevation(selected ? 20f : 4f);
+                root.setTranslationY(selected ? -14f : 0f);
+                root.setElevation(selected ? 20f : 4f);
             }
 
-            // ── CardView background tint ───────────────────────────
-            if (view instanceof CardView) {
-                CardView cv = (CardView) view;
+            // ── 2. CardView background tint ───────────────────────
+            if (holder.cardView != null) {
                 if (selected) {
                     int accent = Color.parseColor(card.colorHex);
-                    int r = (int) (0x1E + 0.20f * (Color.red(accent)   - 0x1E));
-                    int g = (int) (0x3A + 0.20f * (Color.green(accent) - 0x3A));
-                    int b = (int) (0x4A + 0.20f * (Color.blue(accent)  - 0x4A));
-                    cv.setCardBackgroundColor(Color.rgb(
+                    // Blend a small amount of the accent into the dark base colour
+                    int r = (int) (0x1E + 0.18f * (Color.red(accent)   - 0x1E));
+                    int g = (int) (0x3A + 0.18f * (Color.green(accent) - 0x3A));
+                    int b = (int) (0x4A + 0.18f * (Color.blue(accent)  - 0x4A));
+                    holder.cardView.setCardBackgroundColor(Color.rgb(
                             Math.max(0, Math.min(255, r)),
                             Math.max(0, Math.min(255, g)),
                             Math.max(0, Math.min(255, b))
                     ));
                 } else {
-                    cv.setCardBackgroundColor(Color.parseColor("#1E3A4A"));
+                    holder.cardView.setCardBackgroundColor(Color.parseColor("#1E3A4A"));
                 }
             }
 
-            // ── Underglow overlay ──────────────────────────────────
-            View glow = view.findViewById(R.id.viewUnderglow);
-            if (glow != null) {
-                int accent    = Color.parseColor(card.colorHex);
-                int glowColor = Color.argb(80,
+            // ── 3. Colored glow halo behind the card ─────────────
+            if (holder.viewGlow != null) {
+                int accent = Color.parseColor(card.colorHex);
+
+                // Set the glow drawable color to the card's accent color
+                GradientDrawable gd = new GradientDrawable();
+                gd.setShape(GradientDrawable.OVAL);
+                // Semi-transparent accent: alpha ~160 (~63%)
+                gd.setColor(Color.argb(160,
                         Color.red(accent),
                         Color.green(accent),
-                        Color.blue(accent));
-                glow.setBackgroundColor(glowColor);
-                glow.animate()
+                        Color.blue(accent)));
+                gd.setCornerRadius(60f);
+                holder.viewGlow.setBackground(gd);
+
+                // Animate alpha: 0 = invisible, 1 = full glow
+                holder.viewGlow.animate()
                         .alpha(selected ? 1f : 0f)
-                        .setDuration(animate ? 180 : 0)
+                        .setDuration(animate ? 200 : 0)
                         .start();
             }
         }
@@ -461,13 +449,19 @@ public class UserActivity extends AppCompatActivity {
             notifyItemChanged(position);
         }
 
+        // ── ViewHolder ─────────────────────────────────────────────
         static class CardViewHolder extends RecyclerView.ViewHolder {
-            TextView tvCount, tvLabel;
+            TextView tvCount;
+            TextView tvLabel;
+            CardView cardView;
+            View     viewGlow;
 
             CardViewHolder(@NonNull View itemView) {
                 super(itemView);
-                tvCount = itemView.findViewById(R.id.tvCount);
-                tvLabel = itemView.findViewById(R.id.tvLabel);
+                tvCount  = itemView.findViewById(R.id.tvCount);
+                tvLabel  = itemView.findViewById(R.id.tvLabel);
+                cardView = itemView.findViewById(R.id.summaryCard);
+                viewGlow = itemView.findViewById(R.id.viewGlow);
             }
         }
     }
