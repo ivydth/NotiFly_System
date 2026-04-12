@@ -27,43 +27,42 @@ public class NotifActivity1 extends AppCompatActivity {
 
     // Top bar
     AppCompatImageView btnMenu;
-    AppCompatImageView btnProfile;
+    TextView           btnProfile; // ✅ TextView for live letter avatar
 
     // Bottom nav
     AppCompatImageView ivHome, ivSearch, ivBell;
 
-    // Notification list container inside the CardView
+    // Notification list container
     LinearLayout notifContainer;
 
     // Firebase
     FirebaseAuth      mAuth;
+    DatabaseReference usersRef;
     DatabaseReference notificationsRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.userdbtotalnotif_activity); // rename to match your XML filename
+        setContentView(R.layout.userdbtotalnotif);
 
         // ── INITIALIZE VIEWS ──────────────────────────────────────
-
         btnMenu    = findViewById(R.id.btnMenu);
-        btnProfile = findViewById(R.id.btnProfile);
-
-        ivHome   = findViewById(R.id.ivHome);
-        ivSearch = findViewById(R.id.ivSearch);
-        ivBell   = findViewById(R.id.ivBell);
-
+        btnProfile = findViewById(R.id.btnProfile); // TextView now
+        ivHome     = findViewById(R.id.ivHome);
+        ivSearch   = findViewById(R.id.ivSearch);
+        ivBell     = findViewById(R.id.ivBell);
         notifContainer = findViewById(R.id.notifContainer);
 
         // ── FIREBASE ──────────────────────────────────────────────
-
         mAuth = FirebaseAuth.getInstance();
+        usersRef = FirebaseDatabase.getInstance(
+                "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        ).getReference("users");
         notificationsRef = FirebaseDatabase.getInstance(
                 "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
         ).getReference("notifications");
 
         // ── BUTTON LISTENERS ──────────────────────────────────────
-
         btnMenu.setOnClickListener(v -> {
             startActivity(new Intent(this, UserMenu.class));
             overridePendingTransition(0, 0);
@@ -79,15 +78,46 @@ public class NotifActivity1 extends AppCompatActivity {
         });
 
         ivSearch.setOnClickListener(v -> {
-            // TODO: navigate to search activity
+            // TODO: navigate to search
         });
 
         ivBell.setOnClickListener(v -> {
-            startActivity(new Intent(this, NotifActivity1.class));
+            // already here
         });
 
-        // ── LOAD NOTIFICATIONS ────────────────────────────────────
+        // ── LOAD DATA ─────────────────────────────────────────────
+        loadProfileAvatar();
         loadNotifications();
+    }
+
+    // ✅ Loads the user's first letter just like UserActivity does
+    private void loadProfileAvatar() {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) return;
+
+        usersRef.child(currentUser.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                String username  = snapshot.child("username").getValue(String.class);
+                String firstName = snapshot.child("firstName").getValue(String.class);
+
+                String displayName;
+                if (username != null && !username.isEmpty()) {
+                    displayName = username;
+                } else if (firstName != null && !firstName.isEmpty()) {
+                    displayName = firstName;
+                } else {
+                    displayName = "U";
+                }
+
+                btnProfile.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                btnProfile.setText("U");
+            }
+        });
     }
 
     private void loadNotifications() {
@@ -101,11 +131,9 @@ public class NotifActivity1 extends AppCompatActivity {
         notificationsRef.orderByChild("timestamp").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
-
-                // Collect newest first
                 List<DataSnapshot> notifList = new ArrayList<>();
                 for (DataSnapshot child : snapshot.getChildren()) {
-                    notifList.add(0, child);
+                    notifList.add(0, child); // newest first
                 }
 
                 notifContainer.removeAllViews();
@@ -131,8 +159,7 @@ public class NotifActivity1 extends AppCompatActivity {
                         dateStr = sdf.format(new Date(timestamp));
                     }
 
-                    boolean showDivider = (i < notifList.size() - 1);
-                    addNotifRow(title, body, dateStr, showDivider);
+                    addNotifRow(title, body, dateStr, i < notifList.size() - 1);
                 }
             }
 
@@ -144,8 +171,6 @@ public class NotifActivity1 extends AppCompatActivity {
     }
 
     private void addNotifRow(String title, String body, String date, boolean showDivider) {
-
-        // ── ROW ───────────────────────────────────────────────────
         android.widget.RelativeLayout row = new android.widget.RelativeLayout(this);
         android.widget.RelativeLayout.LayoutParams rowParams =
                 new android.widget.RelativeLayout.LayoutParams(
@@ -153,7 +178,7 @@ public class NotifActivity1 extends AppCompatActivity {
         row.setLayoutParams(rowParams);
         row.setPadding(dpToPx(12), 0, dpToPx(12), 0);
 
-        // ── AVATAR ────────────────────────────────────────────────
+        // Avatar
         android.view.View avatar = new android.view.View(this);
         android.widget.RelativeLayout.LayoutParams avatarParams =
                 new android.widget.RelativeLayout.LayoutParams(dpToPx(44), dpToPx(44));
@@ -164,7 +189,7 @@ public class NotifActivity1 extends AppCompatActivity {
         avatar.setId(android.view.View.generateViewId());
         row.addView(avatar);
 
-        // ── TEXT BLOCK (title + body) ─────────────────────────────
+        // Text block
         LinearLayout textBlock = new LinearLayout(this);
         textBlock.setOrientation(LinearLayout.VERTICAL);
         textBlock.setGravity(android.view.Gravity.CENTER_VERTICAL);
@@ -202,7 +227,7 @@ public class NotifActivity1 extends AppCompatActivity {
 
         row.addView(textBlock);
 
-        // ── RIGHT COLUMN (date + dot) ─────────────────────────────
+        // Right column (date + dot)
         LinearLayout rightCol = new LinearLayout(this);
         rightCol.setOrientation(LinearLayout.VERTICAL);
         rightCol.setGravity(android.view.Gravity.CENTER);
@@ -231,7 +256,7 @@ public class NotifActivity1 extends AppCompatActivity {
         row.addView(rightCol);
         notifContainer.addView(row);
 
-        // ── DIVIDER ───────────────────────────────────────────────
+        // Divider
         if (showDivider) {
             android.view.View divider = new android.view.View(this);
             LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
@@ -271,6 +296,7 @@ public class NotifActivity1 extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        loadProfileAvatar();
         setOnlineStatus(true);
     }
 
@@ -283,9 +309,7 @@ public class NotifActivity1 extends AppCompatActivity {
     private void setOnlineStatus(boolean isOnline) {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
-        DatabaseReference presenceRef = FirebaseDatabase.getInstance(
-                "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
-        ).getReference("users").child(currentUser.getUid()).child("online");
+        DatabaseReference presenceRef = usersRef.child(currentUser.getUid()).child("online");
         presenceRef.setValue(isOnline);
         if (isOnline) presenceRef.onDisconnect().setValue(false);
     }
@@ -299,7 +323,6 @@ public class NotifActivity1 extends AppCompatActivity {
         }
     }
 
-    // ── Utility ───────────────────────────────────────────────────
     private int dpToPx(int dp) {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
