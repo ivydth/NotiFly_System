@@ -1,4 +1,4 @@
-package com.example.notifly; // TODO: Replace with your actual package name
+package com.example.notifly_system; // TODO: Replace with your actual package name
 
 import android.os.Bundle;
 import android.view.View;
@@ -16,7 +16,7 @@ public class AnnActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_ann);
+        setContentView(R.layout.announcements_activity);
 
         initViews();
         setListeners();
