@@ -20,7 +20,7 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="72dp"
+        android:paddingBottom="80dp"
         android:clipToPadding="false"
         android:background="@android:color/transparent">
 
@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- ✅ TOP APP BAR — live letter avatar (copied from user_activity) -->
+            <!-- TOP APP BAR — live letter avatar -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
@@ -37,7 +37,6 @@
                 android:paddingEnd="16dp"
                 android:gravity="center_vertical">
 
-                <!-- Menu -->
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/btnMenu"
                     android:layout_width="80dp"
@@ -50,7 +49,6 @@
                     android:src="@drawable/ic_menu"
                     app:tint="#FFFFFF" />
 
-                <!-- Logo + App Title centered -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -77,7 +75,7 @@
 
                 </LinearLayout>
 
-                <!-- ✅ Live letter avatar — set dynamically in NotifActivity.java -->
+                <!-- ✅ Live letter avatar -->
                 <TextView
                     android:id="@+id/btnProfile"
                     android:layout_width="36dp"
@@ -130,9 +128,8 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- ✅ BOTTOM NAV — elevated version from user_activity -->
+    <!-- ✅ BOTTOM NAV — copied from unr_activity -->
     <LinearLayout
-        android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:layout_gravity="bottom"
@@ -141,17 +138,13 @@
         android:gravity="center"
         android:weightSum="3"
         android:clipChildren="false"
-        android:clipToPadding="false"
-        android:elevation="8dp"
-        android:fitsSystemWindows="true">
+        android:clipToPadding="false">
 
-        <!-- Home -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
+            android:gravity="center">
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/ivHome"
                 android:layout_width="24dp"
@@ -161,7 +154,6 @@
                 app:tint="#FFFFFF" />
         </LinearLayout>
 
-        <!-- Search (center raised FAB) -->
         <FrameLayout
             android:layout_width="0dp"
             android:layout_height="80dp"
@@ -183,7 +175,6 @@
                 app:tint="#FFFFFF" />
         </FrameLayout>
 
-        <!-- Bell -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
