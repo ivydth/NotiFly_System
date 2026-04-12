@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clipChildren="false"
-    android:clipToPadding="false">
+    android:clipToPadding="false"
+    android:fitsSystemWindows="true">
 
     <!-- Background -->
     <ImageView
@@ -19,7 +20,7 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="80dp"
+        android:paddingBottom="72dp"
         android:clipToPadding="false"
         android:background="@android:color/transparent">
 
@@ -28,7 +29,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- TOP APP BAR -->
+            <!-- ✅ TOP APP BAR — live letter avatar (copied from user_activity) -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
@@ -76,18 +77,23 @@
 
                 </LinearLayout>
 
-                <!-- Profile -->
-                <androidx.appcompat.widget.AppCompatImageView
+                <!-- ✅ Live letter avatar — set dynamically in NotifActivity.java -->
+                <TextView
                     android:id="@+id/btnProfile"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
-                    android:src="@drawable/ic_profile"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="4dp"
+                    android:text="U"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/avatar_teal"
                     android:contentDescription="Profile"
-                    app:tint="#FFFFFF" />
+                    android:clickable="true"
+                    android:focusable="true" />
+
             </RelativeLayout>
 
             <!-- Section Label -->
@@ -112,7 +118,6 @@
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 
-                <!-- ✅ notifContainer: rows are added dynamically by NotifActivity.java -->
                 <LinearLayout
                     android:id="@+id/notifContainer"
                     android:layout_width="match_parent"
@@ -125,8 +130,9 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- BOTTOM NAV BAR -->
+    <!-- ✅ BOTTOM NAV — elevated version from user_activity -->
     <LinearLayout
+        android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:layout_gravity="bottom"
@@ -135,13 +141,17 @@
         android:gravity="center"
         android:weightSum="3"
         android:clipChildren="false"
-        android:clipToPadding="false">
+        android:clipToPadding="false"
+        android:elevation="8dp"
+        android:fitsSystemWindows="true">
 
+        <!-- Home -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:gravity="center">
+            android:gravity="center"
+            android:orientation="vertical">
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/ivHome"
                 android:layout_width="24dp"
@@ -151,6 +161,7 @@
                 app:tint="#FFFFFF" />
         </LinearLayout>
 
+        <!-- Search (center raised FAB) -->
         <FrameLayout
             android:layout_width="0dp"
             android:layout_height="80dp"
@@ -172,6 +183,7 @@
                 app:tint="#FFFFFF" />
         </FrameLayout>
 
+        <!-- Bell -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
