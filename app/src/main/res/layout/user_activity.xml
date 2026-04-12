@@ -177,12 +177,6 @@
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <!--
-                    height increased to 100dp (was 80dp) to give the glow
-                    room to bleed below the card without being clipped.
-                    clipChildren=false added so the radial glow renders
-                    outside the RecyclerView's own bounds.
-                -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvSummaryCards"
                     android:layout_width="match_parent"
@@ -208,6 +202,7 @@
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
                     android:layout_marginBottom="8dp">
+
                     <TextView
                         android:id="@+id/tvSectionTitle"
                         android:layout_width="wrap_content"
@@ -218,17 +213,24 @@
                         android:textColor="#FFFFFF"
                         android:textSize="16sp"
                         android:textStyle="bold" />
+
+                    <!-- ✅ Added android:id here so UserActivity can attach the click listener -->
                     <TextView
+                        android:id="@+id/tvSeeAll"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:text="See all"
                         android:textColor="#00C9B1"
-                        android:textSize="13sp" />
+                        android:textSize="13sp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:padding="4dp" />
+
                 </RelativeLayout>
 
-                <!-- Notification rows are added here dynamically at runtime -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -246,7 +248,7 @@
                         android:background="@drawable/notif_container_bg"
                         android:padding="12dp">
 
-                        <!-- Empty state message — updated dynamically -->
+                        <!-- Empty state — hidden when rows are present -->
                         <TextView
                             android:id="@+id/tvEmptyState"
                             android:layout_width="wrap_content"
