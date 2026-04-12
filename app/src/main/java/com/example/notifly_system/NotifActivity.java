@@ -5,7 +5,6 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
@@ -27,8 +26,9 @@ public class NotifActivity extends AppCompatActivity {
     // The item being viewed
     private NotificationItem currentItem;
 
-    // ── Extras keys (use these when launching this activity) ──────────────────
     public static final String EXTRA_NOTIF_ID = "extra_notif_id";
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,15 +54,10 @@ public class NotifActivity extends AppCompatActivity {
         btnDelete     = findViewById(R.id.btnDelete);
     }
 
-    /**
-     * Reads the notification ID from the intent, looks it up in the store,
-     * and auto-marks it as read as soon as the screen opens.
-     */
     private void loadNotificationData() {
         String notifId = getIntent().getStringExtra(EXTRA_NOTIF_ID);
 
         if (notifId != null) {
-            // Look up the live item from the store
             for (NotificationItem n : NotificationStore.getInstance().getAll()) {
                 if (n.id.equals(notifId)) {
                     currentItem = n;
@@ -72,7 +67,6 @@ public class NotifActivity extends AppCompatActivity {
         }
 
         if (currentItem == null) {
-            // Fallback: nothing to show, just go back
             Toast.makeText(this, "Notification not found.", Toast.LENGTH_SHORT).show();
             finish();
             return;
@@ -82,13 +76,10 @@ public class NotifActivity extends AppCompatActivity {
         tvSenderName.setText(currentItem.senderName);
         tvDate.setText(currentItem.dateLabel);
         tvFullDate.setText(currentItem.dateLabel);
-
-        // Use senderName as title if you don't have a separate title field,
-        // or add a `title` field to NotificationItem later
         tvNotifTitle.setText(currentItem.senderName);
         tvFullMessage.setText(currentItem.message);
 
-        // Auto-mark as read the moment the user opens this screen
+        // Auto-mark as read the moment the screen opens
         if (!currentItem.isRead) {
             NotificationStore.getInstance().markRead(currentItem.id);
             currentItem.isRead = true;
@@ -114,7 +105,11 @@ public class NotifActivity extends AppCompatActivity {
             }
         });
 
-        btnDelete.setOnClickListener(v -> showDeleteConfirmationDialog());
+        // Delete button just dismisses the screen — notification is kept in the store
+        btnDelete.setOnClickListener(v -> {
+            Toast.makeText(this, "Notification dismissed", Toast.LENGTH_SHORT).show();
+            finish();
+        });
     }
 
     // ── UI state ──────────────────────────────────────────────────────────────
@@ -131,20 +126,5 @@ public class NotifActivity extends AppCompatActivity {
             btnMarkRead.setAlpha(1f);
             btnMarkRead.setEnabled(true);
         }
-    }
-
-    // ── Delete ────────────────────────────────────────────────────────────────
-
-    private void showDeleteConfirmationDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("Delete Notification")
-                .setMessage("Are you sure you want to delete this notification? This cannot be undone.")
-                .setPositiveButton("Delete", (dialog, which) -> {
-                    NotificationStore.getInstance().delete(currentItem.id);
-                    Toast.makeText(this, "Notification deleted", Toast.LENGTH_SHORT).show();
-                    finish();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 }
