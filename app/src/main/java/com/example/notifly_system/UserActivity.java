@@ -78,7 +78,7 @@ public class UserActivity extends AppCompatActivity {
         });
 
         ivHome.setOnClickListener(v -> {
-            // already on home
+            startActivity(new Intent(this, UserActivity.class));
         });
 
         ivSearch.setOnClickListener(v -> {
