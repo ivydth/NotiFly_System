@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SeeAllActivity extends AppCompatActivity
-        implements NotificationStore.StoreListener {   // ← live updates
+        implements NotificationStore.StoreListener {
 
     public static final String EXTRA_CATEGORY = "extra_category";
 
@@ -89,22 +89,25 @@ public class SeeAllActivity extends AppCompatActivity
     }
 
     private void setupRecyclerView() {
-        adapter = new NotifListAdapter(new ArrayList<>(), item -> {
-            // Star toggle
-            if (item.isStarred) {
-                NotificationStore.getInstance().unstar(item.id);
-                item.isStarred = false;
-            } else {
-                NotificationStore.getInstance().star(item.id);
-                item.isStarred = true;
-            }
-            // onStoreChanged() fires automatically — no need to call refreshList() manually
-        }, item -> {
-            // Row tap → mark as read
-            if (!item.isRead) {
-                NotificationStore.getInstance().markRead(item.id);
-            }
-        });
+        adapter = new NotifListAdapter(
+                new ArrayList<>(),
+                // Star toggle
+                item -> {
+                    if (item.isStarred) {
+                        NotificationStore.getInstance().unstar(item.id);
+                        item.isStarred = false;
+                    } else {
+                        NotificationStore.getInstance().star(item.id);
+                        item.isStarred = true;
+                    }
+                },
+                // Row tap → open NotifActivity
+                item -> {
+                    Intent intent = new Intent(this, NotifActivity.class);
+                    intent.putExtra(NotifActivity.EXTRA_NOTIF_ID, item.id);
+                    startActivity(intent);
+                }
+        );
 
         rvStarred.setLayoutManager(new LinearLayoutManager(this));
         rvStarred.setNestedScrollingEnabled(false);
@@ -142,7 +145,7 @@ public class SeeAllActivity extends AppCompatActivity
         } else if (category.equalsIgnoreCase("Starred")) {
             items = store.getStarred();
         } else if (category.equalsIgnoreCase("Unread")) {
-            items = store.getUnread(); // only shows unread items
+            items = store.getUnread();
         } else {
             items = store.getByCategory(category);
         }
@@ -197,7 +200,7 @@ public class SeeAllActivity extends AppCompatActivity
             h.tvMessage.setText(item.message);
             h.tvDate.setText(item.dateLabel);
 
-            // Dim read items
+            // Dim already-read items
             if (item.isRead) {
                 h.tvName.setTextColor(Color.parseColor("#668899"));
                 h.tvMessage.setTextColor(Color.parseColor("#446677"));
@@ -208,12 +211,13 @@ public class SeeAllActivity extends AppCompatActivity
 
             applyStarColor(h.tvStar, item.isStarred);
 
+            // Star tap — must not also trigger row tap
             h.tvStar.setOnClickListener(v -> {
                 if (starListener != null) starListener.onStarClick(item);
                 applyStarColor(h.tvStar, item.isStarred);
             });
 
-            // Tapping the row marks it read
+            // Row tap → open NotifActivity
             h.itemView.setOnClickListener(v -> {
                 if (rowListener != null) rowListener.onRowClick(item);
             });
