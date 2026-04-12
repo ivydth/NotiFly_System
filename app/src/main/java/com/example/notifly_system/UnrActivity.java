@@ -86,7 +86,7 @@ public class UnrActivity extends AppCompatActivity {
         });
 
         ivBell.setOnClickListener(v -> {
-            // already on notifications screen
+            startActivity(new Intent(this, NotifActivity1.class));
         });
 
         // ── LOAD NOTIFICATIONS ────────────────────────────────────
