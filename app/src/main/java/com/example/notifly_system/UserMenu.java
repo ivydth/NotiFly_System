@@ -270,7 +270,7 @@ public class UserMenu extends AppCompatActivity {
     }
 
     private void onNavAnnouncementsClicked() {
-        Toast.makeText(this, "Announcements", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, AnnActivity.class));
         closeDrawer();
     }
 
