@@ -34,7 +34,7 @@ import java.util.List;
 
 public class UserActivity extends AppCompatActivity {
 
-    // ── Views ─────────────────────────────────────────────────────────────────
+    // ── Views — matched to user_activity.xml IDs ──────────────────────────────
 
     AppCompatImageView btnMenu;
     TextView           btnProfile;
@@ -43,10 +43,10 @@ public class UserActivity extends AppCompatActivity {
     RecyclerView       rvSummaryCards;
     SummaryCardAdapter summaryAdapter;
 
-    TextView     tvSectionTitle;
-    TextView     tvSeeAll;               // "See all" button
-    TextView     tvEmptyState;
-    LinearLayout notificationsContainer;
+    TextView     tvSectionTitle;        // @+id/tvSectionTitle
+    TextView     tvSeeAll;              // @+id/tvSeeAll
+    TextView     tvEmptyState;          // @+id/tvEmptyState
+    LinearLayout notificationsContainer; // @+id/notificationsContainer
 
     AppCompatImageView ivHome, ivSearch, ivBell;
 
@@ -60,12 +60,7 @@ public class UserActivity extends AppCompatActivity {
 
     String currentUsername = "User";
     String currentEmail    = "";
-
-    /**
-     * The card category that is currently selected (-1 = none / "New").
-     * Drives which sample notification is shown in the container.
-     */
-    private int selectedCardPosition = -1;
+    int    selectedCardPosition = -1;
 
     private static final String[] SECTION_TITLES = {
             "Unread", "Announcements", "Events", "Starred"
@@ -85,31 +80,26 @@ public class UserActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.user_activity);
 
-        // Bind views
-        btnMenu    = findViewById(R.id.btnMenu);
-        btnProfile = findViewById(R.id.btnProfile);
-
+        btnMenu                = findViewById(R.id.btnMenu);
+        btnProfile             = findViewById(R.id.btnProfile);
         tvWelcomeUser          = findViewById(R.id.tvWelcomeUser);
         rvSummaryCards         = findViewById(R.id.rvSummaryCards);
         tvSectionTitle         = findViewById(R.id.tvSectionTitle);
         tvSeeAll               = findViewById(R.id.tvSeeAll);
         tvEmptyState           = findViewById(R.id.tvEmptyState);
         notificationsContainer = findViewById(R.id.notificationsContainer);
-
-        ivHome   = findViewById(R.id.ivHome);
-        ivSearch = findViewById(R.id.ivSearch);
-        ivBell   = findViewById(R.id.ivBell);
-
-        setupSummaryCarousel();
-        setupClickListeners();
-
-        // Show the default "New" section with no card selected
-        showNotificationsForCategory(null);
+        ivHome                 = findViewById(R.id.ivHome);
+        ivSearch               = findViewById(R.id.ivSearch);
+        ivBell                 = findViewById(R.id.ivBell);
 
         mAuth = FirebaseAuth.getInstance();
         database = FirebaseDatabase.getInstance(
                 "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
         ).getReference("users");
+
+        setupSummaryCarousel();
+        setupClickListeners();
+        showNotificationsForCategory(null); // default: show "New" with first item
     }
 
     @Override
@@ -117,7 +107,7 @@ public class UserActivity extends AppCompatActivity {
         super.onResume();
         loadUserData();
         setOnlineStatus(true);
-        // Refresh the current section (in case user starred something and came back)
+        // Refresh in case user starred something on another screen
         String category = selectedCardPosition >= 0
                 ? SECTION_TITLES[selectedCardPosition] : null;
         showNotificationsForCategory(category);
@@ -127,6 +117,15 @@ public class UserActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         setOnlineStatus(false);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (mAuth.getCurrentUser() == null) {
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        }
     }
 
     // ── Summary Carousel ──────────────────────────────────────────────────────
@@ -139,7 +138,7 @@ public class UserActivity extends AppCompatActivity {
                 new SummaryCard("0", "Starred",       "#FFB347")
         );
 
-        // Update badge counts from the store
+        // Populate badge counts from store
         for (int i = 0; i < SECTION_TITLES.length; i++) {
             int count = NotificationStore.getInstance()
                     .getByCategory(SECTION_TITLES[i]).size();
@@ -153,7 +152,6 @@ public class UserActivity extends AppCompatActivity {
         rvSummaryCards.setLayoutManager(llm);
         rvSummaryCards.setAdapter(summaryAdapter);
         new PagerSnapHelper().attachToRecyclerView(rvSummaryCards);
-
         rvSummaryCards.setClipChildren(false);
         rvSummaryCards.setClipToPadding(false);
     }
@@ -179,12 +177,11 @@ public class UserActivity extends AppCompatActivity {
         ivBell.setOnClickListener(v ->
                 startActivity(new Intent(this, NotifActivity1.class)));
 
-        // "See all" opens SeeAllActivity with the currently selected category
+        // "See all" — opens SeeAllActivity with the currently selected category
         tvSeeAll.setOnClickListener(v -> {
             String category = selectedCardPosition >= 0
                     ? SECTION_TITLES[selectedCardPosition]
                     : "All";
-
             Intent intent = new Intent(this, SeeAllActivity.class);
             intent.putExtra(SeeAllActivity.EXTRA_CATEGORY, category);
             startActivity(intent);
@@ -195,9 +192,7 @@ public class UserActivity extends AppCompatActivity {
 
     private void onCardTapped(int position) {
         selectedCardPosition = position;
-
         if (position < 0) {
-            // Deselected — back to "New"
             tvSectionTitle.setText("New");
             showNotificationsForCategory(null);
         } else {
@@ -209,12 +204,11 @@ public class UserActivity extends AppCompatActivity {
     // ── Notification container ────────────────────────────────────────────────
 
     /**
-     * Clears the container and adds one sample notification row for the given
-     * category. Pass null to show the generic "New" sample.
+     * Clears the container and shows one preview row for the given category.
+     * The full list is accessible via the "See all" button → SeeAllActivity.
      */
     private void showNotificationsForCategory(String category) {
-        // Always keep the tvEmptyState in the container; remove any previous rows
-        // (all children except tvEmptyState at index 0)
+        // Remove all dynamically added rows (keep tvEmptyState at index 0)
         while (notificationsContainer.getChildCount() > 1) {
             notificationsContainer.removeViewAt(1);
         }
@@ -232,35 +226,36 @@ public class UserActivity extends AppCompatActivity {
 
         tvEmptyState.setVisibility(View.GONE);
 
-        // Show only the first item as the preview; "See all" shows the rest
-        NotificationItem preview = items.get(0);
-        View row = buildNotificationRow(preview);
+        // Show only the first item as a preview
+        View row = buildNotificationRow(items.get(0));
         notificationsContainer.addView(row);
     }
 
     /**
-     * Inflates a notification row view and populates it with data.
-     * Uses item_notification_row.xml — see the comment block below.
+     * Inflates item_notification_row.xml and binds a NotificationItem to it.
+     * IDs used: ivAvatar, tvSenderName, tvMessage, tvDate, tvStar, vDivider
      */
     private View buildNotificationRow(NotificationItem item) {
         View row = LayoutInflater.from(this)
                 .inflate(R.layout.item_notification_row, notificationsContainer, false);
 
-        View     avatar     = row.findViewById(R.id.ivAvatar);
-        TextView tvName     = row.findViewById(R.id.tvSenderName);
-        TextView tvMessage  = row.findViewById(R.id.tvMessage);
-        TextView tvDate     = row.findViewById(R.id.tvDate);
-        TextView tvStar     = row.findViewById(R.id.tvStar);
+        View     avatar    = row.findViewById(R.id.ivAvatar);
+        TextView tvName    = row.findViewById(R.id.tvSenderName);
+        TextView tvMessage = row.findViewById(R.id.tvMessage);
+        TextView tvDate    = row.findViewById(R.id.tvDate);
+        TextView tvStar    = row.findViewById(R.id.tvStar);
+        View     divider   = row.findViewById(R.id.vDivider);
 
         avatar.setBackgroundResource(item.avatarResId);
         tvName.setText(item.senderName);
         tvMessage.setText(item.message);
         tvDate.setText(item.dateLabel);
 
-        // Star state
-        updateStarView(tvStar, item.isStarred);
+        // Hide divider — only one preview row shown
+        if (divider != null) divider.setVisibility(View.GONE);
 
-        // Toggle star on tap
+        applyStarColor(tvStar, item.isStarred);
+
         tvStar.setOnClickListener(v -> {
             if (item.isStarred) {
                 NotificationStore.getInstance().unstar(item.id);
@@ -269,20 +264,19 @@ public class UserActivity extends AppCompatActivity {
                 NotificationStore.getInstance().star(item.id);
                 item.isStarred = true;
             }
-            updateStarView(tvStar, item.isStarred);
+            applyStarColor(tvStar, item.isStarred);
         });
 
         return row;
     }
 
-    private void updateStarView(TextView tvStar, boolean starred) {
-        tvStar.setText("\u2605"); // ★
+    private void applyStarColor(TextView tvStar, boolean starred) {
         tvStar.setTextColor(starred
-                ? Color.parseColor("#FFB347")   // gold when starred
-                : Color.parseColor("#44AACCDD")); // dim when not starred
+                ? Color.parseColor("#FFB347")
+                : Color.parseColor("#44AACCDD"));
     }
 
-    // ── Firebase helpers ──────────────────────────────────────────────────────
+    // ── Firebase ──────────────────────────────────────────────────────────────
 
     private void setOnlineStatus(boolean isOnline) {
         FirebaseUser currentUser = mAuth.getCurrentUser();
@@ -337,16 +331,16 @@ public class UserActivity extends AppCompatActivity {
                 });
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if (mAuth.getCurrentUser() == null) {
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
+    // ── Utility ───────────────────────────────────────────────────────────────
+
+    private static int indexOf(String[] arr, String value) {
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i].equalsIgnoreCase(value)) return i;
         }
+        return -1;
     }
 
-    // ── Animation helpers (shared with SummaryCardAdapter) ────────────────────
+    // ── Animation helpers ─────────────────────────────────────────────────────
 
     static void animateLift(View root) {
         ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY",
@@ -355,7 +349,9 @@ public class UserActivity extends AppCompatActivity {
                 root.getElevation(), 20f);
         ty.setDuration(180);
         elev.setDuration(180);
-        new AnimatorSet() {{ playTogether(ty, elev); }}.start();
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(ty, elev);
+        set.start();
     }
 
     static void animateDrop(View root) {
@@ -365,16 +361,9 @@ public class UserActivity extends AppCompatActivity {
                 root.getElevation(), 4f);
         ty.setDuration(200);
         elev.setDuration(200);
-        new AnimatorSet() {{ playTogether(ty, elev); }}.start();
-    }
-
-    // ── Utility ───────────────────────────────────────────────────────────────
-
-    private static int indexOf(String[] arr, String value) {
-        for (int i = 0; i < arr.length; i++) {
-            if (arr[i].equalsIgnoreCase(value)) return i;
-        }
-        return -1;
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(ty, elev);
+        set.start();
     }
 
     // ── Interfaces / Models ───────────────────────────────────────────────────
@@ -395,9 +384,7 @@ public class UserActivity extends AppCompatActivity {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // SummaryCardAdapter (unchanged from original — kept here for self-containment)
-    // ══════════════════════════════════════════════════════════════════════════
+    // ── SummaryCardAdapter ────────────────────────────────────────────────────
 
     static class SummaryCardAdapter
             extends RecyclerView.Adapter<SummaryCardAdapter.CardViewHolder> {
@@ -549,103 +536,3 @@ public class UserActivity extends AppCompatActivity {
         }
     }
 }
-
-/*
- * ─────────────────────────────────────────────────────────────────────────────
- * REQUIRED: res/layout/item_notification_row.xml
- *
- * This is the row layout inflated inside notificationsContainer.
- * Create this file exactly as shown:
- *
- * <?xml version="1.0" encoding="utf-8"?>
- * <LinearLayout
- *     xmlns:android="http://schemas.android.com/apk/res/android"
- *     android:layout_width="match_parent"
- *     android:layout_height="wrap_content"
- *     android:orientation="vertical">
- *
- *     <RelativeLayout
- *         android:layout_width="match_parent"
- *         android:layout_height="70dp"
- *         android:paddingStart="12dp"
- *         android:paddingEnd="12dp">
- *
- *         <View
- *             android:id="@+id/ivAvatar"
- *             android:layout_width="44dp"
- *             android:layout_height="44dp"
- *             android:layout_alignParentStart="true"
- *             android:layout_centerVertical="true"
- *             android:background="@drawable/avatar_teal" />
- *
- *         <LinearLayout
- *             android:layout_width="match_parent"
- *             android:layout_height="wrap_content"
- *             android:layout_centerVertical="true"
- *             android:layout_marginStart="56dp"
- *             android:layout_marginEnd="52dp"
- *             android:orientation="vertical">
- *
- *             <TextView
- *                 android:id="@+id/tvSenderName"
- *                 android:layout_width="wrap_content"
- *                 android:layout_height="wrap_content"
- *                 android:textColor="#FFFFFF"
- *                 android:textSize="15sp"
- *                 android:textStyle="bold" />
- *
- *             <TextView
- *                 android:id="@+id/tvMessage"
- *                 android:layout_width="wrap_content"
- *                 android:layout_height="wrap_content"
- *                 android:textColor="#AACCDD"
- *                 android:textSize="12sp"
- *                 android:maxLines="1"
- *                 android:ellipsize="end"
- *                 android:layout_marginTop="2dp" />
- *         </LinearLayout>
- *
- *         <LinearLayout
- *             android:layout_width="44dp"
- *             android:layout_height="wrap_content"
- *             android:layout_alignParentEnd="true"
- *             android:layout_centerVertical="true"
- *             android:orientation="vertical"
- *             android:gravity="center">
- *
- *             <TextView
- *                 android:id="@+id/tvDate"
- *                 android:layout_width="wrap_content"
- *                 android:layout_height="wrap_content"
- *                 android:textColor="#AACCDD"
- *                 android:textSize="10sp"
- *                 android:layout_gravity="center" />
- *
- *             <TextView
- *                 android:id="@+id/tvStar"
- *                 android:layout_width="wrap_content"
- *                 android:layout_height="wrap_content"
- *                 android:text="&#9733;"
- *                 android:textSize="14sp"
- *                 android:layout_gravity="center"
- *                 android:layout_marginTop="2dp"
- *                 android:clickable="true"
- *                 android:focusable="true"
- *                 android:background="?attr/selectableItemBackgroundBorderless" />
- *         </LinearLayout>
- *
- *     </RelativeLayout>
- *
- *     <View
- *         android:layout_width="match_parent"
- *         android:layout_height="1dp"
- *         android:background="#22FFFFFF"
- *         android:layout_marginStart="68dp" />
- *
- * </LinearLayout>
- * ─────────────────────────────────────────────────────────────────────────────
- *
- * ALSO ADD to user_activity.xml — give the "See all" TextView an id:
- *   android:id="@+id/tvSeeAll"
- * (it's the TextView with android:text="See all" in the RelativeLayout header)
- */
