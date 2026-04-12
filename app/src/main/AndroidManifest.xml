@@ -33,6 +33,7 @@
         <activity android:name=".ChangePass"/>
         <activity android:name=".NotifActivity"/>
         <activity android:name=".UnrActivity"/>
+        <activity android:name=".NotifActivity1"/>
     </application>
 
 </manifest>
