@@ -6,9 +6,9 @@ public class NotificationItem {
     public String  message;
     public String  dateLabel;
     public String  category;
-    public String  originalCategory; // never changes — keeps item in its home list
+    public String  originalCategory;
     public boolean isStarred;
-    public boolean isRead;           // true once the user opens/reads it
+    public boolean isRead;
     public int     avatarResId;
 
     public NotificationItem(String id, String senderName, String message,
@@ -19,7 +19,7 @@ public class NotificationItem {
         this.message          = message;
         this.dateLabel        = dateLabel;
         this.category         = category;
-        this.originalCategory = category; // locked at creation
+        this.originalCategory = category;
         this.isStarred        = isStarred;
         this.isRead           = false;
         this.avatarResId      = avatarResId;
