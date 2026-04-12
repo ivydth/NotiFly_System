@@ -34,6 +34,7 @@
         <activity android:name=".NotifActivity"/>
         <activity android:name=".UnrActivity"/>
         <activity android:name=".NotifActivity1"/>
+        <activity android:name=".AnnActivity"/>
     </application>
 
 </manifest>
