@@ -177,15 +177,22 @@
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <!-- Swipeable summary cards carousel -->
+                <!--
+                    height increased to 100dp (was 80dp) to give the glow
+                    room to bleed below the card without being clipped.
+                    clipChildren=false added so the radial glow renders
+                    outside the RecyclerView's own bounds.
+                -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvSummaryCards"
                     android:layout_width="match_parent"
-                    android:layout_height="80dp"
+                    android:layout_height="100dp"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
+                    android:clipChildren="false"
                     android:clipToPadding="false"
                     android:overScrollMode="never" />
+
             </LinearLayout>
 
             <!-- NEW NOTIFICATIONS SECTION -->
