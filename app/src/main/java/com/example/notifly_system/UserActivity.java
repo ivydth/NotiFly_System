@@ -32,9 +32,10 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.Arrays;
 import java.util.List;
 
-public class UserActivity extends AppCompatActivity {
+public class UserActivity extends AppCompatActivity
+        implements NotificationStore.StoreListener {   // ← implement listener
 
-    // ── Views — matched to user_activity.xml IDs ──────────────────────────────
+    // ── Views ─────────────────────────────────────────────────────────────────
 
     AppCompatImageView btnMenu;
     TextView           btnProfile;
@@ -43,10 +44,10 @@ public class UserActivity extends AppCompatActivity {
     RecyclerView       rvSummaryCards;
     SummaryCardAdapter summaryAdapter;
 
-    TextView     tvSectionTitle;        // @+id/tvSectionTitle
-    TextView     tvSeeAll;              // @+id/tvSeeAll
-    TextView     tvEmptyState;          // @+id/tvEmptyState
-    LinearLayout notificationsContainer; // @+id/notificationsContainer
+    TextView     tvSectionTitle;
+    TextView     tvSeeAll;
+    TextView     tvEmptyState;
+    LinearLayout notificationsContainer;
 
     AppCompatImageView ivHome, ivSearch, ivBell;
 
@@ -62,6 +63,7 @@ public class UserActivity extends AppCompatActivity {
     String currentEmail    = "";
     int    selectedCardPosition = -1;
 
+    // Card index → category name (index 0 = Unread uses getUnread() count)
     private static final String[] SECTION_TITLES = {
             "Unread", "Announcements", "Events", "Starred"
     };
@@ -92,30 +94,31 @@ public class UserActivity extends AppCompatActivity {
         ivSearch               = findViewById(R.id.ivSearch);
         ivBell                 = findViewById(R.id.ivBell);
 
-        mAuth = FirebaseAuth.getInstance();
+        mAuth    = FirebaseAuth.getInstance();
         database = FirebaseDatabase.getInstance(
                 "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
         ).getReference("users");
 
         setupSummaryCarousel();
         setupClickListeners();
-        showNotificationsForCategory(null); // default: show "New" with first item
+        showNotificationsForCategory(null);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        // Register for live store updates
+        NotificationStore.getInstance().addListener(this);
         loadUserData();
         setOnlineStatus(true);
-        // Refresh in case user starred something on another screen
-        String category = selectedCardPosition >= 0
-                ? SECTION_TITLES[selectedCardPosition] : null;
-        showNotificationsForCategory(category);
+        refreshAll();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        // Unregister — we don't need updates while in background
+        NotificationStore.getInstance().removeListener(this);
         setOnlineStatus(false);
     }
 
@@ -128,22 +131,63 @@ public class UserActivity extends AppCompatActivity {
         }
     }
 
+    // ── StoreListener ─────────────────────────────────────────────────────────
+
+    /**
+     * Called by NotificationStore whenever any item is starred, unstarred,
+     * or marked read. Refreshes badge counts + preview row on the UI thread.
+     */
+    @Override
+    public void onStoreChanged() {
+        runOnUiThread(this::refreshAll);
+    }
+
+    // ── Refresh helpers ───────────────────────────────────────────────────────
+
+    /** Refresh both the summary card counts and the preview row. */
+    private void refreshAll() {
+        refreshSummaryCounts();
+        String category = selectedCardPosition >= 0
+                ? SECTION_TITLES[selectedCardPosition] : null;
+        showNotificationsForCategory(category);
+    }
+
+    /**
+     * Recomputes each card's badge count from the store and pushes
+     * the update to the adapter without rebuilding the whole carousel.
+     */
+    private void refreshSummaryCounts() {
+        if (summaryAdapter == null) return;
+        NotificationStore store = NotificationStore.getInstance();
+
+        // Index 0 = Unread  → count only unread (isRead == false) items
+        summaryAdapter.updateCount(0, String.valueOf(store.getUnreadCount()));
+
+        // Indices 1-2 = Announcements, Events → total items in that category
+        for (int i = 1; i <= 2; i++) {
+            int count = store.getByCategory(SECTION_TITLES[i]).size();
+            summaryAdapter.updateCount(i, String.valueOf(count));
+        }
+
+        // Index 3 = Starred → count starred items
+        summaryAdapter.updateCount(3, String.valueOf(store.getStarred().size()));
+    }
+
     // ── Summary Carousel ──────────────────────────────────────────────────────
 
     private void setupSummaryCarousel() {
-        List<SummaryCard> cards = Arrays.asList(
-                new SummaryCard("0", "Unread",        "#5BB8FF"),
-                new SummaryCard("0", "Announcements", "#00C9B1"),
-                new SummaryCard("0", "Events",        "#C084FC"),
-                new SummaryCard("0", "Starred",       "#FFB347")
-        );
+        NotificationStore store = NotificationStore.getInstance();
 
-        // Populate badge counts from store
-        for (int i = 0; i < SECTION_TITLES.length; i++) {
-            int count = NotificationStore.getInstance()
-                    .getByCategory(SECTION_TITLES[i]).size();
-            cards.get(i).count = String.valueOf(count);
-        }
+        // Build initial counts
+        java.util.ArrayList<SummaryCard> cards = new java.util.ArrayList<>();
+        cards.add(new SummaryCard(String.valueOf(store.getUnreadCount()),
+                "Unread",        "#5BB8FF"));
+        cards.add(new SummaryCard(String.valueOf(store.getByCategory("Announcements").size()),
+                "Announcements", "#00C9B1"));
+        cards.add(new SummaryCard(String.valueOf(store.getByCategory("Events").size()),
+                "Events",        "#C084FC"));
+        cards.add(new SummaryCard(String.valueOf(store.getStarred().size()),
+                "Starred",       "#FFB347"));
 
         summaryAdapter = new SummaryCardAdapter(this, cards, this::onCardTapped);
 
@@ -177,7 +221,6 @@ public class UserActivity extends AppCompatActivity {
         ivBell.setOnClickListener(v ->
                 startActivity(new Intent(this, NotifActivity1.class)));
 
-        // "See all" — opens SeeAllActivity with the currently selected category
         tvSeeAll.setOnClickListener(v -> {
             String category = selectedCardPosition >= 0
                     ? SECTION_TITLES[selectedCardPosition]
@@ -201,21 +244,29 @@ public class UserActivity extends AppCompatActivity {
         }
     }
 
-    // ── Notification container ────────────────────────────────────────────────
+    // ── Notification preview ──────────────────────────────────────────────────
 
     /**
-     * Clears the container and shows one preview row for the given category.
-     * The full list is accessible via the "See all" button → SeeAllActivity.
+     * Shows one preview row for the selected category.
+     * Tapping the row marks the item as read (decrements Unread count).
      */
     private void showNotificationsForCategory(String category) {
-        // Remove all dynamically added rows (keep tvEmptyState at index 0)
+        // Remove all dynamic rows (index 0 = tvEmptyState, keep it)
         while (notificationsContainer.getChildCount() > 1) {
             notificationsContainer.removeViewAt(1);
         }
 
-        List<NotificationItem> items = (category == null)
-                ? NotificationStore.getInstance().getAll()
-                : NotificationStore.getInstance().getByCategory(category);
+        List<NotificationItem> items;
+        if (category == null) {
+            items = NotificationStore.getInstance().getAll();
+        } else if (category.equalsIgnoreCase("Unread")) {
+            // Show only unread items in preview
+            items = NotificationStore.getInstance().getUnread();
+        } else if (category.equalsIgnoreCase("Starred")) {
+            items = NotificationStore.getInstance().getStarred();
+        } else {
+            items = NotificationStore.getInstance().getByCategory(category);
+        }
 
         if (items.isEmpty()) {
             tvEmptyState.setVisibility(View.VISIBLE);
@@ -226,14 +277,15 @@ public class UserActivity extends AppCompatActivity {
 
         tvEmptyState.setVisibility(View.GONE);
 
-        // Show only the first item as a preview
+        // Show only the first item as preview
         View row = buildNotificationRow(items.get(0));
         notificationsContainer.addView(row);
     }
 
     /**
-     * Inflates item_notification_row.xml and binds a NotificationItem to it.
-     * IDs used: ivAvatar, tvSenderName, tvMessage, tvDate, tvStar, vDivider
+     * Inflates a row, binds the item, and sets up:
+     *  - tap on row  → markRead (Unread count decrements)
+     *  - tap on star → toggle star (Starred count updates)
      */
     private View buildNotificationRow(NotificationItem item) {
         View row = LayoutInflater.from(this)
@@ -251,11 +303,20 @@ public class UserActivity extends AppCompatActivity {
         tvMessage.setText(item.message);
         tvDate.setText(item.dateLabel);
 
-        // Hide divider — only one preview row shown
         if (divider != null) divider.setVisibility(View.GONE);
 
+        applyReadStyle(tvName, tvMessage, item.isRead);
         applyStarColor(tvStar, item.isStarred);
 
+        // Tapping the row body marks it as read
+        row.setOnClickListener(v -> {
+            if (!item.isRead) {
+                NotificationStore.getInstance().markRead(item.id);
+                // onStoreChanged() → refreshAll() will update everything
+            }
+        });
+
+        // Tapping the star toggles starred state
         tvStar.setOnClickListener(v -> {
             if (item.isStarred) {
                 NotificationStore.getInstance().unstar(item.id);
@@ -265,9 +326,21 @@ public class UserActivity extends AppCompatActivity {
                 item.isStarred = true;
             }
             applyStarColor(tvStar, item.isStarred);
+            // onStoreChanged() will also fire and refreshAll()
         });
 
         return row;
+    }
+
+    /** Dim text if the notification has already been read. */
+    private void applyReadStyle(TextView tvName, TextView tvMessage, boolean isRead) {
+        if (isRead) {
+            tvName.setTextColor(Color.parseColor("#668899"));
+            tvMessage.setTextColor(Color.parseColor("#446677"));
+        } else {
+            tvName.setTextColor(Color.WHITE);
+            tvMessage.setTextColor(Color.parseColor("#AACCDD"));
+        }
     }
 
     private void applyStarColor(TextView tvStar, boolean starred) {
@@ -347,8 +420,7 @@ public class UserActivity extends AppCompatActivity {
                 root.getTranslationY(), -14f);
         ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation",
                 root.getElevation(), 20f);
-        ty.setDuration(180);
-        elev.setDuration(180);
+        ty.setDuration(180); elev.setDuration(180);
         AnimatorSet set = new AnimatorSet();
         set.playTogether(ty, elev);
         set.start();
@@ -359,8 +431,7 @@ public class UserActivity extends AppCompatActivity {
                 root.getTranslationY(), 0f);
         ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation",
                 root.getElevation(), 4f);
-        ty.setDuration(200);
-        elev.setDuration(200);
+        ty.setDuration(200); elev.setDuration(200);
         AnimatorSet set = new AnimatorSet();
         set.playTogether(ty, elev);
         set.start();
@@ -494,9 +565,12 @@ public class UserActivity extends AppCompatActivity {
             if (holder.cardView != null) {
                 if (selected) {
                     int a = Color.parseColor(card.colorHex);
-                    int r = Math.max(0, Math.min(255, (int)(0x1E + 0.20f * (Color.red(a)   - 0x1E))));
-                    int g = Math.max(0, Math.min(255, (int)(0x3A + 0.20f * (Color.green(a) - 0x3A))));
-                    int b = Math.max(0, Math.min(255, (int)(0x4A + 0.20f * (Color.blue(a)  - 0x4A))));
+                    int r = Math.max(0, Math.min(255,
+                            (int)(0x1E + 0.20f * (Color.red(a)   - 0x1E))));
+                    int g = Math.max(0, Math.min(255,
+                            (int)(0x3A + 0.20f * (Color.green(a) - 0x3A))));
+                    int b = Math.max(0, Math.min(255,
+                            (int)(0x4A + 0.20f * (Color.blue(a)  - 0x4A))));
                     holder.cardView.setCardBackgroundColor(Color.rgb(r, g, b));
                 } else {
                     holder.cardView.setCardBackgroundColor(Color.parseColor("#1E3A4A"));
@@ -515,7 +589,9 @@ public class UserActivity extends AppCompatActivity {
         @Override
         public int getItemCount() { return items.size(); }
 
+        /** Called by UserActivity.refreshSummaryCounts() */
         public void updateCount(int position, String newCount) {
+            if (position < 0 || position >= items.size()) return;
             items.get(position).count = newCount;
             notifyItemChanged(position);
         }
