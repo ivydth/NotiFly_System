@@ -53,7 +53,6 @@ public class NotificationStore {
                 "Team meeting tomorrow at 9 AM.",
                 "Tue", "Events", false, R.drawable.avatar_teal));
 
-        // This one starts as starred — originalCategory stays "Starred"
         NotificationItem starred = new NotificationItem(
                 "4", "You",
                 "You starred this important reminder.",
@@ -67,10 +66,6 @@ public class NotificationStore {
         return new ArrayList<>(items);
     }
 
-    /**
-     * Returns items whose originalCategory matches — so starred items
-     * always stay visible in their home list.
-     */
     public synchronized List<NotificationItem> getByCategory(String category) {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -87,7 +82,6 @@ public class NotificationStore {
         return result;
     }
 
-    /** Unread = items in the "Unread" originalCategory that haven't been read yet */
     public synchronized List<NotificationItem> getUnread() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -97,7 +91,6 @@ public class NotificationStore {
         return result;
     }
 
-    /** Count of unread (not-yet-read) items */
     public synchronized int getUnreadCount() {
         int count = 0;
         for (NotificationItem n : items) {
@@ -110,16 +103,12 @@ public class NotificationStore {
 
     public synchronized void add(NotificationItem item) {
         for (NotificationItem n : items) {
-            if (n.id.equals(item.id)) return; // no duplicates
+            if (n.id.equals(item.id)) return;
         }
         items.add(item);
         notifyListeners();
     }
 
-    /**
-     * Star an item — category field becomes "Starred" for display
-     * but originalCategory is untouched so it stays in its home list.
-     */
     public synchronized void star(String id) {
         for (NotificationItem n : items) {
             if (n.id.equals(id)) {
@@ -131,24 +120,17 @@ public class NotificationStore {
         }
     }
 
-    /**
-     * Unstar — restore category to originalCategory so it goes back home.
-     */
     public synchronized void unstar(String id) {
         for (NotificationItem n : items) {
             if (n.id.equals(id)) {
                 n.isStarred = false;
-                n.category  = n.originalCategory; // restore home category
+                n.category  = n.originalCategory;
                 notifyListeners();
                 return;
             }
         }
     }
 
-    /**
-     * Mark a single item as read and notify listeners so
-     * the Unread card count decrements immediately.
-     */
     public synchronized void markRead(String id) {
         for (NotificationItem n : items) {
             if (n.id.equals(id) && !n.isRead) {
