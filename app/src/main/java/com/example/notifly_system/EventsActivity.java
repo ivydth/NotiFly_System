@@ -1,4 +1,4 @@
-package com.example.notifly; // TODO: Replace with your actual package name
+package com.example.notifly_system; // TODO: Replace with your actual package name
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,7 +15,7 @@ public class EventsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_events); // rename to match your actual XML file name
+        setContentView(R.layout.events_activity); // rename to match your actual XML file name
 
         initViews();
         setListeners();
