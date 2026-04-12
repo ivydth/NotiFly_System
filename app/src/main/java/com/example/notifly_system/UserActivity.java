@@ -238,7 +238,9 @@ public class UserActivity extends AppCompatActivity {
         ObjectAnimator liftElev = ObjectAnimator.ofFloat(card, "elevation", card.getElevation(), 20f);
         liftY.setDuration(180);
         liftElev.setDuration(180);
-        new AnimatorSet().also(set -> { set.playTogether(liftY, liftElev); set.start(); });
+        AnimatorSet liftSet = new AnimatorSet();
+        liftSet.playTogether(liftY, liftElev);
+        liftSet.start();
     }
 
     static void animateDrop(View card) {
@@ -246,7 +248,9 @@ public class UserActivity extends AppCompatActivity {
         ObjectAnimator dropElev = ObjectAnimator.ofFloat(card, "elevation", card.getElevation(), 4f);
         dropY.setDuration(200);
         dropElev.setDuration(200);
-        new AnimatorSet().also(set -> { set.playTogether(dropY, dropElev); set.start(); });
+        AnimatorSet dropSet = new AnimatorSet();
+        dropSet.playTogether(dropY, dropElev);
+        dropSet.start();
     }
 
     // ── Interfaces / Models ────────────────────────────────────────
