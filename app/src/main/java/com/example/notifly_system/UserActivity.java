@@ -1,11 +1,20 @@
 package com.example.notifly_system;
 
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageView;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.PagerSnapHelper;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -14,6 +23,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class UserActivity extends AppCompatActivity {
 
@@ -24,8 +36,9 @@ public class UserActivity extends AppCompatActivity {
     // Welcome banner
     TextView tvWelcomeUser;
 
-    // Summary counts
-    TextView tvTotalCount, tvUnreadCount, tvStarredCount;
+    // Summary carousel
+    RecyclerView rvSummaryCards;
+    SummaryCardAdapter summaryAdapter;
 
     // Bottom nav
     AppCompatImageView ivHome, ivSearch, ivBell;
@@ -33,7 +46,7 @@ public class UserActivity extends AppCompatActivity {
     // Firebase
     FirebaseAuth      mAuth;
     DatabaseReference database;
-    DatabaseReference presenceRef; // ✅ NEW: reference to this user's online field
+    DatabaseReference presenceRef;
 
     // User data
     String currentUsername = "User";
@@ -51,13 +64,30 @@ public class UserActivity extends AppCompatActivity {
 
         tvWelcomeUser = findViewById(R.id.tvWelcomeUser);
 
-        tvTotalCount   = findViewById(R.id.tvTotalCount);
-        tvUnreadCount  = findViewById(R.id.tvUnreadCount);
-        tvStarredCount = findViewById(R.id.tvStarredCount);
+        rvSummaryCards = findViewById(R.id.rvSummaryCards);
 
         ivHome   = findViewById(R.id.ivHome);
         ivSearch = findViewById(R.id.ivSearch);
         ivBell   = findViewById(R.id.ivBell);
+
+        // ── SUMMARY CAROUSEL ──────────────────────────────────────
+
+        List<SummaryCard> cards = Arrays.asList(
+                new SummaryCard("0", "Unread",        "#5BB8FF"),
+                new SummaryCard("0", "Announcements", "#00C9B1"),
+                new SummaryCard("0", "Events",        "#C084FC"),
+                new SummaryCard("0", "Starred",       "#FFB347")
+        );
+
+        summaryAdapter = new SummaryCardAdapter(this, cards);
+
+        LinearLayoutManager llm = new LinearLayoutManager(
+                this, LinearLayoutManager.HORIZONTAL, false);
+        rvSummaryCards.setLayoutManager(llm);
+        rvSummaryCards.setAdapter(summaryAdapter);
+
+        // Snap so each swipe locks cleanly to the next card
+        new PagerSnapHelper().attachToRecyclerView(rvSummaryCards);
 
         // ── FIREBASE ──────────────────────────────────────────────
 
@@ -95,14 +125,14 @@ public class UserActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadUserData();
-        setOnlineStatus(true);  // ✅ User is now on the app
+        setOnlineStatus(true);
     }
 
     // ── Runs when user leaves the screen ──────────────────────────
     @Override
     protected void onPause() {
         super.onPause();
-        setOnlineStatus(false); // ✅ User left the app
+        setOnlineStatus(false);
     }
 
     // ── Sets online/offline in Firebase ───────────────────────────
@@ -113,7 +143,6 @@ public class UserActivity extends AppCompatActivity {
         presenceRef = database.child(currentUser.getUid()).child("online");
         presenceRef.setValue(isOnline);
 
-        // ✅ If app crashes or loses internet, Firebase auto-sets offline
         if (isOnline) {
             presenceRef.onDisconnect().setValue(false);
         }
@@ -176,6 +205,71 @@ public class UserActivity extends AppCompatActivity {
         if (currentUser == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // SummaryCard  —  simple data model
+    // ══════════════════════════════════════════════════════════════
+    static class SummaryCard {
+        String count;
+        String label;
+        String colorHex;
+
+        SummaryCard(String count, String label, String colorHex) {
+            this.count    = count;
+            this.label    = label;
+            this.colorHex = colorHex;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // SummaryCardAdapter  —  drives the RecyclerView carousel
+    // ══════════════════════════════════════════════════════════════
+    static class SummaryCardAdapter
+            extends RecyclerView.Adapter<SummaryCardAdapter.CardViewHolder> {
+
+        private final Context          context;
+        private final List<SummaryCard> items;
+
+        SummaryCardAdapter(Context context, List<SummaryCard> items) {
+            this.context = context;
+            this.items   = items;
+        }
+
+        @NonNull
+        @Override
+        public CardViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(context)
+                    .inflate(R.layout.item_summary_card, parent, false);
+            return new CardViewHolder(v);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull CardViewHolder holder, int position) {
+            SummaryCard card = items.get(position);
+            holder.tvCount.setText(card.count);
+            holder.tvCount.setTextColor(Color.parseColor(card.colorHex));
+            holder.tvLabel.setText(card.label);
+        }
+
+        @Override
+        public int getItemCount() { return items.size(); }
+
+        // Public helper so the Activity can update counts later
+        public void updateCount(int position, String newCount) {
+            items.get(position).count = newCount;
+            notifyItemChanged(position);
+        }
+
+        static class CardViewHolder extends RecyclerView.ViewHolder {
+            TextView tvCount, tvLabel;
+
+            CardViewHolder(@NonNull View itemView) {
+                super(itemView);
+                tvCount = itemView.findViewById(R.id.tvCount);
+                tvLabel = itemView.findViewById(R.id.tvLabel);
+            }
         }
     }
 }
