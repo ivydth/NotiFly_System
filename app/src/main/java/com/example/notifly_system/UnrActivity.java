@@ -44,7 +44,7 @@ public class UnrActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.unr_activity); // make sure your XML file is named unr_activity.xml
+        setContentView(R.layout.userdbunread_activity); // make sure your XML file is named unr_activity.xml
 
         // ── INITIALIZE VIEWS ──────────────────────────────────────
 
