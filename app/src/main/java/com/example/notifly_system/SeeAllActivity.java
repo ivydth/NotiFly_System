@@ -17,21 +17,20 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SeeAllActivity extends AppCompatActivity {
+public class SeeAllActivity extends AppCompatActivity
+        implements NotificationStore.StoreListener {   // ← live updates
 
     public static final String EXTRA_CATEGORY = "extra_category";
 
-    // ── Views — matched to activity_star.xml IDs ──────────────────────────────
+    private AppCompatImageView btnMenu;
+    private AppCompatImageView btnProfile;
+    private AppCompatImageView ivHome;
+    private AppCompatImageView ivSearch;
+    private AppCompatImageView ivBell;
 
-    private AppCompatImageView btnMenu;      // @+id/btnMenu
-    private AppCompatImageView btnProfile;   // @+id/btnProfile
-    private AppCompatImageView ivHome;       // @+id/ivHome
-    private AppCompatImageView ivSearch;     // @+id/ivSearch
-    private AppCompatImageView ivBell;       // @+id/ivBell
-
-    private TextView     tvSectionLabel;    // @+id/tvSectionLabel
-    private RecyclerView rvStarred;         // @+id/rvStarred
-    private TextView     tvEmptyState;      // @+id/tvEmptyState
+    private TextView     tvSectionLabel;
+    private RecyclerView rvStarred;
+    private TextView     tvEmptyState;
 
     private NotifListAdapter adapter;
     private String category = "All";
@@ -55,7 +54,21 @@ public class SeeAllActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        NotificationStore.getInstance().addListener(this);
         refreshList();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        NotificationStore.getInstance().removeListener(this);
+    }
+
+    // ── StoreListener ─────────────────────────────────────────────────────────
+
+    @Override
+    public void onStoreChanged() {
+        runOnUiThread(this::refreshList);
     }
 
     // ── Setup ─────────────────────────────────────────────────────────────────
@@ -72,13 +85,12 @@ public class SeeAllActivity extends AppCompatActivity {
     }
 
     private void setupSectionLabel() {
-        if (tvSectionLabel != null) {
-            tvSectionLabel.setText(category.toUpperCase());
-        }
+        if (tvSectionLabel != null) tvSectionLabel.setText(category.toUpperCase());
     }
 
     private void setupRecyclerView() {
         adapter = new NotifListAdapter(new ArrayList<>(), item -> {
+            // Star toggle
             if (item.isStarred) {
                 NotificationStore.getInstance().unstar(item.id);
                 item.isStarred = false;
@@ -86,11 +98,11 @@ public class SeeAllActivity extends AppCompatActivity {
                 NotificationStore.getInstance().star(item.id);
                 item.isStarred = true;
             }
-            // If on the Starred list, unstarring removes the item
-            if (category.equalsIgnoreCase("Starred")) {
-                refreshList();
-            } else {
-                adapter.notifyDataSetChanged();
+            // onStoreChanged() fires automatically — no need to call refreshList() manually
+        }, item -> {
+            // Row tap → mark as read
+            if (!item.isRead) {
+                NotificationStore.getInstance().markRead(item.id);
             }
         });
 
@@ -113,9 +125,7 @@ public class SeeAllActivity extends AppCompatActivity {
             finish();
         });
 
-        ivSearch.setOnClickListener(v -> {
-            // TODO: search screen
-        });
+        ivSearch.setOnClickListener(v -> { /* TODO */ });
 
         ivBell.setOnClickListener(v ->
                 startActivity(new Intent(this, NotifActivity1.class)));
@@ -125,13 +135,16 @@ public class SeeAllActivity extends AppCompatActivity {
 
     private void refreshList() {
         List<NotificationItem> items;
+        NotificationStore store = NotificationStore.getInstance();
 
         if (category.equalsIgnoreCase("All")) {
-            items = NotificationStore.getInstance().getAll();
+            items = store.getAll();
         } else if (category.equalsIgnoreCase("Starred")) {
-            items = NotificationStore.getInstance().getStarred();
+            items = store.getStarred();
+        } else if (category.equalsIgnoreCase("Unread")) {
+            items = store.getUnread(); // only shows unread items
         } else {
-            items = NotificationStore.getInstance().getByCategory(category);
+            items = store.getByCategory(category);
         }
 
         adapter.updateData(items);
@@ -146,16 +159,19 @@ public class SeeAllActivity extends AppCompatActivity {
     private static class NotifListAdapter
             extends RecyclerView.Adapter<NotifListAdapter.VH> {
 
-        interface OnStarClickListener {
-            void onStarClick(NotificationItem item);
-        }
+        interface OnStarClickListener { void onStarClick(NotificationItem item); }
+        interface OnRowClickListener  { void onRowClick(NotificationItem item);  }
 
         private final List<NotificationItem> data;
         private final OnStarClickListener    starListener;
+        private final OnRowClickListener     rowListener;
 
-        NotifListAdapter(List<NotificationItem> data, OnStarClickListener listener) {
+        NotifListAdapter(List<NotificationItem> data,
+                         OnStarClickListener starListener,
+                         OnRowClickListener  rowListener) {
             this.data         = data;
-            this.starListener = listener;
+            this.starListener = starListener;
+            this.rowListener  = rowListener;
         }
 
         void updateData(List<NotificationItem> newData) {
@@ -176,12 +192,19 @@ public class SeeAllActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull VH h, int position) {
             NotificationItem item = data.get(position);
 
-            // Bind to item_notification_row.xml IDs:
-            // ivAvatar, tvSenderName, tvMessage, tvDate, tvStar, vDivider
             h.avatar.setBackgroundResource(item.avatarResId);
             h.tvName.setText(item.senderName);
             h.tvMessage.setText(item.message);
             h.tvDate.setText(item.dateLabel);
+
+            // Dim read items
+            if (item.isRead) {
+                h.tvName.setTextColor(Color.parseColor("#668899"));
+                h.tvMessage.setTextColor(Color.parseColor("#446677"));
+            } else {
+                h.tvName.setTextColor(Color.WHITE);
+                h.tvMessage.setTextColor(Color.parseColor("#AACCDD"));
+            }
 
             applyStarColor(h.tvStar, item.isStarred);
 
@@ -190,7 +213,11 @@ public class SeeAllActivity extends AppCompatActivity {
                 applyStarColor(h.tvStar, item.isStarred);
             });
 
-            // Hide divider on the last row
+            // Tapping the row marks it read
+            h.itemView.setOnClickListener(v -> {
+                if (rowListener != null) rowListener.onRowClick(item);
+            });
+
             if (h.divider != null) {
                 h.divider.setVisibility(
                         position < data.size() - 1 ? View.VISIBLE : View.GONE);
@@ -207,12 +234,12 @@ public class SeeAllActivity extends AppCompatActivity {
         public int getItemCount() { return data.size(); }
 
         static class VH extends RecyclerView.ViewHolder {
-            View     avatar;    // R.id.ivAvatar
-            TextView tvName;    // R.id.tvSenderName
-            TextView tvMessage; // R.id.tvMessage
-            TextView tvDate;    // R.id.tvDate
-            TextView tvStar;    // R.id.tvStar
-            View     divider;   // R.id.vDivider
+            View     avatar;
+            TextView tvName;
+            TextView tvMessage;
+            TextView tvDate;
+            TextView tvStar;
+            View     divider;
 
             VH(@NonNull View itemView) {
                 super(itemView);
