@@ -62,7 +62,6 @@ public class UserMenu extends AppCompatActivity {
 
         drawerPanel.setTranslationX(-9999f);
 
-        // ── INITIALIZE FIREBASE HERE (once) ───────────────────────
         mAuth    = FirebaseAuth.getInstance();
         database = FirebaseDatabase.getInstance(
                 "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
@@ -97,7 +96,6 @@ public class UserMenu extends AppCompatActivity {
         });
     }
 
-    // ── Runs every time the drawer comes back into view ────────────
     @Override
     protected void onResume() {
         super.onResume();
@@ -111,14 +109,14 @@ public class UserMenu extends AppCompatActivity {
     }
 
     private void initViews() {
-        navDashboard     = findViewById(R.id.nav_dashboard);
-        navNotifications = findViewById(R.id.nav_notifications);
-        navAllInboxes    = findViewById(R.id.nav_all_inboxes);
-        navUnread        = findViewById(R.id.nav_unread);
-        navAnnouncements = findViewById(R.id.nav_announcements);
-        navEvents        = findViewById(R.id.nav_events);
-        navSettings      = findViewById(R.id.nav_settings);
-        navArchive       = findViewById(R.id.nav_archive);
+        navDashboard       = findViewById(R.id.nav_dashboard);
+        navNotifications   = findViewById(R.id.nav_notifications);
+        navAllInboxes      = findViewById(R.id.nav_all_inboxes);
+        navUnread          = findViewById(R.id.nav_unread);
+        navAnnouncements   = findViewById(R.id.nav_announcements);
+        navEvents          = findViewById(R.id.nav_events);
+        navSettings        = findViewById(R.id.nav_settings);
+        navArchive         = findViewById(R.id.nav_archive);
         badgeNotifications = findViewById(R.id.badge_notifications);
 
         tvDrawerUsername = findViewById(R.id.tv_drawer_username);
@@ -150,7 +148,6 @@ public class UserMenu extends AppCompatActivity {
                 String username  = snapshot.child("username").getValue(String.class);
                 String email     = snapshot.child("email").getValue(String.class);
 
-                // ── Resolve display name ──────────────────────────
                 String displayName;
                 if (username != null && !username.isEmpty()) {
                     displayName = username;
@@ -160,27 +157,20 @@ public class UserMenu extends AppCompatActivity {
                     displayName = "User";
                 }
 
-                // ── Resolve display email ─────────────────────────
                 String displayEmail = (email != null && !email.isEmpty())
                         ? email
                         : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
 
-                // ── Update header views ───────────────────────────
-                if (tvDrawerUsername != null)
-                    tvDrawerUsername.setText(displayName);
-
-                if (tvDrawerEmail != null)
-                    tvDrawerEmail.setText(displayEmail);
-
-                if (tvAvatar != null)
-                    tvAvatar.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
+                if (tvDrawerUsername != null) tvDrawerUsername.setText(displayName);
+                if (tvDrawerEmail != null)    tvDrawerEmail.setText(displayEmail);
+                if (tvAvatar != null)         tvAvatar.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
             }
 
             @Override
             public void onCancelled(DatabaseError error) {
                 if (tvDrawerUsername != null) tvDrawerUsername.setText("User");
-                if (tvAvatar != null) tvAvatar.setText("U");
-                if (tvDrawerEmail != null) tvDrawerEmail.setText("");
+                if (tvAvatar != null)         tvAvatar.setText("U");
+                if (tvDrawerEmail != null)    tvDrawerEmail.setText("");
             }
         });
     }
@@ -209,14 +199,15 @@ public class UserMenu extends AppCompatActivity {
 
         navAnnouncements.setOnClickListener(v -> onNavAnnouncementsClicked());
 
-        // ✅ FIXED: was calling onEventsClicked(), now correctly calls onNavEventsClicked()
         navEvents.setOnClickListener(v -> onNavEventsClicked());
 
+        // ✅ FIXED: navigates to SettActivity
         navSettings.setOnClickListener(v -> {
             setActiveItem(navSettings);
             onNavSettingsClicked();
         });
 
+        // ✅ FIXED: navigates to ArcActivity
         navArchive.setOnClickListener(v -> {
             setActiveItem(navArchive);
             onNavArchiveClicked();
@@ -274,19 +265,20 @@ public class UserMenu extends AppCompatActivity {
         closeDrawer();
     }
 
-    // ✅ FIXED: renamed from onEventsClicked() to onNavEventsClicked()
     private void onNavEventsClicked() {
         startActivity(new Intent(this, EventsActivity.class));
         closeDrawer();
     }
 
+    // ✅ FIXED: was Toast, now navigates to SettActivity
     private void onNavSettingsClicked() {
-        Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, SettActivity.class));
         closeDrawer();
     }
 
+    // ✅ FIXED: was Toast, now navigates to ArcActivity
     private void onNavArchiveClicked() {
-        Toast.makeText(this, "Archive", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, ArcActivity.class));
         closeDrawer();
     }
 
