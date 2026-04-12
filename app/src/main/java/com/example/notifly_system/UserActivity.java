@@ -146,6 +146,12 @@ public class UserActivity extends AppCompatActivity {
 
     // ── Called when a summary card is tapped ──────────────────────
     private void onCardTapped(int position) {
+        // position == -1 means deselected
+        if (position < 0) {
+            tvSectionTitle.setText("New");
+            tvEmptyState.setText("No new notifications");
+            return;
+        }
         tvSectionTitle.setText(SECTION_TITLES[position]);
         tvEmptyState.setText(EMPTY_MESSAGES[position]);
 
@@ -239,11 +245,11 @@ public class UserActivity extends AppCompatActivity {
     }
 
     // ══════════════════════════════════════════════════════════════
-    // Lift animation — stays lifted while selected, drops on deselect
+    // Lift animation — animates card upward and raises elevation
     // ══════════════════════════════════════════════════════════════
-    private static void animateLift(View card) {
-        ObjectAnimator liftY    = ObjectAnimator.ofFloat(card, "translationY", 0f, -16f);
-        ObjectAnimator liftElev = ObjectAnimator.ofFloat(card, "elevation", 4f, 16f);
+    static void animateLift(View card) {
+        ObjectAnimator liftY    = ObjectAnimator.ofFloat(card, "translationY", card.getTranslationY(), -16f);
+        ObjectAnimator liftElev = ObjectAnimator.ofFloat(card, "elevation", card.getElevation(), 16f);
         liftY.setDuration(180);
         liftElev.setDuration(180);
 
@@ -252,9 +258,9 @@ public class UserActivity extends AppCompatActivity {
         set.start();
     }
 
-    private static void animateDrop(View card) {
-        ObjectAnimator dropY    = ObjectAnimator.ofFloat(card, "translationY", -16f, 0f);
-        ObjectAnimator dropElev = ObjectAnimator.ofFloat(card, "elevation", 16f, 4f);
+    static void animateDrop(View card) {
+        ObjectAnimator dropY    = ObjectAnimator.ofFloat(card, "translationY", card.getTranslationY(), 0f);
+        ObjectAnimator dropElev = ObjectAnimator.ofFloat(card, "elevation", card.getElevation(), 4f);
         dropY.setDuration(200);
         dropElev.setDuration(200);
 
@@ -298,9 +304,11 @@ public class UserActivity extends AppCompatActivity {
         // Tracks which card is currently selected (-1 = none)
         private int selectedPosition = -1;
 
-        // Touch tracking to distinguish tap from swipe
-        private float touchStartX = 0f;
-        private float touchStartY = 0f;
+        // Touch tracking
+        private float   touchStartX = 0f;
+        private float   touchStartY = 0f;
+        private boolean isDragging  = false; // true once finger moves past threshold
+
         private static final int DRAG_THRESHOLD_DP = 10;
 
         SummaryCardAdapter(Context context, List<SummaryCard> items,
@@ -331,11 +339,10 @@ public class UserActivity extends AppCompatActivity {
             holder.itemView.setTranslationY(selected ? -16f : 0f);
             holder.itemView.setElevation(selected ? 16f : 4f);
 
-            // ── Underglow: card background color tint when selected
+            // ── CardView background tint when selected ────────────
             if (holder.itemView instanceof CardView) {
                 CardView cv = (CardView) holder.itemView;
                 if (selected) {
-                    // Blend card color with a faint tint of the card's accent color
                     int accent = Color.parseColor(card.colorHex);
                     int r = (int) (0x1E + 0.15f * (Color.red(accent)   - 0x1E));
                     int g = (int) (0x3A + 0.15f * (Color.green(accent) - 0x3A));
@@ -350,41 +357,92 @@ public class UserActivity extends AppCompatActivity {
                 }
             }
 
+            // ── Underglow overlay (viewUnderglow must exist in item_summary_card.xml) ──
+            View glow = holder.itemView.findViewById(R.id.viewUnderglow);
+            if (glow != null) {
+                int accent = Color.parseColor(card.colorHex);
+                // 25% alpha tint of the card's accent colour
+                int glowColor = Color.argb(64,
+                        Color.red(accent),
+                        Color.green(accent),
+                        Color.blue(accent));
+                glow.setBackgroundColor(glowColor);
+                glow.animate()
+                        .alpha(selected ? 1f : 0f)
+                        .setDuration(180)
+                        .start();
+            }
+
             // ── Drag threshold in px ──────────────────────────────
-            float density  = context.getResources().getDisplayMetrics().density;
+            float density   = context.getResources().getDisplayMetrics().density;
             float threshold = DRAG_THRESHOLD_DP * density;
 
-            // ── Touch listener: only trigger on confirmed tap ─────
+            // ── Touch listener ────────────────────────────────────
             holder.itemView.setOnTouchListener((v, event) -> {
+                // getAdapterPosition() is safe inside the listener because
+                // it's called at event time, not at bind time.
+                int adapterPos = holder.getAdapterPosition();
+                if (adapterPos == RecyclerView.NO_ID) return false;
+
                 switch (event.getAction()) {
 
                     case MotionEvent.ACTION_DOWN:
                         touchStartX = event.getRawX();
                         touchStartY = event.getRawY();
+                        isDragging  = false; // reset on every new touch
+                        break;
+
+                    case MotionEvent.ACTION_MOVE:
+                        float mdx = Math.abs(event.getRawX() - touchStartX);
+                        float mdy = Math.abs(event.getRawY() - touchStartY);
+                        if (!isDragging && (mdx > threshold || mdy > threshold)) {
+                            isDragging = true; // finger moved — treat as scroll
+
+                            // If we had already started lifting this card, drop it
+                            if (selectedPosition == adapterPos) {
+                                selectedPosition = -1;
+                                animateDrop(v);
+                                notifyItemChanged(adapterPos);
+                                if (listener != null) listener.onTapped(-1);
+                            }
+                        }
                         break;
 
                     case MotionEvent.ACTION_UP:
-                        float dx = Math.abs(event.getRawX() - touchStartX);
-                        float dy = Math.abs(event.getRawY() - touchStartY);
-
-                        // Only treat it as a tap if finger barely moved
-                        if (dx < threshold && dy < threshold) {
+                        if (!isDragging) {
+                            // Confirmed deliberate press
                             int prev = selectedPosition;
-                            selectedPosition = position;
 
-                            // Drop the previously selected card
-                            if (prev != -1 && prev != position) {
-                                notifyItemChanged(prev);
+                            if (prev == adapterPos) {
+                                // Pressing the already-selected card deselects it
+                                selectedPosition = -1;
+                                animateDrop(v);
+                                notifyItemChanged(adapterPos);
+                                if (listener != null) listener.onTapped(-1);
+                            } else {
+                                selectedPosition = adapterPos;
+                                if (prev != -1) notifyItemChanged(prev);
+                                animateLift(v);
+                                notifyItemChanged(adapterPos);
+                                if (listener != null) listener.onTapped(adapterPos);
                             }
-
-                            // Lift this card
-                            animateLift(v);
-                            notifyItemChanged(position);
-
-                            if (listener != null) listener.onTapped(position);
                         }
+                        isDragging = false;
+                        break;
+
+                    case MotionEvent.ACTION_CANCEL:
+                        // RecyclerView intercepted the gesture (e.g. mid-scroll).
+                        // Drop the card if it was lifted.
+                        if (selectedPosition == adapterPos) {
+                            selectedPosition = -1;
+                            animateDrop(v);
+                            notifyItemChanged(adapterPos);
+                            if (listener != null) listener.onTapped(-1);
+                        }
+                        isDragging = false;
                         break;
                 }
+
                 // Return false so RecyclerView still handles horizontal swipes
                 return false;
             });
