@@ -1,6 +1,7 @@
 package com.example.notifly_system;
 
 import android.animation.ValueAnimator;
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -203,7 +204,10 @@ public class UserMenu extends AppCompatActivity {
         });
 
         navAllInboxes.setOnClickListener(v -> onNavAllInboxesClicked());
+
+        // ✅ FIXED: Unread now navigates to UnrActivity
         navUnread.setOnClickListener(v -> onNavUnreadClicked());
+
         navAnnouncements.setOnClickListener(v -> onNavAnnouncementsClicked());
         navPromotions.setOnClickListener(v -> onNavPromotionsClicked());
 
@@ -245,12 +249,12 @@ public class UserMenu extends AppCompatActivity {
     }
 
     private void onNavDashboardClicked() {
-        Toast.makeText(this, "Dashboard", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, UserActivity.class));
         closeDrawer();
     }
 
     private void onNavNotificationsClicked() {
-        Toast.makeText(this, "Notifications", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, NotifActivity.class));
         closeDrawer();
     }
 
@@ -259,8 +263,9 @@ public class UserMenu extends AppCompatActivity {
         closeDrawer();
     }
 
+    // ✅ FIXED: navigates to UnrActivity (userdbunread_activity layout)
     private void onNavUnreadClicked() {
-        Toast.makeText(this, "Unread", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, UnrActivity.class));
         closeDrawer();
     }
 
