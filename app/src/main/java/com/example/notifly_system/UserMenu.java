@@ -274,8 +274,8 @@ public class UserMenu extends AppCompatActivity {
         closeDrawer();
     }
 
-    private void onNavPromotionsClicked() {
-        Toast.makeText(this, "Promotions", Toast.LENGTH_SHORT).show();
+    private void onEventsClicked() {
+        Toast.makeText(this, "Events", Toast.LENGTH_SHORT).show();
         closeDrawer();
     }
 
