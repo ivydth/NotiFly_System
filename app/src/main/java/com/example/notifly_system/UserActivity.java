@@ -1,12 +1,16 @@
 package com.example.notifly_system;
 
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -37,8 +41,13 @@ public class UserActivity extends AppCompatActivity {
     TextView tvWelcomeUser;
 
     // Summary carousel
-    RecyclerView rvSummaryCards;
+    RecyclerView       rvSummaryCards;
     SummaryCardAdapter summaryAdapter;
+
+    // Notifications section
+    TextView     tvSectionTitle;
+    TextView     tvEmptyState;
+    LinearLayout notificationsContainer;
 
     // Bottom nav
     AppCompatImageView ivHome, ivSearch, ivBell;
@@ -52,6 +61,21 @@ public class UserActivity extends AppCompatActivity {
     String currentUsername = "User";
     String currentEmail    = "";
 
+    // ── Empty state messages per card ──────────────────────────────
+    private static final String[] SECTION_TITLES = {
+            "Unread",
+            "Announcements",
+            "Events",
+            "Starred"
+    };
+
+    private static final String[] EMPTY_MESSAGES = {
+            "No unread notifications",
+            "No announcements yet",
+            "No events yet",
+            "No starred notifications"
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,9 +86,11 @@ public class UserActivity extends AppCompatActivity {
         btnMenu    = findViewById(R.id.btnMenu);
         btnProfile = findViewById(R.id.btnProfile);
 
-        tvWelcomeUser = findViewById(R.id.tvWelcomeUser);
-
-        rvSummaryCards = findViewById(R.id.rvSummaryCards);
+        tvWelcomeUser        = findViewById(R.id.tvWelcomeUser);
+        rvSummaryCards       = findViewById(R.id.rvSummaryCards);
+        tvSectionTitle       = findViewById(R.id.tvSectionTitle);
+        tvEmptyState         = findViewById(R.id.tvEmptyState);
+        notificationsContainer = findViewById(R.id.notificationsContainer);
 
         ivHome   = findViewById(R.id.ivHome);
         ivSearch = findViewById(R.id.ivSearch);
@@ -79,7 +105,7 @@ public class UserActivity extends AppCompatActivity {
                 new SummaryCard("0", "Starred",       "#FFB347")
         );
 
-        summaryAdapter = new SummaryCardAdapter(this, cards);
+        summaryAdapter = new SummaryCardAdapter(this, cards, this::onCardTapped);
 
         LinearLayoutManager llm = new LinearLayoutManager(
                 this, LinearLayoutManager.HORIZONTAL, false);
@@ -103,21 +129,31 @@ public class UserActivity extends AppCompatActivity {
             overridePendingTransition(0, 0);
         });
 
-        btnProfile.setOnClickListener(v -> {
-            startActivity(new Intent(this, ProfileActivity.class));
-        });
+        btnProfile.setOnClickListener(v ->
+                startActivity(new Intent(this, ProfileActivity.class)));
 
-        ivHome.setOnClickListener(v -> {
-            startActivity(new Intent(this, UserActivity.class));
-        });
+        ivHome.setOnClickListener(v ->
+                startActivity(new Intent(this, UserActivity.class)));
 
         ivSearch.setOnClickListener(v -> {
             // TODO: navigate to search activity
         });
 
-        ivBell.setOnClickListener(v -> {
-            startActivity(new Intent(this, NotifActivity1.class));
-        });
+        ivBell.setOnClickListener(v ->
+                startActivity(new Intent(this, NotifActivity1.class)));
+    }
+
+    // ── Called when a summary card is tapped ──────────────────────
+    private void onCardTapped(int position) {
+        // Update section title
+        tvSectionTitle.setText(SECTION_TITLES[position]);
+
+        // Update empty state message
+        // (only visible when no dynamic rows have been added)
+        tvEmptyState.setText(EMPTY_MESSAGES[position]);
+
+        // TODO: when you have real data, clear notificationsContainer
+        // and re-populate it here based on the selected category
     }
 
     // ── Runs every time the screen comes back into view ────────────
@@ -209,6 +245,36 @@ public class UserActivity extends AppCompatActivity {
     }
 
     // ══════════════════════════════════════════════════════════════
+    // Lift animation — card floats up then settles back down
+    // ══════════════════════════════════════════════════════════════
+    private static void animateLift(View card) {
+        // Phase 1: lift up
+        ObjectAnimator liftY    = ObjectAnimator.ofFloat(card, "translationY", 0f, -18f);
+        ObjectAnimator liftElev = ObjectAnimator.ofFloat(card, "elevation", 4f, 14f);
+        liftY.setDuration(150);
+        liftElev.setDuration(150);
+
+        // Phase 2: settle back down
+        ObjectAnimator dropY    = ObjectAnimator.ofFloat(card, "translationY", -18f, 0f);
+        ObjectAnimator dropElev = ObjectAnimator.ofFloat(card, "elevation", 14f, 4f);
+        dropY.setDuration(200);
+        dropElev.setDuration(200);
+        dropY.setStartDelay(150);
+        dropElev.setStartDelay(150);
+
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(liftY, liftElev, dropY, dropElev);
+        set.start();
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // Callback interface for card tap
+    // ══════════════════════════════════════════════════════════════
+    interface OnCardTappedListener {
+        void onTapped(int position);
+    }
+
+    // ══════════════════════════════════════════════════════════════
     // SummaryCard  —  simple data model
     // ══════════════════════════════════════════════════════════════
     static class SummaryCard {
@@ -229,12 +295,15 @@ public class UserActivity extends AppCompatActivity {
     static class SummaryCardAdapter
             extends RecyclerView.Adapter<SummaryCardAdapter.CardViewHolder> {
 
-        private final Context          context;
-        private final List<SummaryCard> items;
+        private final Context               context;
+        private final List<SummaryCard>     items;
+        private final OnCardTappedListener  listener;
 
-        SummaryCardAdapter(Context context, List<SummaryCard> items) {
-            this.context = context;
-            this.items   = items;
+        SummaryCardAdapter(Context context, List<SummaryCard> items,
+                           OnCardTappedListener listener) {
+            this.context  = context;
+            this.items    = items;
+            this.listener = listener;
         }
 
         @NonNull
@@ -251,6 +320,16 @@ public class UserActivity extends AppCompatActivity {
             holder.tvCount.setText(card.count);
             holder.tvCount.setTextColor(Color.parseColor(card.colorHex));
             holder.tvLabel.setText(card.label);
+
+            // ── Lift animation + tap callback on touch ────────────
+            holder.itemView.setOnTouchListener((v, event) -> {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    animateLift(v);
+                    // Notify the activity which card was tapped
+                    if (listener != null) listener.onTapped(position);
+                }
+                return false;
+            });
         }
 
         @Override
