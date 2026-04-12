@@ -86,7 +86,7 @@ public class UserActivity extends AppCompatActivity {
         });
 
         ivBell.setOnClickListener(v -> {
-            // TODO: navigate to notifications activity
+            startActivity(new Intent(this, ProfileActivity.class));
         });
     }
 
