@@ -33,16 +33,16 @@ public class AnnActivity extends AppCompatActivity {
     private void setListeners() {
 
         btnMenu.setOnClickListener(v -> {
-            // TODO: Open navigation drawer or menu
+            startActivity(new Intent(this, UserMenu.class));
+            overridePendingTransition(0, 0);
         });
 
         btnProfile.setOnClickListener(v -> {
-            // TODO: Navigate to profile screen
+            startActivity(new Intent(this, ProfileActivity.class));
         });
 
         ivHome.setOnClickListener(v -> {
-            // TODO: Navigate to home screen
-            finish();
+            startActivity(new Intent(this, UserActivity.class));
         });
 
         ivSearch.setOnClickListener(v -> {
@@ -50,7 +50,7 @@ public class AnnActivity extends AppCompatActivity {
         });
 
         ivBell.setOnClickListener(v -> {
-            // TODO: Navigate to notifications/announcements screen (already here)
+            startActivity(new Intent(this, NotifActivity1.class));
         });
     }
 }
