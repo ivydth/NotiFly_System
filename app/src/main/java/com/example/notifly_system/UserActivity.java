@@ -5,7 +5,6 @@ import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -64,10 +63,7 @@ public class UserActivity extends AppCompatActivity {
     String currentEmail    = "";
 
     private static final String[] SECTION_TITLES = {
-            "Unread",
-            "Announcements",
-            "Events",
-            "Starred"
+            "Unread", "Announcements", "Events", "Starred"
     };
 
     private static final String[] EMPTY_MESSAGES = {
@@ -112,7 +108,7 @@ public class UserActivity extends AppCompatActivity {
         rvSummaryCards.setAdapter(summaryAdapter);
         new PagerSnapHelper().attachToRecyclerView(rvSummaryCards);
 
-        // Allow the glow to bleed outside the RecyclerView bounds
+        // Allow the glow to render outside the RecyclerView clip bounds
         rvSummaryCards.setClipChildren(false);
         rvSummaryCards.setClipToPadding(false);
 
@@ -186,38 +182,39 @@ public class UserActivity extends AppCompatActivity {
 
         database.child(currentUser.getUid())
                 .addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot snapshot) {
-                if (!snapshot.exists()) return;
+                    @Override
+                    public void onDataChange(DataSnapshot snapshot) {
+                        if (!snapshot.exists()) return;
 
-                String firstName = snapshot.child("firstName").getValue(String.class);
-                String username  = snapshot.child("username").getValue(String.class);
-                String email     = snapshot.child("email").getValue(String.class);
+                        String firstName = snapshot.child("firstName").getValue(String.class);
+                        String username  = snapshot.child("username").getValue(String.class);
+                        String email     = snapshot.child("email").getValue(String.class);
 
-                if (username != null && !username.isEmpty()) {
-                    tvWelcomeUser.setText(username + "!");
-                    currentUsername = username;
-                } else if (firstName != null && !firstName.isEmpty()) {
-                    tvWelcomeUser.setText(firstName + "!");
-                    currentUsername = firstName;
-                } else {
-                    tvWelcomeUser.setText("User!");
-                    currentUsername = "User";
-                }
+                        if (username != null && !username.isEmpty()) {
+                            tvWelcomeUser.setText(username + "!");
+                            currentUsername = username;
+                        } else if (firstName != null && !firstName.isEmpty()) {
+                            tvWelcomeUser.setText(firstName + "!");
+                            currentUsername = firstName;
+                        } else {
+                            tvWelcomeUser.setText("User!");
+                            currentUsername = "User";
+                        }
 
-                btnProfile.setText(currentUsername.substring(0, 1).toUpperCase());
+                        btnProfile.setText(currentUsername.substring(0, 1).toUpperCase());
 
-                currentEmail = (email != null && !email.isEmpty())
-                        ? email
-                        : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
-            }
+                        currentEmail = (email != null && !email.isEmpty())
+                                ? email
+                                : (currentUser.getEmail() != null
+                                        ? currentUser.getEmail() : "");
+                    }
 
-            @Override
-            public void onCancelled(DatabaseError error) {
-                tvWelcomeUser.setText("User!");
-                btnProfile.setText("U");
-            }
-        });
+                    @Override
+                    public void onCancelled(DatabaseError error) {
+                        tvWelcomeUser.setText("User!");
+                        btnProfile.setText("U");
+                    }
+                });
     }
 
     @Override
@@ -229,12 +226,13 @@ public class UserActivity extends AppCompatActivity {
         }
     }
 
-    // ── Animations ────────────────────────────────────────────────
+    // ── Lift / drop the FrameLayout (card + glow together) ────────
 
     static void animateLift(View root) {
-        // root is the FrameLayout wrapper — lift the whole thing
-        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), -14f);
-        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation",    root.getElevation(),    20f);
+        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY",
+                root.getTranslationY(), -14f);
+        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation",
+                root.getElevation(), 20f);
         ty.setDuration(180);
         elev.setDuration(180);
         AnimatorSet set = new AnimatorSet();
@@ -243,8 +241,10 @@ public class UserActivity extends AppCompatActivity {
     }
 
     static void animateDrop(View root) {
-        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), 0f);
-        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation",    root.getElevation(),    4f);
+        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY",
+                root.getTranslationY(), 0f);
+        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation",
+                root.getElevation(), 4f);
         ty.setDuration(200);
         elev.setDuration(200);
         AnimatorSet set = new AnimatorSet();
@@ -311,13 +311,12 @@ public class UserActivity extends AppCompatActivity {
             holder.tvCount.setTextColor(Color.parseColor(card.colorHex));
             holder.tvLabel.setText(card.label);
 
-            // Snap state instantly on bind (no animation — handles RecyclerView rebinds)
+            // Snap to correct state instantly on bind (no animation needed on rebind)
             applyState(holder, card, selected, false);
 
             float threshold = DRAG_THRESHOLD_DP
                     * context.getResources().getDisplayMetrics().density;
 
-            // Attach touch listener to the root FrameLayout
             holder.itemView.setOnTouchListener((v, event) -> {
                 int pos = holder.getAdapterPosition();
                 if (pos == RecyclerView.NO_ID) return false;
@@ -328,18 +327,15 @@ public class UserActivity extends AppCompatActivity {
                         touchStartX = event.getRawX();
                         touchStartY = event.getRawY();
                         isDragging  = false;
-                        // Claim the gesture so we get MOVE/UP
+                        // Claim the gesture — we decide if it's a tap or scroll
                         v.getParent().requestDisallowInterceptTouchEvent(true);
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
                         float dx = Math.abs(event.getRawX() - touchStartX);
                         float dy = Math.abs(event.getRawY() - touchStartY);
-                        if (!isDragging && dx > threshold) {
-                            // Horizontal scroll detected — hand gesture back to RecyclerView
-                            isDragging = true;
-                            v.getParent().requestDisallowInterceptTouchEvent(false);
-                        } else if (!isDragging && dy > threshold) {
+                        if (!isDragging && (dx > threshold || dy > threshold)) {
+                            // Finger moved too much — it's a scroll, hand back to RecyclerView
                             isDragging = true;
                             v.getParent().requestDisallowInterceptTouchEvent(false);
                         }
@@ -350,13 +346,13 @@ public class UserActivity extends AppCompatActivity {
                         if (!isDragging) {
                             int prev = selectedPosition;
                             if (prev == pos) {
-                                // Tap selected card → deselect
+                                // Tap already-selected → deselect
                                 selectedPosition = -1;
                                 applyState(holder, card, false, true);
                                 notifyItemChanged(pos);
                                 if (listener != null) listener.onTapped(-1);
                             } else {
-                                // Select this card
+                                // Select this card, drop previous
                                 selectedPosition = pos;
                                 applyState(holder, card, true, true);
                                 notifyItemChanged(pos);
@@ -368,8 +364,8 @@ public class UserActivity extends AppCompatActivity {
                         return true;
 
                     case MotionEvent.ACTION_CANCEL:
-                        // RecyclerView took over (e.g. fling) — do NOT drop the selection.
-                        // The card stays lifted because the user didn't intentionally deselect.
+                        // RecyclerView took the gesture (fling/scroll).
+                        // Card stays lifted — user didn't intentionally deselect.
                         v.getParent().requestDisallowInterceptTouchEvent(false);
                         isDragging = false;
                         return true;
@@ -379,19 +375,19 @@ public class UserActivity extends AppCompatActivity {
         }
 
         /**
-         * Applies lifted/normal visual state to a card.
+         * Applies the selected or normal visual state to a card.
          *
-         * @param holder   the ViewHolder whose views we update
-         * @param card     data model (for accent colour)
-         * @param selected true = lifted + glow on, false = normal
-         * @param animate  true = animate, false = snap immediately
+         * @param holder   ViewHolder to update
+         * @param card     data model (accent colour)
+         * @param selected true = lifted + glowing
+         * @param animate  true = animate transitions, false = snap instantly
          */
         private void applyState(CardViewHolder holder, SummaryCard card,
                                 boolean selected, boolean animate) {
 
-            View root = holder.itemView; // FrameLayout
+            View root = holder.itemView; // the FrameLayout
 
-            // ── 1. Lift the whole FrameLayout ─────────────────────
+            // 1. Lift the whole item (card + glow rise together)
             if (animate) {
                 if (selected) animateLift(root);
                 else          animateDrop(root);
@@ -400,43 +396,25 @@ public class UserActivity extends AppCompatActivity {
                 root.setElevation(selected ? 20f : 4f);
             }
 
-            // ── 2. CardView background tint ───────────────────────
+            // 2. Subtle card background tint when selected
             if (holder.cardView != null) {
                 if (selected) {
-                    int accent = Color.parseColor(card.colorHex);
-                    // Blend a small amount of the accent into the dark base colour
-                    int r = (int) (0x1E + 0.18f * (Color.red(accent)   - 0x1E));
-                    int g = (int) (0x3A + 0.18f * (Color.green(accent) - 0x3A));
-                    int b = (int) (0x4A + 0.18f * (Color.blue(accent)  - 0x4A));
-                    holder.cardView.setCardBackgroundColor(Color.rgb(
-                            Math.max(0, Math.min(255, r)),
-                            Math.max(0, Math.min(255, g)),
-                            Math.max(0, Math.min(255, b))
-                    ));
+                    int a = Color.parseColor(card.colorHex);
+                    int r = Math.max(0, Math.min(255, (int)(0x1E + 0.20f * (Color.red(a)   - 0x1E))));
+                    int g = Math.max(0, Math.min(255, (int)(0x3A + 0.20f * (Color.green(a) - 0x3A))));
+                    int b = Math.max(0, Math.min(255, (int)(0x4A + 0.20f * (Color.blue(a)  - 0x4A))));
+                    holder.cardView.setCardBackgroundColor(Color.rgb(r, g, b));
                 } else {
                     holder.cardView.setCardBackgroundColor(Color.parseColor("#1E3A4A"));
                 }
             }
 
-            // ── 3. Colored glow halo behind the card ─────────────
+            // 3. Radial gradient glow below the card
             if (holder.viewGlow != null) {
-                int accent = Color.parseColor(card.colorHex);
-
-                // Set the glow drawable color to the card's accent color
-                GradientDrawable gd = new GradientDrawable();
-                gd.setShape(GradientDrawable.OVAL);
-                // Semi-transparent accent: alpha ~160 (~63%)
-                gd.setColor(Color.argb(160,
-                        Color.red(accent),
-                        Color.green(accent),
-                        Color.blue(accent)));
-                gd.setCornerRadius(60f);
-                holder.viewGlow.setBackground(gd);
-
-                // Animate alpha: 0 = invisible, 1 = full glow
+                holder.viewGlow.setGlowColor(Color.parseColor(card.colorHex));
                 holder.viewGlow.animate()
                         .alpha(selected ? 1f : 0f)
-                        .setDuration(animate ? 200 : 0)
+                        .setDuration(animate ? 220 : 0)
                         .start();
             }
         }
@@ -454,7 +432,7 @@ public class UserActivity extends AppCompatActivity {
             TextView tvCount;
             TextView tvLabel;
             CardView cardView;
-            View     viewGlow;
+            GlowView viewGlow;
 
             CardViewHolder(@NonNull View itemView) {
                 super(itemView);
