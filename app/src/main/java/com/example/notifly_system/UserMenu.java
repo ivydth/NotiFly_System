@@ -25,7 +25,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-public class UserMenu extends AppCompatActivity {
+public class UserMenu extends AppCompatActivity
+        implements NotificationStore.StoreListener {   // ← live updates
 
     private View drawerPanel;
     private View rootLayout;
@@ -40,7 +41,12 @@ public class UserMenu extends AppCompatActivity {
     private View navSettings;
     private View navArchive;
 
-    private TextView badgeNotifications;
+    // ── Badges ────────────────────────────────────────────────────────────────
+    // One badge per menu item that has a count
+    private TextView badgeNotifications;   // existing — total unread
+    private TextView badgeUnread;          // @+id/badge_unread
+    private TextView badgeAnnouncements;   // @+id/badge_announcements
+    private TextView badgeEvents;          // @+id/badge_events
 
     // Header views
     private TextView tvDrawerUsername;
@@ -48,8 +54,10 @@ public class UserMenu extends AppCompatActivity {
     private TextView tvAvatar;
 
     // Firebase
-    private FirebaseAuth mAuth;
+    private FirebaseAuth      mAuth;
     private DatabaseReference database;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,35 +79,48 @@ public class UserMenu extends AppCompatActivity {
         setActiveItem(navDashboard);
         setClickListeners();
 
-        drawerPanel.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                drawerPanel.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                drawerPanel.setTranslationX(-drawerPanel.getWidth());
-                openDrawer();
-            }
-        });
+        drawerPanel.getViewTreeObserver().addOnGlobalLayoutListener(
+                new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        drawerPanel.getViewTreeObserver()
+                                .removeOnGlobalLayoutListener(this);
+                        drawerPanel.setTranslationX(-drawerPanel.getWidth());
+                        openDrawer();
+                    }
+                });
 
         rootLayout.setOnClickListener(v -> closeDrawer());
         drawerPanel.setOnClickListener(v -> {});
 
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (isDrawerOpen) {
-                    closeDrawer();
-                } else {
-                    setEnabled(false);
-                    getOnBackPressedDispatcher().onBackPressed();
-                }
-            }
-        });
+        getOnBackPressedDispatcher().addCallback(this,
+                new OnBackPressedCallback(true) {
+                    @Override
+                    public void handleOnBackPressed() {
+                        if (isDrawerOpen) {
+                            closeDrawer();
+                        } else {
+                            setEnabled(false);
+                            getOnBackPressedDispatcher().onBackPressed();
+                        }
+                    }
+                });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        // Register for live store updates
+        NotificationStore.getInstance().addListener(this);
         loadUserData();
+        refreshBadges();   // show counts immediately on open
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Unregister — no updates needed while offscreen
+        NotificationStore.getInstance().removeListener(this);
     }
 
     @Override
@@ -108,17 +129,73 @@ public class UserMenu extends AppCompatActivity {
         overridePendingTransition(0, 0);
     }
 
-    private void initViews() {
-        navDashboard       = findViewById(R.id.nav_dashboard);
-        navNotifications   = findViewById(R.id.nav_notifications);
-        navAllInboxes      = findViewById(R.id.nav_all_inboxes);
-        navUnread          = findViewById(R.id.nav_unread);
-        navAnnouncements   = findViewById(R.id.nav_announcements);
-        navEvents          = findViewById(R.id.nav_events);
-        navSettings        = findViewById(R.id.nav_settings);
-        navArchive         = findViewById(R.id.nav_archive);
-        badgeNotifications = findViewById(R.id.badge_notifications);
+    // ── StoreListener ─────────────────────────────────────────────────────────
 
+    /**
+     * Called whenever a notification is starred, unstarred, read, or added.
+     * Runs badge refresh on the UI thread.
+     */
+    @Override
+    public void onStoreChanged() {
+        runOnUiThread(this::refreshBadges);
+    }
+
+    // ── Badge refresh ─────────────────────────────────────────────────────────
+
+    /**
+     * Reads live counts from NotificationStore and pushes them
+     * to each badge TextView in the drawer.
+     */
+    private void refreshBadges() {
+        NotificationStore store = NotificationStore.getInstance();
+
+        // Unread = items not yet read in the Unread category
+        int unreadCount         = store.getUnreadCount();
+
+        // Announcements and Events = total items in that category
+        int announcementsCount  = store.getByCategory("Announcements").size();
+        int eventsCount         = store.getByCategory("Events").size();
+
+        // Total for the top-level Notifications badge =
+        // unread + announcements + events (anything the user hasn't read)
+        int totalCount = unreadCount + announcementsCount + eventsCount;
+
+        setBadge(badgeNotifications, totalCount);
+        setBadge(badgeUnread,        unreadCount);
+        setBadge(badgeAnnouncements, announcementsCount);
+        setBadge(badgeEvents,        eventsCount);
+    }
+
+    /** Shows or hides a badge and sets its text. */
+    private void setBadge(TextView badge, int count) {
+        if (badge == null) return;
+        if (count <= 0) {
+            badge.setVisibility(View.GONE);
+        } else {
+            badge.setVisibility(View.VISIBLE);
+            badge.setText(count > 99 ? "99+" : String.valueOf(count));
+        }
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+
+    private void initViews() {
+        navDashboard     = findViewById(R.id.nav_dashboard);
+        navNotifications = findViewById(R.id.nav_notifications);
+        navAllInboxes    = findViewById(R.id.nav_all_inboxes);
+        navUnread        = findViewById(R.id.nav_unread);
+        navAnnouncements = findViewById(R.id.nav_announcements);
+        navEvents        = findViewById(R.id.nav_events);
+        navSettings      = findViewById(R.id.nav_settings);
+        navArchive       = findViewById(R.id.nav_archive);
+
+        // Badges
+        badgeNotifications = findViewById(R.id.badge_notifications);
+        badgeUnread        = findViewById(R.id.badge_unread);
+        badgeAnnouncements = findViewById(R.id.badge_announcements);
+        badgeEvents        = findViewById(R.id.badge_events);
+
+        // Header
         tvDrawerUsername = findViewById(R.id.tv_drawer_username);
         tvDrawerEmail    = findViewById(R.id.tv_drawer_email);
         tvAvatar         = findViewById(R.id.tv_avatar);
@@ -133,54 +210,63 @@ public class UserMenu extends AppCompatActivity {
         applyRipple(navArchive);
     }
 
+    // ── Firebase ──────────────────────────────────────────────────────────────
+
     private void loadUserData() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
 
-        String userId = currentUser.getUid();
+        database.child(currentUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot snapshot) {
+                        if (!snapshot.exists()) return;
 
-        database.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot snapshot) {
-                if (!snapshot.exists()) return;
+                        String firstName = snapshot.child("firstName").getValue(String.class);
+                        String username  = snapshot.child("username").getValue(String.class);
+                        String email     = snapshot.child("email").getValue(String.class);
 
-                String firstName = snapshot.child("firstName").getValue(String.class);
-                String username  = snapshot.child("username").getValue(String.class);
-                String email     = snapshot.child("email").getValue(String.class);
+                        String displayName;
+                        if (username != null && !username.isEmpty()) {
+                            displayName = username;
+                        } else if (firstName != null && !firstName.isEmpty()) {
+                            displayName = firstName;
+                        } else {
+                            displayName = "User";
+                        }
 
-                String displayName;
-                if (username != null && !username.isEmpty()) {
-                    displayName = username;
-                } else if (firstName != null && !firstName.isEmpty()) {
-                    displayName = firstName;
-                } else {
-                    displayName = "User";
-                }
+                        String displayEmail = (email != null && !email.isEmpty())
+                                ? email
+                                : (currentUser.getEmail() != null
+                                        ? currentUser.getEmail() : "");
 
-                String displayEmail = (email != null && !email.isEmpty())
-                        ? email
-                        : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
+                        if (tvDrawerUsername != null) tvDrawerUsername.setText(displayName);
+                        if (tvDrawerEmail    != null) tvDrawerEmail.setText(displayEmail);
+                        if (tvAvatar        != null)
+                            tvAvatar.setText(
+                                    String.valueOf(displayName.charAt(0)).toUpperCase());
+                    }
 
-                if (tvDrawerUsername != null) tvDrawerUsername.setText(displayName);
-                if (tvDrawerEmail != null)    tvDrawerEmail.setText(displayEmail);
-                if (tvAvatar != null)         tvAvatar.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-                if (tvDrawerUsername != null) tvDrawerUsername.setText("User");
-                if (tvAvatar != null)         tvAvatar.setText("U");
-                if (tvDrawerEmail != null)    tvDrawerEmail.setText("");
-            }
-        });
+                    @Override
+                    public void onCancelled(DatabaseError error) {
+                        if (tvDrawerUsername != null) tvDrawerUsername.setText("User");
+                        if (tvAvatar        != null) tvAvatar.setText("U");
+                        if (tvDrawerEmail   != null) tvDrawerEmail.setText("");
+                    }
+                });
     }
 
+    // ── Ripple ────────────────────────────────────────────────────────────────
+
     private void applyRipple(View view) {
-        ColorStateList rippleColor = ColorStateList.valueOf(Color.parseColor("#521ABFB8"));
+        ColorStateList rippleColor =
+                ColorStateList.valueOf(Color.parseColor("#521ABFB8"));
         Drawable existingBg = view.getBackground();
         RippleDrawable ripple = new RippleDrawable(rippleColor, existingBg, null);
         view.setBackground(ripple);
     }
+
+    // ── Click listeners ───────────────────────────────────────────────────────
 
     private void setClickListeners() {
         navDashboard.setOnClickListener(v -> {
@@ -201,44 +287,18 @@ public class UserMenu extends AppCompatActivity {
 
         navEvents.setOnClickListener(v -> onNavEventsClicked());
 
-        // ✅ FIXED: navigates to SettActivity
         navSettings.setOnClickListener(v -> {
             setActiveItem(navSettings);
             onNavSettingsClicked();
         });
 
-        // ✅ FIXED: navigates to ArcActivity
         navArchive.setOnClickListener(v -> {
             setActiveItem(navArchive);
             onNavArchiveClicked();
         });
     }
 
-    public void openDrawer() {
-        float from = drawerPanel.getTranslationX();
-        ValueAnimator animator = ValueAnimator.ofFloat(from, 0f);
-        animator.setDuration(350);
-        animator.setInterpolator(new DecelerateInterpolator(2f));
-        animator.addUpdateListener(a -> drawerPanel.setTranslationX((float) a.getAnimatedValue()));
-        animator.start();
-        isDrawerOpen = true;
-    }
-
-    public void closeDrawer() {
-        float panelWidth = drawerPanel.getWidth();
-        ValueAnimator animator = ValueAnimator.ofFloat(0f, -panelWidth);
-        animator.setDuration(300);
-        animator.setInterpolator(new DecelerateInterpolator(2f));
-        animator.addUpdateListener(a -> drawerPanel.setTranslationX((float) a.getAnimatedValue()));
-        animator.addListener(new android.animation.AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(android.animation.Animator animation) {
-                finish();
-            }
-        });
-        animator.start();
-        isDrawerOpen = false;
-    }
+    // ── Navigation actions ────────────────────────────────────────────────────
 
     private void onNavDashboardClicked() {
         startActivity(new Intent(this, UserActivity.class));
@@ -270,17 +330,47 @@ public class UserMenu extends AppCompatActivity {
         closeDrawer();
     }
 
-    // ✅ FIXED: was Toast, now navigates to SettActivity
     private void onNavSettingsClicked() {
         startActivity(new Intent(this, SettActivity.class));
         closeDrawer();
     }
 
-    // ✅ FIXED: was Toast, now navigates to ArcActivity
     private void onNavArchiveClicked() {
         startActivity(new Intent(this, ArcActivity.class));
         closeDrawer();
     }
+
+    // ── Drawer animation ──────────────────────────────────────────────────────
+
+    public void openDrawer() {
+        float from = drawerPanel.getTranslationX();
+        ValueAnimator animator = ValueAnimator.ofFloat(from, 0f);
+        animator.setDuration(350);
+        animator.setInterpolator(new DecelerateInterpolator(2f));
+        animator.addUpdateListener(
+                a -> drawerPanel.setTranslationX((float) a.getAnimatedValue()));
+        animator.start();
+        isDrawerOpen = true;
+    }
+
+    public void closeDrawer() {
+        float panelWidth = drawerPanel.getWidth();
+        ValueAnimator animator = ValueAnimator.ofFloat(0f, -panelWidth);
+        animator.setDuration(300);
+        animator.setInterpolator(new DecelerateInterpolator(2f));
+        animator.addUpdateListener(
+                a -> drawerPanel.setTranslationX((float) a.getAnimatedValue()));
+        animator.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                finish();
+            }
+        });
+        animator.start();
+        isDrawerOpen = false;
+    }
+
+    // ── Active item highlight ─────────────────────────────────────────────────
 
     private void setActiveItem(View activeView) {
         View[] items = {navDashboard, navNotifications, navSettings, navArchive};
@@ -288,7 +378,8 @@ public class UserMenu extends AppCompatActivity {
             if (item == null) continue;
             if (item == activeView) {
                 Drawable activeBg = getDrawable(R.drawable.nav_item_active_bg);
-                ColorStateList rippleColor = ColorStateList.valueOf(Color.parseColor("#521ABFB8"));
+                ColorStateList rippleColor =
+                        ColorStateList.valueOf(Color.parseColor("#521ABFB8"));
                 item.setBackground(new RippleDrawable(rippleColor, activeBg, null));
                 TextView label = getFirstTextView(item);
                 if (label != null) {
@@ -317,13 +408,9 @@ public class UserMenu extends AppCompatActivity {
         return null;
     }
 
+    // ── Legacy helper (kept for compatibility) ────────────────────────────────
+
     public void setNotificationBadge(int count) {
-        if (badgeNotifications == null) return;
-        if (count <= 0) {
-            badgeNotifications.setVisibility(View.GONE);
-        } else {
-            badgeNotifications.setVisibility(View.VISIBLE);
-            badgeNotifications.setText(count > 99 ? "99+" : String.valueOf(count));
-        }
+        setBadge(badgeNotifications, count);
     }
 }
