@@ -42,7 +42,7 @@ public class NotifActivity1 extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_notif); // rename to match your XML filename
+        setContentView(R.layout.usertotalnotif_activity); // rename to match your XML filename
 
         // ── INITIALIZE VIEWS ──────────────────────────────────────
 
