@@ -209,7 +209,7 @@ public class UserMenu extends AppCompatActivity {
         navUnread.setOnClickListener(v -> onNavUnreadClicked());
 
         navAnnouncements.setOnClickListener(v -> onNavAnnouncementsClicked());
-        navPromotions.setOnClickListener(v -> onNavPromotionsClicked());
+        navEvents.setOnClickListener(v -> onNavEventsClicked());
 
         navSettings.setOnClickListener(v -> {
             setActiveItem(navSettings);
