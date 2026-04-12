@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    glow_shape.xml  →  res/drawable/glow_shape.xml
+    A soft oval used as the glow halo behind lifted cards.
+    The fill color is overridden in Java to match each card's accent color.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#FF5BB8FF" />
+    <corners android:radius="24dp" />
+</shape>
