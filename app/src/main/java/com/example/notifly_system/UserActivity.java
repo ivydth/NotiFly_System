@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +22,7 @@ import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -30,8 +32,11 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class UserActivity extends AppCompatActivity
         implements NotificationStore.StoreListener {
@@ -45,21 +50,26 @@ public class UserActivity extends AppCompatActivity
     RecyclerView       rvSummaryCards;
     SummaryCardAdapter summaryAdapter;
 
-    TextView     tvSectionTitle;
-    TextView     tvSeeAll;
-    TextView     tvEmptyState;
-    LinearLayout notificationsContainer;
+    TextView           tvSectionTitle;
+    TextView           tvSeeAll;
+    TextView           tvEmptyState;
+    LinearLayout       notificationsContainer;
 
     AppCompatImageView ivHome, ivSearch, ivBell;
+    TextView           tvBellBadge;
 
-    // Bell badge — sits on top of ivBell
-    TextView tvBellBadge;
+    // ✅ Pull-to-refresh
+    SwipeRefreshLayout swipeRefreshLayout;
 
     // ── Firebase ──────────────────────────────────────────────────────────────
 
     FirebaseAuth      mAuth;
     DatabaseReference database;
+    DatabaseReference notificationsRef;
     DatabaseReference presenceRef;
+
+    // Realtime listener — kept as a field so it can be removed on pause
+    ValueEventListener notifListener;
 
     // ── State ─────────────────────────────────────────────────────────────────
 
@@ -97,12 +107,17 @@ public class UserActivity extends AppCompatActivity
         ivSearch               = findViewById(R.id.ivSearch);
         ivBell                 = findViewById(R.id.ivBell);
         tvBellBadge            = findViewById(R.id.tvBellBadge);
+        swipeRefreshLayout     = findViewById(R.id.swipeRefreshLayout);
 
-        mAuth    = FirebaseAuth.getInstance();
-        database = FirebaseDatabase.getInstance(
+        mAuth             = FirebaseAuth.getInstance();
+        database          = FirebaseDatabase.getInstance(
                 "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
         ).getReference("users");
+        notificationsRef  = FirebaseDatabase.getInstance(
+                "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        ).getReference("notifications");
 
+        setupSwipeRefresh();
         setupSummaryCarousel();
         setupClickListeners();
         showNotificationsForCategory(null);
@@ -114,6 +129,7 @@ public class UserActivity extends AppCompatActivity
         NotificationStore.getInstance().addListener(this);
         loadUserData();
         setOnlineStatus(true);
+        attachRealtimeListener(); // ✅ start realtime Firebase listener
         refreshAll();
     }
 
@@ -121,6 +137,7 @@ public class UserActivity extends AppCompatActivity
     protected void onPause() {
         super.onPause();
         NotificationStore.getInstance().removeListener(this);
+        detachRealtimeListener(); // ✅ stop listener to save resources
         setOnlineStatus(false);
     }
 
@@ -133,10 +150,109 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
+    // ── Realtime Firebase listener ────────────────────────────────────────────
+
+    /**
+     * Attaches a realtime ValueEventListener to /notifications.
+     * Any change in Firebase (new notification added by admin) will
+     * immediately sync to the store and update the UI + bell badge.
+     */
+    private void attachRealtimeListener() {
+        if (notifListener != null) return; // already attached
+
+        notifListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                List<NotificationItem> incoming = new ArrayList<>();
+
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    String id     = child.getKey();
+                    String title  = child.child("title").getValue(String.class);
+                    String body   = child.child("body").getValue(String.class);
+                    String target = child.child("target").getValue(String.class);
+                    Long   ts     = child.child("timestamp").getValue(Long.class);
+
+                    if (title == null) title = "Notification";
+                    if (body  == null) body  = "";
+
+                    String category  = mapTargetToCategory(target);
+                    String dateLabel = formatTimestamp(ts);
+
+                    NotificationItem item = new NotificationItem(
+                            id,
+                            title,
+                            body,
+                            dateLabel,
+                            category,
+                            false,
+                            R.drawable.avatar_teal
+                    );
+                    if (ts != null) item.timestamp = ts;
+                    incoming.add(item);
+                }
+
+                // Sync to store — updates badge + UI automatically via onStoreChanged()
+                NotificationStore.getInstance().syncFromFirebase(incoming);
+
+                // Stop the swipe refresh spinner if it was spinning
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+                Toast.makeText(UserActivity.this,
+                        "Failed to load notifications.", Toast.LENGTH_SHORT).show();
+            }
+        };
+
+        notificationsRef.addValueEventListener(notifListener);
+    }
+
+    private void detachRealtimeListener() {
+        if (notifListener != null) {
+            notificationsRef.removeEventListener(notifListener);
+            notifListener = null;
+        }
+    }
+
+    // ── Pull-to-refresh ───────────────────────────────────────────────────────
+
+    /**
+     * Swipe down on the screen to manually force a Firebase re-fetch.
+     * The realtime listener already handles automatic updates, but this
+     * gives users a visible way to confirm everything is up to date.
+     */
+    private void setupSwipeRefresh() {
+        if (swipeRefreshLayout == null) return;
+
+        // Match the app's color scheme
+        swipeRefreshLayout.setColorSchemeColors(
+                Color.parseColor("#00C9B1"),  // teal
+                Color.parseColor("#5BB8FF"),  // blue
+                Color.parseColor("#C084FC")   // purple
+        );
+        swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
+                Color.parseColor("#1E3A4A")
+        );
+
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            // Detach and re-attach to force a fresh fetch
+            detachRealtimeListener();
+            attachRealtimeListener();
+            Toast.makeText(this, "Refreshing notifications...", Toast.LENGTH_SHORT).show();
+        });
+    }
+
     // ── StoreListener ─────────────────────────────────────────────────────────
 
     @Override
     public void onStoreChanged() {
+        // Called on background thread by Firebase — post to UI thread
         runOnUiThread(this::refreshAll);
     }
 
@@ -163,8 +279,8 @@ public class UserActivity extends AppCompatActivity
     }
 
     /**
-     * Shows or hides the red badge number on the bell icon.
-     * Count = new notifications from Firebase since last time user opened bell.
+     * Shows or hides the red badge on the bell icon.
+     * Number = how many notifications arrived since user last tapped bell.
      */
     private void refreshBellBadge() {
         if (tvBellBadge == null) return;
@@ -219,7 +335,7 @@ public class UserActivity extends AppCompatActivity
 
         ivSearch.setOnClickListener(v -> { /* TODO */ });
 
-        // Bell tap → mark all seen (badge resets) then open notification screen
+        // Bell tap → mark all seen (badge resets to 0) then open notification screen
         ivBell.setOnClickListener(v -> {
             NotificationStore.getInstance().markAllSeen();
             refreshBellBadge();
@@ -252,7 +368,6 @@ public class UserActivity extends AppCompatActivity
     // ── Notification preview ──────────────────────────────────────────────────
 
     private void showNotificationsForCategory(String category) {
-        // Remove all rows except the first child (tvEmptyState)
         while (notificationsContainer.getChildCount() > 1) {
             notificationsContainer.removeViewAt(1);
         }
@@ -275,7 +390,6 @@ public class UserActivity extends AppCompatActivity
             return;
         }
 
-        // ✅ FIXED: loop through ALL items, not just items.get(0)
         tvEmptyState.setVisibility(View.GONE);
         for (NotificationItem item : items) {
             View row = buildNotificationRow(item);
@@ -340,7 +454,27 @@ public class UserActivity extends AppCompatActivity
                 : Color.parseColor("#44AACCDD"));
     }
 
-    // ── Firebase ──────────────────────────────────────────────────────────────
+    // ── Firebase helpers ──────────────────────────────────────────────────────
+
+    private String mapTargetToCategory(String target) {
+        if (target == null) return "Unread";
+        switch (target.toLowerCase()) {
+            case "all":    return "Announcements";
+            case "topic":  return "Events";
+            case "single": return "Unread";
+            default:       return "Unread";
+        }
+    }
+
+    private String formatTimestamp(Long ts) {
+        if (ts == null || ts == 0) return "Now";
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM d", Locale.getDefault());
+            return sdf.format(new Date(ts));
+        } catch (Exception e) {
+            return "Now";
+        }
+    }
 
     private void setOnlineStatus(boolean isOnline) {
         FirebaseUser currentUser = mAuth.getCurrentUser();
