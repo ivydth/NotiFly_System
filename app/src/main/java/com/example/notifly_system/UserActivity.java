@@ -10,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -50,6 +51,9 @@ public class UserActivity extends AppCompatActivity
     LinearLayout notificationsContainer;
 
     AppCompatImageView ivHome, ivSearch, ivBell;
+
+    // Bell badge — sits on top of ivBell
+    TextView tvBellBadge;
 
     // ── Firebase ──────────────────────────────────────────────────────────────
 
@@ -92,6 +96,7 @@ public class UserActivity extends AppCompatActivity
         ivHome                 = findViewById(R.id.ivHome);
         ivSearch               = findViewById(R.id.ivSearch);
         ivBell                 = findViewById(R.id.ivBell);
+        tvBellBadge            = findViewById(R.id.tvBellBadge);
 
         mAuth    = FirebaseAuth.getInstance();
         database = FirebaseDatabase.getInstance(
@@ -139,6 +144,7 @@ public class UserActivity extends AppCompatActivity
 
     private void refreshAll() {
         refreshSummaryCounts();
+        refreshBellBadge();
         String category = selectedCardPosition >= 0
                 ? SECTION_TITLES[selectedCardPosition] : null;
         showNotificationsForCategory(category);
@@ -149,13 +155,26 @@ public class UserActivity extends AppCompatActivity
         NotificationStore store = NotificationStore.getInstance();
 
         summaryAdapter.updateCount(0, String.valueOf(store.getUnreadCount()));
-
         for (int i = 1; i <= 2; i++) {
-            int count = store.getByCategory(SECTION_TITLES[i]).size();
-            summaryAdapter.updateCount(i, String.valueOf(count));
+            summaryAdapter.updateCount(i,
+                    String.valueOf(store.getByCategory(SECTION_TITLES[i]).size()));
         }
-
         summaryAdapter.updateCount(3, String.valueOf(store.getStarred().size()));
+    }
+
+    /**
+     * Shows or hides the red badge number on the bell icon.
+     * Count = new notifications from Firebase since last time user opened bell.
+     */
+    private void refreshBellBadge() {
+        if (tvBellBadge == null) return;
+        int count = NotificationStore.getInstance().getNewCount();
+        if (count <= 0) {
+            tvBellBadge.setVisibility(View.GONE);
+        } else {
+            tvBellBadge.setVisibility(View.VISIBLE);
+            tvBellBadge.setText(count > 99 ? "99+" : String.valueOf(count));
+        }
     }
 
     // ── Summary Carousel ──────────────────────────────────────────────────────
@@ -200,8 +219,12 @@ public class UserActivity extends AppCompatActivity
 
         ivSearch.setOnClickListener(v -> { /* TODO */ });
 
-        ivBell.setOnClickListener(v ->
-                startActivity(new Intent(this, NotifActivity1.class)));
+        // Bell tap → mark all seen (badge resets) then open notification screen
+        ivBell.setOnClickListener(v -> {
+            NotificationStore.getInstance().markAllSeen();
+            refreshBellBadge();
+            startActivity(new Intent(this, NotifActivity1.class));
+        });
 
         tvSeeAll.setOnClickListener(v -> {
             String category = selectedCardPosition >= 0
@@ -277,14 +300,12 @@ public class UserActivity extends AppCompatActivity
         applyReadStyle(tvName, tvMessage, item.isRead);
         applyStarColor(tvStar, item.isStarred);
 
-        // ── Row tap → open NotifActivity ──────────────────────────────────────
         row.setOnClickListener(v -> {
             Intent intent = new Intent(this, NotifActivity.class);
             intent.putExtra(NotifActivity.EXTRA_NOTIF_ID, item.id);
             startActivity(intent);
         });
 
-        // ── Star tap → toggle starred ─────────────────────────────────────────
         tvStar.setOnClickListener(v -> {
             if (item.isStarred) {
                 NotificationStore.getInstance().unstar(item.id);
