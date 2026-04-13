@@ -10,6 +10,8 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -177,6 +179,9 @@ public class UserActivity extends AppCompatActivity
                     if (ts != null) item.timestamp = ts;
                     incoming.add(item);
                 }
+
+                // Sort newest first before syncing
+                incoming.sort((a, b) -> Long.compare(b.timestamp, a.timestamp));
 
                 NotificationStore.getInstance().syncFromFirebase(incoming);
 
@@ -373,13 +378,24 @@ public class UserActivity extends AppCompatActivity
         View row = LayoutInflater.from(this)
                 .inflate(R.layout.item_notification_row, notificationsContainer, false);
 
-        // ✅ Correct ID: tvAvatar is a TextView showing sender's first letter
         TextView tvAvatar  = row.findViewById(R.id.tvAvatar);
         TextView tvName    = row.findViewById(R.id.tvSenderName);
         TextView tvMessage = row.findViewById(R.id.tvMessage);
         TextView tvDate    = row.findViewById(R.id.tvDate);
         TextView tvStar    = row.findViewById(R.id.tvStar);
         View     divider   = row.findViewById(R.id.vDivider);
+
+        // ── Glowing teal dot — shown only for unseen notifications ────────────
+        View vNewDot = row.findViewById(R.id.vNewDot);
+        if (vNewDot != null) {
+            boolean isNew = NotificationStore.getInstance().isNew(item.id);
+            if (isNew) {
+                vNewDot.setVisibility(View.VISIBLE);
+                startGlowPulse(vNewDot);
+            } else {
+                vNewDot.setVisibility(View.INVISIBLE);
+            }
+        }
 
         if (tvAvatar != null) {
             String name = (item.senderName != null && !item.senderName.isEmpty())
@@ -416,6 +432,20 @@ public class UserActivity extends AppCompatActivity
         }
 
         return row;
+    }
+
+    // ── Glow pulse animation ──────────────────────────────────────────────────
+
+    /**
+     * Pulses the dot between full opacity and 20% opacity on a 900ms loop,
+     * giving it a soft glowing effect.
+     */
+    private void startGlowPulse(View dot) {
+        AlphaAnimation pulse = new AlphaAnimation(1f, 0.2f);
+        pulse.setDuration(900);
+        pulse.setRepeatMode(Animation.REVERSE);
+        pulse.setRepeatCount(Animation.INFINITE);
+        dot.startAnimation(pulse);
     }
 
     private void applyReadStyle(TextView tvName, TextView tvMessage, boolean isRead) {
