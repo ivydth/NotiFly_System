@@ -10,9 +10,9 @@ public class NotificationStore {
     }
 
     private static NotificationStore instance;
-    private final List<NotificationItem> items       = new ArrayList<>();
-    private final List<StoreListener>    listeners   = new ArrayList<>();
-    private final List<String>           seenIds     = new ArrayList<>();
+    private final List<NotificationItem> items     = new ArrayList<>();
+    private final List<StoreListener>    listeners = new ArrayList<>();
+    private final List<String>           seenIds   = new ArrayList<>();
 
     private int     newCount      = 0;
     private boolean samplesLoaded = false;
@@ -29,8 +29,9 @@ public class NotificationStore {
     // ── Sample Data ───────────────────────────────────────────────────────────
 
     /**
-     * One sample per category so every card and section has a placeholder
-     * while Firebase loads. Samples are removed the moment real data arrives.
+     * One sample per category so every card has a placeholder
+     * while Firebase loads. Samples are removed when real data arrives.
+     * Samples are pre-marked seen so they never trigger the bell badge.
      *
      * Constructor: id, senderName, message, dateLabel, category, isStarred, avatarResId
      */
@@ -38,7 +39,6 @@ public class NotificationStore {
         if (samplesLoaded) return;
         samplesLoaded = true;
 
-        // 1 sample for Unread
         items.add(new NotificationItem(
                 "sample_unread",
                 "System",
@@ -49,7 +49,6 @@ public class NotificationStore {
                 R.drawable.avatar_teal
         ));
 
-        // 1 sample for Announcements
         items.add(new NotificationItem(
                 "sample_announcement",
                 "Admin",
@@ -60,7 +59,6 @@ public class NotificationStore {
                 R.drawable.avatar_teal
         ));
 
-        // 1 sample for Events
         items.add(new NotificationItem(
                 "sample_event",
                 "System",
@@ -71,7 +69,7 @@ public class NotificationStore {
                 R.drawable.avatar_teal
         ));
 
-        // 1 sample for Starred (pre-starred so Starred card shows data)
+        // Pre-starred so Starred card shows data on first load
         items.add(new NotificationItem(
                 "sample_starred",
                 "Registrar",
@@ -82,7 +80,7 @@ public class NotificationStore {
                 R.drawable.avatar_teal
         ));
 
-        // Mark all samples as already seen — they should NOT count as new
+        // Pre-mark all samples as seen — must NOT trigger the bell badge
         for (NotificationItem n : items) {
             seenIds.add(n.id);
         }
@@ -105,18 +103,15 @@ public class NotificationStore {
     // ── Firebase sync ─────────────────────────────────────────────────────────
 
     /**
-     * Called by FirebaseNotifSyncService whenever /notifications changes.
-     * - Removes sample placeholders when real data arrives.
-     * - Merges new Firebase items without duplicating.
-     * - Bell badge = count of Firebase IDs not yet in seenIds.
+     * Called by FirebaseNotifSyncService / UserActivity realtime listener.
+     * Strips samples when real data arrives, merges without duplicating,
+     * recalculates bell badge count.
      */
     public synchronized void syncFromFirebase(List<NotificationItem> incoming) {
-        // Strip samples only when real data exists
         if (!incoming.isEmpty()) {
             items.removeIf(n -> n.id.startsWith("sample_"));
         }
 
-        // Merge incoming — skip duplicates
         for (NotificationItem incomingItem : incoming) {
             boolean exists = false;
             for (NotificationItem existing : items) {
@@ -130,8 +125,7 @@ public class NotificationStore {
             }
         }
 
-        // Recalculate new count:
-        // any Firebase item whose ID is NOT in seenIds is "new"
+        // Bell badge = items the user hasn't seen yet
         newCount = 0;
         for (NotificationItem n : items) {
             if (!n.id.startsWith("sample_") && !seenIds.contains(n.id)) {
@@ -143,8 +137,8 @@ public class NotificationStore {
     }
 
     /**
-     * Call when the user opens the bell / notification screen.
-     * Marks all current items as seen so badge resets to 0.
+     * Call when the user taps the bell / opens NotifActivity1.
+     * Badge resets to 0. Notifications are NOT removed — they stay permanently.
      */
     public synchronized void markAllSeen() {
         for (NotificationItem n : items) {
@@ -156,13 +150,14 @@ public class NotificationStore {
         notifyListeners();
     }
 
-    /** How many NEW notifications arrived since the user last opened bell. */
+    /** Bell badge number. Resets to 0 on markAllSeen(). */
     public synchronized int getNewCount() {
         return newCount;
     }
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
+    /** All non-archived notifications. */
     public synchronized List<NotificationItem> getAll() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -171,6 +166,7 @@ public class NotificationStore {
         return result;
     }
 
+    /** Non-archived notifications matching a specific category. */
     public synchronized List<NotificationItem> getByCategory(String category) {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -180,14 +176,21 @@ public class NotificationStore {
         return result;
     }
 
+    /**
+     * ALL starred notifications — includes BOTH archived and non-archived.
+     * ✅ This is the key fix: removing the !isArchived filter means that
+     * starring a notification inside ArcActivity immediately updates the
+     * Starred count on the UserActivity dashboard, and unstarring removes it.
+     */
     public synchronized List<NotificationItem> getStarred() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
-            if (!n.isArchived && n.isStarred) result.add(n);
+            if (n.isStarred) result.add(n); // ✅ no isArchived filter
         }
         return result;
     }
 
+    /** Unread notifications — not archived, category Unread, not yet read. */
     public synchronized List<NotificationItem> getUnread() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -199,6 +202,7 @@ public class NotificationStore {
         return result;
     }
 
+    /** Count of unread notifications. */
     public synchronized int getUnreadCount() {
         int count = 0;
         for (NotificationItem n : items) {
@@ -209,6 +213,7 @@ public class NotificationStore {
         return count;
     }
 
+    /** All archived notifications. */
     public synchronized List<NotificationItem> getArchived() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -227,6 +232,11 @@ public class NotificationStore {
         notifyListeners();
     }
 
+    /**
+     * Stars a notification by ID.
+     * Triggers notifyListeners() so ALL registered StoreListeners update —
+     * including UserActivity (dashboard Starred card) and ArcActivity (star color).
+     */
     public synchronized void star(String id) {
         for (NotificationItem n : items) {
             if (n.id.equals(id)) {
@@ -237,6 +247,10 @@ public class NotificationStore {
         }
     }
 
+    /**
+     * Unstars a notification by ID.
+     * Same as star() — triggers live update on dashboard and archive screen.
+     */
     public synchronized void unstar(String id) {
         for (NotificationItem n : items) {
             if (n.id.equals(id)) {
