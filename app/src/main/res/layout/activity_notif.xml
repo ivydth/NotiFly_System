@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="#0B1628">
 
-    <!-- Background -->
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -19,7 +18,6 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Status bar spacer -->
         <View
             android:layout_width="match_parent"
             android:layout_height="32dp" />
@@ -62,7 +60,6 @@
 
         </FrameLayout>
 
-        <!-- Scrollable content -->
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -79,7 +76,6 @@
                 android:paddingTop="24dp"
                 android:paddingBottom="36dp">
 
-                <!-- Section label -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -150,7 +146,6 @@
 
                             </LinearLayout>
 
-                            <!-- Unread dot — hidden once read -->
                             <View
                                 android:id="@+id/unreadDot"
                                 android:layout_width="10dp"
@@ -159,14 +154,13 @@
 
                         </LinearLayout>
 
-                        <!-- Divider -->
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
                             android:background="#1E5BCCE8"
                             android:layout_marginBottom="16dp" />
 
-                        <!-- TITLE label -->
+                        <!-- TITLE -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -203,14 +197,13 @@
                             android:fontFamily="@font/fredoka_one"
                             android:layout_marginBottom="16dp" />
 
-                        <!-- Divider -->
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
                             android:background="#1E5BCCE8"
                             android:layout_marginBottom="16dp" />
 
-                        <!-- MESSAGE label -->
+                        <!-- MESSAGE -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -246,14 +239,13 @@
                             android:lineSpacingExtra="4dp"
                             android:layout_marginBottom="16dp" />
 
-                        <!-- Divider -->
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
                             android:background="#1E5BCCE8"
                             android:layout_marginBottom="16dp" />
 
-                        <!-- DATE RECEIVED label -->
+                        <!-- DATE RECEIVED -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -337,14 +329,13 @@
                             app:iconPadding="8dp"
                             app:rippleColor="#401ABFB8" />
 
-                        <!-- Divider -->
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
                             android:background="#1E5BCCE8"
                             android:layout_marginBottom="10dp" />
 
-                        <!-- Archive — closes the screen, notification stays in store -->
+                        <!-- Archive button -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnDelete"
                             android:layout_width="match_parent"
