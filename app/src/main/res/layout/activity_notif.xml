@@ -344,24 +344,24 @@
                             android:background="#1E5BCCE8"
                             android:layout_marginBottom="10dp" />
 
-                        <!-- Dismiss — just closes the screen, nothing is deleted -->
+                        <!-- Archive — closes the screen, notification stays in store -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnDelete"
                             android:layout_width="match_parent"
                             android:layout_height="50dp"
                             android:fontFamily="@font/fredoka_one"
-                            android:text="Dismiss"
-                            android:textColor="#FF6B6B"
+                            android:text="Archive"
+                            android:textColor="#8A9BB0"
                             android:textSize="15sp"
-                            app:backgroundTint="#1AFF4444"
+                            app:backgroundTint="#1A5BCCE8"
                             app:cornerRadius="14dp"
                             app:elevation="0dp"
-                            app:icon="@drawable/ic_delete"
-                            app:iconTint="#FF6B6B"
+                            app:icon="@drawable/ic_archive"
+                            app:iconTint="#8A9BB0"
                             app:iconSize="16dp"
                             app:iconPadding="8dp"
-                            app:rippleColor="#33FF4444"
-                            app:strokeColor="#33FF4444"
+                            app:rippleColor="#335BCCE8"
+                            app:strokeColor="#335BCCE8"
                             app:strokeWidth="1dp" />
 
                     </LinearLayout>
