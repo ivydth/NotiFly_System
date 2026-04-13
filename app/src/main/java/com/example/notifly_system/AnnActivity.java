@@ -115,7 +115,6 @@ public class AnnActivity extends AppCompatActivity
             startActivity(new Intent(this, NotifActivity1.class));
         });
 
-        // Pull-to-refresh — same gate pattern as UserActivity
         swipeRefreshLayout.setColorSchemeColors(
                 Color.parseColor("#00C9B1"),
                 Color.parseColor("#5BB8FF"),
@@ -142,7 +141,7 @@ public class AnnActivity extends AppCompatActivity
             public void onDataChange(DataSnapshot snapshot) {
                 NotificationStore store = NotificationStore.getInstance();
                 store.syncFromFirebase(parseSnapshot(snapshot));
-                store.applyPending(); // reveals new admin notifications
+                store.applyPending();
                 swipeRefreshLayout.setRefreshing(false);
             }
 
@@ -161,16 +160,20 @@ public class AnnActivity extends AppCompatActivity
         List<NotificationItem> incoming = new ArrayList<>();
 
         for (DataSnapshot child : snapshot.getChildren()) {
-            String id     = child.getKey();
-            String title  = child.child("title").getValue(String.class);
-            String body   = child.child("body").getValue(String.class);
-            String target = child.child("target").getValue(String.class);
-            Long   ts     = child.child("timestamp").getValue(Long.class);
+            String id          = child.getKey();
+            String title       = child.child("title").getValue(String.class);
+            String body        = child.child("body").getValue(String.class);
+            String target      = child.child("target").getValue(String.class);
+            // FIX: also read topicOrUser so we can distinguish
+            // "topic → announcements" from "topic → events"
+            String topicOrUser = child.child("topicOrUser").getValue(String.class);
+            Long   ts          = child.child("timestamp").getValue(Long.class);
 
             if (title == null) title = "Notification";
             if (body  == null) body  = "";
 
-            String category  = mapTargetToCategory(target);
+            // FIX: pass both fields into the mapping method
+            String category  = mapTargetToCategory(target, topicOrUser);
             String dateLabel = formatTimestamp(ts);
 
             NotificationItem item = new NotificationItem(
@@ -219,14 +222,13 @@ public class AnnActivity extends AppCompatActivity
             NotificationItem item = items.get(i);
             notificationsContainer.addView(buildNotificationRow(item));
 
-            // Divider between rows, not after the last one
             if (i < items.size() - 1) {
                 notificationsContainer.addView(buildDivider());
             }
         }
     }
 
-    // ── Build row — mirrors UserActivity.buildNotificationRow() ──────────────
+    // ── Build row ─────────────────────────────────────────────────────────────
 
     private View buildNotificationRow(NotificationItem item) {
         View row = LayoutInflater.from(this)
@@ -239,7 +241,6 @@ public class AnnActivity extends AppCompatActivity
         TextView tvStar    = row.findViewById(R.id.tvStar);
         View     vNewDot   = row.findViewById(R.id.vNewDot);
 
-        // Avatar: first letter of sender name
         if (tvAvatar != null) {
             String name = (item.senderName != null && !item.senderName.isEmpty())
                     ? item.senderName : "N";
@@ -250,7 +251,6 @@ public class AnnActivity extends AppCompatActivity
         if (tvMessage != null) tvMessage.setText(item.message);
         if (tvDate    != null) tvDate.setText(item.dateLabel);
 
-        // Glowing new-dot
         if (vNewDot != null) {
             boolean isNew = NotificationStore.getInstance().isNew(item.id);
             vNewDot.setVisibility(isNew ? View.VISIBLE : View.INVISIBLE);
@@ -259,7 +259,6 @@ public class AnnActivity extends AppCompatActivity
 
         applyReadStyle(tvName, tvMessage, item.isRead);
 
-        // Star toggle
         if (tvStar != null) {
             applyStarColor(tvStar, item.isStarred);
             tvStar.setOnClickListener(v -> {
@@ -274,7 +273,6 @@ public class AnnActivity extends AppCompatActivity
             });
         }
 
-        // Open notification detail
         row.setOnClickListener(v -> {
             Intent intent = new Intent(this, NotifActivity.class);
             intent.putExtra(NotifActivity.EXTRA_NOTIF_ID, item.id);
@@ -284,7 +282,6 @@ public class AnnActivity extends AppCompatActivity
         return row;
     }
 
-    // Thin divider between rows, matching the original XML style
     private View buildDivider() {
         View divider = new View(this);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
@@ -322,13 +319,29 @@ public class AnnActivity extends AppCompatActivity
                 : Color.parseColor("#44AACCDD"));
     }
 
-    private String mapTargetToCategory(String target) {
+    /**
+     * FIX: Now accepts both `target` and `topicOrUser` from Firebase.
+     *
+     * Admin panel writes:
+     *   target = "all"    → broadcast, goes to Announcements
+     *   target = "topic"  → topicOrUser = "announcements" → Announcements
+     *                        topicOrUser = "events"        → Events
+     *   target = "single" → goes to Unread / inbox
+     */
+    private String mapTargetToCategory(String target, String topicOrUser) {
         if (target == null) return "Unread";
         switch (target.toLowerCase()) {
-            case "all":    return "Announcements";
-            case "topic":  return "Events";
-            case "single": return "Unread";
-            default:       return "Unread";
+            case "all":
+                return "Announcements";
+            case "topic":
+                if (topicOrUser == null) return "Unread";
+                if (topicOrUser.equalsIgnoreCase("announcements")) return "Announcements";
+                if (topicOrUser.equalsIgnoreCase("events"))        return "Events";
+                return "Unread";
+            case "single":
+                return "Unread";
+            default:
+                return "Unread";
         }
     }
 
