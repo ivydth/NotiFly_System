@@ -26,7 +26,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 public class UserMenu extends AppCompatActivity
-        implements NotificationStore.StoreListener {   // ← live updates
+        implements NotificationStore.StoreListener {
 
     private View drawerPanel;
     private View rootLayout;
@@ -42,13 +42,12 @@ public class UserMenu extends AppCompatActivity
     private View navArchive;
 
     // ── Badges ────────────────────────────────────────────────────────────────
-    // One badge per menu item that has a count
-    private TextView badgeNotifications;   // existing — total unread
-    private TextView badgeUnread;          // @+id/badge_unread
-    private TextView badgeAnnouncements;   // @+id/badge_announcements
-    private TextView badgeEvents;          // @+id/badge_events
+    private TextView badgeNotifications;  // new count from Firebase
+    private TextView badgeUnread;
+    private TextView badgeAnnouncements;
+    private TextView badgeEvents;
 
-    // Header views
+    // Header
     private TextView tvDrawerUsername;
     private TextView tvDrawerEmail;
     private TextView tvAvatar;
@@ -67,7 +66,6 @@ public class UserMenu extends AppCompatActivity
 
         drawerPanel = findViewById(R.id.drawer_panel);
         rootLayout  = findViewById(R.id.root_layout);
-
         drawerPanel.setTranslationX(-9999f);
 
         mAuth    = FirebaseAuth.getInstance();
@@ -97,9 +95,8 @@ public class UserMenu extends AppCompatActivity
                 new OnBackPressedCallback(true) {
                     @Override
                     public void handleOnBackPressed() {
-                        if (isDrawerOpen) {
-                            closeDrawer();
-                        } else {
+                        if (isDrawerOpen) closeDrawer();
+                        else {
                             setEnabled(false);
                             getOnBackPressedDispatcher().onBackPressed();
                         }
@@ -110,16 +107,14 @@ public class UserMenu extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
-        // Register for live store updates
         NotificationStore.getInstance().addListener(this);
         loadUserData();
-        refreshBadges();   // show counts immediately on open
+        refreshBadges();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        // Unregister — no updates needed while offscreen
         NotificationStore.getInstance().removeListener(this);
     }
 
@@ -131,10 +126,6 @@ public class UserMenu extends AppCompatActivity
 
     // ── StoreListener ─────────────────────────────────────────────────────────
 
-    /**
-     * Called whenever a notification is starred, unstarred, read, or added.
-     * Runs badge refresh on the UI thread.
-     */
     @Override
     public void onStoreChanged() {
         runOnUiThread(this::refreshBadges);
@@ -142,31 +133,22 @@ public class UserMenu extends AppCompatActivity
 
     // ── Badge refresh ─────────────────────────────────────────────────────────
 
-    /**
-     * Reads live counts from NotificationStore and pushes them
-     * to each badge TextView in the drawer.
-     */
     private void refreshBadges() {
         NotificationStore store = NotificationStore.getInstance();
 
-        // Unread = items not yet read in the Unread category
-        int unreadCount         = store.getUnreadCount();
+        // New notifications badge — same source as bell icon in UserActivity
+        int newCount           = store.getNewCount();
+        int unreadCount        = store.getUnreadCount();
+        int announcementsCount = store.getByCategory("Announcements").size();
+        int eventsCount        = store.getByCategory("Events").size();
 
-        // Announcements and Events = total items in that category
-        int announcementsCount  = store.getByCategory("Announcements").size();
-        int eventsCount         = store.getByCategory("Events").size();
-
-        // Total for the top-level Notifications badge =
-        // unread + announcements + events (anything the user hasn't read)
-        int totalCount = unreadCount + announcementsCount + eventsCount;
-
-        setBadge(badgeNotifications, totalCount);
+        // Top-level Notifications item shows new count from Firebase
+        setBadge(badgeNotifications, newCount);
         setBadge(badgeUnread,        unreadCount);
         setBadge(badgeAnnouncements, announcementsCount);
         setBadge(badgeEvents,        eventsCount);
     }
 
-    /** Shows or hides a badge and sets its text. */
     private void setBadge(TextView badge, int count) {
         if (badge == null) return;
         if (count <= 0) {
@@ -189,13 +171,11 @@ public class UserMenu extends AppCompatActivity
         navSettings      = findViewById(R.id.nav_settings);
         navArchive       = findViewById(R.id.nav_archive);
 
-        // Badges
         badgeNotifications = findViewById(R.id.badge_notifications);
         badgeUnread        = findViewById(R.id.badge_unread);
         badgeAnnouncements = findViewById(R.id.badge_announcements);
         badgeEvents        = findViewById(R.id.badge_events);
 
-        // Header
         tvDrawerUsername = findViewById(R.id.tv_drawer_username);
         tvDrawerEmail    = findViewById(R.id.tv_drawer_email);
         tvAvatar         = findViewById(R.id.tv_avatar);
@@ -227,13 +207,12 @@ public class UserMenu extends AppCompatActivity
                         String email     = snapshot.child("email").getValue(String.class);
 
                         String displayName;
-                        if (username != null && !username.isEmpty()) {
+                        if (username != null && !username.isEmpty())
                             displayName = username;
-                        } else if (firstName != null && !firstName.isEmpty()) {
+                        else if (firstName != null && !firstName.isEmpty())
                             displayName = firstName;
-                        } else {
+                        else
                             displayName = "User";
-                        }
 
                         String displayEmail = (email != null && !email.isEmpty())
                                 ? email
@@ -271,73 +250,49 @@ public class UserMenu extends AppCompatActivity
     private void setClickListeners() {
         navDashboard.setOnClickListener(v -> {
             setActiveItem(navDashboard);
-            onNavDashboardClicked();
+            startActivity(new Intent(this, UserActivity.class));
+            closeDrawer();
         });
 
         navNotifications.setOnClickListener(v -> {
             setActiveItem(navNotifications);
-            onNavNotificationsClicked();
+            // Mark all seen so badge resets when user enters notifications
+            NotificationStore.getInstance().markAllSeen();
+            startActivity(new Intent(this, NotifActivity1.class));
+            closeDrawer();
         });
 
-        navAllInboxes.setOnClickListener(v -> onNavAllInboxesClicked());
+        navAllInboxes.setOnClickListener(v -> {
+            Toast.makeText(this, "All Inboxes", Toast.LENGTH_SHORT).show();
+            closeDrawer();
+        });
 
-        navUnread.setOnClickListener(v -> onNavUnreadClicked());
+        navUnread.setOnClickListener(v -> {
+            startActivity(new Intent(this, UnrActivity.class));
+            closeDrawer();
+        });
 
-        navAnnouncements.setOnClickListener(v -> onNavAnnouncementsClicked());
+        navAnnouncements.setOnClickListener(v -> {
+            startActivity(new Intent(this, AnnActivity.class));
+            closeDrawer();
+        });
 
-        navEvents.setOnClickListener(v -> onNavEventsClicked());
+        navEvents.setOnClickListener(v -> {
+            startActivity(new Intent(this, EventsActivity.class));
+            closeDrawer();
+        });
 
         navSettings.setOnClickListener(v -> {
             setActiveItem(navSettings);
-            onNavSettingsClicked();
+            startActivity(new Intent(this, SettActivity.class));
+            closeDrawer();
         });
 
         navArchive.setOnClickListener(v -> {
             setActiveItem(navArchive);
-            onNavArchiveClicked();
+            startActivity(new Intent(this, ArcActivity.class));
+            closeDrawer();
         });
-    }
-
-    // ── Navigation actions ────────────────────────────────────────────────────
-
-    private void onNavDashboardClicked() {
-        startActivity(new Intent(this, UserActivity.class));
-        closeDrawer();
-    }
-
-    private void onNavNotificationsClicked() {
-        startActivity(new Intent(this, NotifActivity.class));
-        closeDrawer();
-    }
-
-    private void onNavAllInboxesClicked() {
-        Toast.makeText(this, "All Inboxes", Toast.LENGTH_SHORT).show();
-        closeDrawer();
-    }
-
-    private void onNavUnreadClicked() {
-        startActivity(new Intent(this, UnrActivity.class));
-        closeDrawer();
-    }
-
-    private void onNavAnnouncementsClicked() {
-        startActivity(new Intent(this, AnnActivity.class));
-        closeDrawer();
-    }
-
-    private void onNavEventsClicked() {
-        startActivity(new Intent(this, EventsActivity.class));
-        closeDrawer();
-    }
-
-    private void onNavSettingsClicked() {
-        startActivity(new Intent(this, SettActivity.class));
-        closeDrawer();
-    }
-
-    private void onNavArchiveClicked() {
-        startActivity(new Intent(this, ArcActivity.class));
-        closeDrawer();
     }
 
     // ── Drawer animation ──────────────────────────────────────────────────────
@@ -370,11 +325,11 @@ public class UserMenu extends AppCompatActivity
         isDrawerOpen = false;
     }
 
-    // ── Active item highlight ─────────────────────────────────────────────────
+    // ── Active item ───────────────────────────────────────────────────────────
 
     private void setActiveItem(View activeView) {
-        View[] items = {navDashboard, navNotifications, navSettings, navArchive};
-        for (View item : items) {
+        View[] navItems = {navDashboard, navNotifications, navSettings, navArchive};
+        for (View item : navItems) {
             if (item == null) continue;
             if (item == activeView) {
                 Drawable activeBg = getDrawable(R.drawable.nav_item_active_bg);
@@ -407,8 +362,6 @@ public class UserMenu extends AppCompatActivity
         }
         return null;
     }
-
-    // ── Legacy helper (kept for compatibility) ────────────────────────────────
 
     public void setNotificationBadge(int count) {
         setBadge(badgeNotifications, count);
