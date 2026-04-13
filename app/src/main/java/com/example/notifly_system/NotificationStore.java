@@ -11,9 +11,18 @@ public class NotificationStore {
     }
 
     private static NotificationStore instance;
+
+    // ── What the user currently SEES ──────────────────────────────────────────
     private final List<NotificationItem> items     = new ArrayList<>();
-    private final List<StoreListener>    listeners = new ArrayList<>();
-    private final List<String>           seenIds   = new ArrayList<>();
+
+    // ── Pending buffer: data from Firebase waiting for user to refresh ────────
+    // When Firebase delivers new data, it goes here — NOT into items.
+    // Only applyPending() moves it into items, and only the user can trigger that.
+    private List<NotificationItem> pendingItems = null;
+    private boolean                hasPending   = false;
+
+    private final List<StoreListener> listeners = new ArrayList<>();
+    private final List<String>        seenIds   = new ArrayList<>();
 
     private int     newCount      = 0;
     private boolean samplesLoaded = false;
@@ -34,13 +43,6 @@ public class NotificationStore {
 
     // ── Sample Data ───────────────────────────────────────────────────────────
 
-    /**
-     * One sample per category so every card has a placeholder
-     * while Firebase loads. Samples are removed when real data arrives.
-     * Samples are pre-marked seen so they never trigger the bell badge.
-     *
-     * Constructor: id, senderName, message, dateLabel, category, isStarred, avatarResId
-     */
     private void loadSampleData() {
         if (samplesLoaded) return;
         samplesLoaded = true;
@@ -75,7 +77,6 @@ public class NotificationStore {
                 R.drawable.avatar_teal
         ));
 
-        // Pre-starred so Starred card shows data on first load
         items.add(new NotificationItem(
                 "sample_starred",
                 "Registrar",
@@ -86,7 +87,7 @@ public class NotificationStore {
                 R.drawable.avatar_teal
         ));
 
-        // Pre-mark all samples as seen — must NOT trigger the bell badge
+        // Pre-mark all samples as seen so they never trigger the bell badge
         for (NotificationItem n : items) {
             seenIds.add(n.id);
         }
@@ -109,28 +110,48 @@ public class NotificationStore {
     // ── Firebase sync ─────────────────────────────────────────────────────────
 
     /**
-     * Called every time the Firebase realtime listener fires (onDataChange).
+     * Called when Firebase delivers fresh data (from fetchNotificationsOnce).
      *
-     * KEY FIX: Instead of merging incrementally (which skips new items whose
-     * IDs were never seen), we do a FULL REPLACE every time:
-     *   1. Remove all sample placeholders.
-     *   2. Remove all non-starred, non-archived real notifications —
-     *      they will be fully replaced by the fresh Firebase snapshot.
-     *   3. Keep starred/archived items so user actions are not lost.
-     *   4. Add every item from the incoming snapshot. For items already
-     *      preserved in step 3, carry over their star/archive/read flags.
-     *   5. Re-sort newest-first and recalculate the bell badge.
+     * IMPORTANT: This does NOT update what the user sees immediately.
+     * Instead, data is stored in a pending buffer.
+     * The UI only updates when the user explicitly pulls-to-refresh,
+     * which calls applyPending().
      *
-     * This guarantees that a notification sent from the admin panel appears
-     * immediately the next time onDataChange fires — no manual refresh needed.
+     * This means:
+     *   - Admin sends a notification → goes to Firebase → arrives here as pending.
+     *   - User sees nothing new yet.
+     *   - User pulls-to-refresh → applyPending() is called → new notification appears.
      */
     public synchronized void syncFromFirebase(List<NotificationItem> incoming) {
+        // Store in the pending buffer — do NOT touch items or notify listeners
+        pendingItems = new ArrayList<>(incoming);
+        hasPending   = true;
+        // DO NOT call notifyListeners() here — that would cause instant update
+    }
 
-        // Step 1 — always strip samples
+    /**
+     * Applies the pending Firebase data to the visible items list.
+     * Call this ONLY from the pull-to-refresh handler in UserActivity
+     * and NotifActivity1 — never automatically.
+     *
+     * This is what makes the refresh gate work:
+     * new notifications only appear after the user manually pulls down.
+     */
+    public synchronized void applyPending() {
+        if (!hasPending || pendingItems == null) {
+            // No new data buffered — just redraw what's already visible
+            notifyListeners();
+            return;
+        }
+
+        List<NotificationItem> incoming = pendingItems;
+        pendingItems = null;
+        hasPending   = false;
+
+        // Step 1 — strip sample placeholders
         items.removeIf(n -> n.id.startsWith("sample_"));
 
-        // Step 2 — snapshot the current user-action flags before clearing
-        // so we can carry them over to the freshly synced items
+        // Step 2 — snapshot current user-action flags before clearing
         List<NotificationItem> preserved = new ArrayList<>();
         for (NotificationItem n : items) {
             if (n.isStarred || n.isArchived || n.isRead) {
@@ -138,12 +159,11 @@ public class NotificationStore {
             }
         }
 
-        // Step 3 — clear all current real items; we are doing a full replace
+        // Step 3 — full replace
         items.clear();
 
-        // Step 4 — add every item from Firebase
+        // Step 4 — add all incoming items, carrying over user flags
         for (NotificationItem incomingItem : incoming) {
-            // Carry over user-set flags from preserved list
             for (NotificationItem p : preserved) {
                 if (p.id.equals(incomingItem.id)) {
                     incomingItem.isStarred  = p.isStarred;
@@ -158,7 +178,7 @@ public class NotificationStore {
         // Step 5 — sort newest-first
         items.sort(NEWEST_FIRST);
 
-        // Step 6 — recalculate bell badge
+        // Step 6 — recalculate bell badge (only truly new IDs count)
         newCount = 0;
         for (NotificationItem n : items) {
             if (!n.id.startsWith("sample_") && !seenIds.contains(n.id)) {
@@ -166,12 +186,21 @@ public class NotificationStore {
             }
         }
 
+        // Step 7 — NOW notify listeners so UI redraws
         notifyListeners();
     }
 
     /**
+     * Returns true if there is Firebase data waiting to be shown.
+     * You can use this to show a "new notifications available" banner if desired.
+     */
+    public synchronized boolean hasPendingData() {
+        return hasPending;
+    }
+
+    /**
      * Call when the user taps the bell / opens NotifActivity1.
-     * Badge resets to 0. Notifications are NOT removed — they stay permanently.
+     * Badge resets to 0. Notifications stay permanently.
      */
     public synchronized void markAllSeen() {
         for (NotificationItem n : items) {
@@ -191,7 +220,6 @@ public class NotificationStore {
     /**
      * Returns true if this notification has NOT been seen yet by the user.
      * Used to show the glowing teal dot on new notification rows.
-     * Samples are always considered seen and will never show the dot.
      */
     public synchronized boolean isNew(String id) {
         if (id == null || id.startsWith("sample_")) return false;
@@ -221,10 +249,7 @@ public class NotificationStore {
         return result;
     }
 
-    /**
-     * ALL starred notifications — includes BOTH archived and non-archived,
-     * newest first.
-     */
+    /** ALL starred notifications — includes archived and non-archived, newest first. */
     public synchronized List<NotificationItem> getStarred() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -279,11 +304,6 @@ public class NotificationStore {
         notifyListeners();
     }
 
-    /**
-     * Stars a notification by ID.
-     * Triggers notifyListeners() so ALL registered StoreListeners update —
-     * including UserActivity (dashboard Starred card) and ArcActivity (star color).
-     */
     public synchronized void star(String id) {
         for (NotificationItem n : items) {
             if (n.id.equals(id)) {
@@ -294,10 +314,6 @@ public class NotificationStore {
         }
     }
 
-    /**
-     * Unstars a notification by ID.
-     * Same as star() — triggers live update on dashboard and archive screen.
-     */
     public synchronized void unstar(String id) {
         for (NotificationItem n : items) {
             if (n.id.equals(id)) {
