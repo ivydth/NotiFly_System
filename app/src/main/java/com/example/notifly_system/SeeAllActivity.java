@@ -130,8 +130,10 @@ public class SeeAllActivity extends AppCompatActivity
 
         if (ivSearch   != null) ivSearch.setOnClickListener(v -> { /* TODO */ });
 
-        if (ivBell     != null) ivBell.setOnClickListener(v ->
-                startActivity(new Intent(this, NotifActivity1.class)));
+        if (ivBell     != null) ivBell.setOnClickListener(v -> {
+            NotificationStore.getInstance().markAllSeen();
+            startActivity(new Intent(this, NotifActivity1.class));
+        });
     }
 
     // ── Data ──────────────────────────────────────────────────────────────────
@@ -195,13 +197,11 @@ public class SeeAllActivity extends AppCompatActivity
         public void onBindViewHolder(@NonNull VH h, int position) {
             NotificationItem item = data.get(position);
 
-            // ✅ Null-safe avatar — same fix as ArcActivity
-            if (h.avatar != null && item.avatarResId != 0) {
-                try {
-                    h.avatar.setBackgroundResource(item.avatarResId);
-                } catch (Exception e) {
-                    h.avatar.setBackgroundResource(R.drawable.avatar_teal);
-                }
+            // ✅ Correct ID: tvAvatar is a TextView showing sender's first letter
+            if (h.tvAvatar != null) {
+                String name = (item.senderName != null && !item.senderName.isEmpty())
+                        ? item.senderName : "N";
+                h.tvAvatar.setText(String.valueOf(name.charAt(0)).toUpperCase());
             }
 
             if (h.tvName    != null) h.tvName.setText(item.senderName);
@@ -221,15 +221,12 @@ public class SeeAllActivity extends AppCompatActivity
 
             if (h.tvStar != null) {
                 applyStarColor(h.tvStar, item.isStarred);
-
-                // Star tap — must not also trigger row tap
                 h.tvStar.setOnClickListener(v -> {
                     if (starListener != null) starListener.onStarClick(item);
                     applyStarColor(h.tvStar, item.isStarred);
                 });
             }
 
-            // Row tap → open NotifActivity
             h.itemView.setOnClickListener(v -> {
                 if (rowListener != null) rowListener.onRowClick(item);
             });
@@ -250,7 +247,7 @@ public class SeeAllActivity extends AppCompatActivity
         public int getItemCount() { return data.size(); }
 
         static class VH extends RecyclerView.ViewHolder {
-            View     avatar;
+            TextView tvAvatar;   // ✅ correct ID
             TextView tvName;
             TextView tvMessage;
             TextView tvDate;
@@ -259,7 +256,7 @@ public class SeeAllActivity extends AppCompatActivity
 
             VH(@NonNull View itemView) {
                 super(itemView);
-                avatar    = itemView.findViewById(R.id.ivAvatar);
+                tvAvatar  = itemView.findViewById(R.id.tvAvatar);   // ✅ fixed
                 tvName    = itemView.findViewById(R.id.tvSenderName);
                 tvMessage = itemView.findViewById(R.id.tvMessage);
                 tvDate    = itemView.findViewById(R.id.tvDate);
