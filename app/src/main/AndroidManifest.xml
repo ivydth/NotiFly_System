@@ -39,6 +39,7 @@
         <activity android:name=".ArcActivity"/>
         <activity android:name=".SettActivity"/>
         <activity android:name=".SeeAllActivity"/>
+        <activity android:name=".NotiflyApplication"/>
     </application>
 
 </manifest>
