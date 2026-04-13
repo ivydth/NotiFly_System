@@ -310,7 +310,7 @@
                             android:textStyle="bold"
                             android:layout_marginBottom="14dp" />
 
-                        <!-- Mark as Read -->
+                        <!-- Mark as Read / Mark as Unread toggle -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnMarkRead"
                             android:layout_width="match_parent"
@@ -335,7 +335,7 @@
                             android:background="#1E5BCCE8"
                             android:layout_marginBottom="10dp" />
 
-                        <!-- Archive button -->
+                        <!-- Archive / Remove from Archive toggle -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnDelete"
                             android:layout_width="match_parent"
