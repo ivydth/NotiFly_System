@@ -79,10 +79,10 @@ public class AnnActivity extends AppCompatActivity
         ivHome                 = findViewById(R.id.ivHome);
         ivSearch               = findViewById(R.id.ivSearch);
         ivBell                 = findViewById(R.id.ivBell);
-        tvBellBadge            = findViewById(R.id.tvBellBadge);       // add to XML if missing
-        swipeRefreshLayout     = findViewById(R.id.swipeRefreshLayout); // add to XML if missing
+        tvBellBadge            = findViewById(R.id.tvBellBadge);
+        swipeRefreshLayout     = findViewById(R.id.swipeRefreshLayout);
         notificationsContainer = findViewById(R.id.notificationsContainer);
-        tvEmptyState           = findViewById(R.id.tvEmptyState);       // add to XML if missing
+        tvEmptyState           = findViewById(R.id.tvEmptyState);
     }
 
     private void initFirebase() {
@@ -115,21 +115,19 @@ public class AnnActivity extends AppCompatActivity
             startActivity(new Intent(this, NotifActivity1.class));
         });
 
-        // Pull-to-refresh — same gate as UserActivity
-        if (swipeRefreshLayout != null) {
-            swipeRefreshLayout.setColorSchemeColors(
-                    Color.parseColor("#00C9B1"),
-                    Color.parseColor("#5BB8FF"),
-                    Color.parseColor("#C084FC")
-            );
-            swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
-                    Color.parseColor("#1E3A4A")
-            );
-            swipeRefreshLayout.setOnRefreshListener(this::fetchAndApplyOnRefresh);
-        }
+        // Pull-to-refresh — same gate pattern as UserActivity
+        swipeRefreshLayout.setColorSchemeColors(
+                Color.parseColor("#00C9B1"),
+                Color.parseColor("#5BB8FF"),
+                Color.parseColor("#C084FC")
+        );
+        swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
+                Color.parseColor("#1E3A4A")
+        );
+        swipeRefreshLayout.setOnRefreshListener(this::fetchAndApplyOnRefresh);
     }
 
-    // ── StoreListener callback ────────────────────────────────────────────────
+    // ── StoreListener ─────────────────────────────────────────────────────────
 
     @Override
     public void onStoreChanged() {
@@ -144,13 +142,13 @@ public class AnnActivity extends AppCompatActivity
             public void onDataChange(DataSnapshot snapshot) {
                 NotificationStore store = NotificationStore.getInstance();
                 store.syncFromFirebase(parseSnapshot(snapshot));
-                store.applyPending();
-                if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
+                store.applyPending(); // reveals new admin notifications
+                swipeRefreshLayout.setRefreshing(false);
             }
 
             @Override
             public void onCancelled(DatabaseError error) {
-                if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
+                swipeRefreshLayout.setRefreshing(false);
                 Toast.makeText(AnnActivity.this,
                         "Failed to refresh.", Toast.LENGTH_SHORT).show();
             }
@@ -204,24 +202,27 @@ public class AnnActivity extends AppCompatActivity
     // ── Render announcement rows ──────────────────────────────────────────────
 
     private void showAnnouncements() {
-        if (notificationsContainer == null) return;
         notificationsContainer.removeAllViews();
 
         List<NotificationItem> items =
                 NotificationStore.getInstance().getByCategory("Announcements");
 
         if (items.isEmpty()) {
-            if (tvEmptyState != null) {
-                tvEmptyState.setVisibility(View.VISIBLE);
-                tvEmptyState.setText("No announcements yet");
-            }
+            tvEmptyState.setVisibility(View.VISIBLE);
+            tvEmptyState.setText("No announcements yet");
             return;
         }
 
-        if (tvEmptyState != null) tvEmptyState.setVisibility(View.GONE);
+        tvEmptyState.setVisibility(View.GONE);
 
-        for (NotificationItem item : items) {
+        for (int i = 0; i < items.size(); i++) {
+            NotificationItem item = items.get(i);
             notificationsContainer.addView(buildNotificationRow(item));
+
+            // Divider between rows, not after the last one
+            if (i < items.size() - 1) {
+                notificationsContainer.addView(buildDivider());
+            }
         }
     }
 
@@ -249,7 +250,7 @@ public class AnnActivity extends AppCompatActivity
         if (tvMessage != null) tvMessage.setText(item.message);
         if (tvDate    != null) tvDate.setText(item.dateLabel);
 
-        // Glowing new-dot pulse
+        // Glowing new-dot
         if (vNewDot != null) {
             boolean isNew = NotificationStore.getInstance().isNew(item.id);
             vNewDot.setVisibility(isNew ? View.VISIBLE : View.INVISIBLE);
@@ -258,6 +259,7 @@ public class AnnActivity extends AppCompatActivity
 
         applyReadStyle(tvName, tvMessage, item.isRead);
 
+        // Star toggle
         if (tvStar != null) {
             applyStarColor(tvStar, item.isStarred);
             tvStar.setOnClickListener(v -> {
@@ -280,6 +282,17 @@ public class AnnActivity extends AppCompatActivity
         });
 
         return row;
+    }
+
+    // Thin divider between rows, matching the original XML style
+    private View buildDivider() {
+        View divider = new View(this);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 1);
+        params.setMarginStart((int) (68 * getResources().getDisplayMetrics().density));
+        divider.setLayoutParams(params);
+        divider.setBackgroundColor(Color.parseColor("#22FFFFFF"));
+        return divider;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
