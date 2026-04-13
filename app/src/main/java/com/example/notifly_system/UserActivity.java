@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
 
 public class UserActivity extends AppCompatActivity
         implements NotificationStore.StoreListener {
@@ -50,10 +49,10 @@ public class UserActivity extends AppCompatActivity
     RecyclerView       rvSummaryCards;
     SummaryCardAdapter summaryAdapter;
 
-    TextView           tvSectionTitle;
-    TextView           tvSeeAll;
-    TextView           tvEmptyState;
-    LinearLayout       notificationsContainer;
+    TextView     tvSectionTitle;
+    TextView     tvSeeAll;
+    TextView     tvEmptyState;
+    LinearLayout notificationsContainer;
 
     AppCompatImageView ivHome, ivSearch, ivBell;
     TextView           tvBellBadge;
@@ -67,13 +66,13 @@ public class UserActivity extends AppCompatActivity
     DatabaseReference notificationsRef;
     DatabaseReference presenceRef;
 
+    ValueEventListener notifListener;
+
     // ── State ─────────────────────────────────────────────────────────────────
 
     String currentUsername      = "User";
     String currentEmail         = "";
     int    selectedCardPosition = -1;
-
-    private static final TimeZone PH_TIMEZONE = TimeZone.getTimeZone("Asia/Manila");
 
     private static final String[] SECTION_TITLES = {
             "Unread", "Announcements", "Events", "Starred"
@@ -127,14 +126,15 @@ public class UserActivity extends AppCompatActivity
         NotificationStore.getInstance().addListener(this);
         loadUserData();
         setOnlineStatus(true);
-        // ✅ One-time fetch on resume — NOT a realtime listener
-        fetchNotificationsOnce();
+        attachRealtimeListener();
+        refreshAll();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         NotificationStore.getInstance().removeListener(this);
+        detachRealtimeListener();
         setOnlineStatus(false);
     }
 
@@ -147,42 +147,31 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
-    // ── One-time fetch (NOT realtime) ─────────────────────────────────────────
+    // ── Realtime Firebase listener ────────────────────────────────────────────
 
-    /**
-     * Fetches notifications from Firebase exactly once.
-     * New notifications sent by the admin will NOT appear automatically —
-     * the user must pull-to-refresh or re-open the app to see them.
-     */
-    private void fetchNotificationsOnce() {
-        notificationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+    private void attachRealtimeListener() {
+        if (notifListener != null) return;
+
+        notifListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 List<NotificationItem> incoming = new ArrayList<>();
 
                 for (DataSnapshot child : snapshot.getChildren()) {
                     String id     = child.getKey();
-                    String sender = child.child("sender").getValue(String.class);
                     String title  = child.child("title").getValue(String.class);
                     String body   = child.child("body").getValue(String.class);
                     String target = child.child("target").getValue(String.class);
                     Long   ts     = child.child("timestamp").getValue(Long.class);
 
-                    if (sender == null || sender.isEmpty()) sender = "NotiFly System";
-                    if (title  == null) title  = "Notification";
-                    if (body   == null) body   = "";
+                    if (title == null) title = "Notification";
+                    if (body  == null) body  = "";
 
                     String category  = mapTargetToCategory(target);
-                    String dateLabel = formatTimestampPH(ts);
-                    String message   = title.isEmpty() ? body : title + ": " + body;
+                    String dateLabel = formatTimestamp(ts);
 
                     NotificationItem item = new NotificationItem(
-                            id,
-                            sender,
-                            message,
-                            dateLabel,
-                            category,
-                            false,
+                            id, title, body, dateLabel, category, false,
                             R.drawable.avatar_teal
                     );
                     if (ts != null) item.timestamp = ts;
@@ -204,7 +193,16 @@ public class UserActivity extends AppCompatActivity
                 Toast.makeText(UserActivity.this,
                         "Failed to load notifications.", Toast.LENGTH_SHORT).show();
             }
-        });
+        };
+
+        notificationsRef.addValueEventListener(notifListener);
+    }
+
+    private void detachRealtimeListener() {
+        if (notifListener != null) {
+            notificationsRef.removeEventListener(notifListener);
+            notifListener = null;
+        }
     }
 
     // ── Pull-to-refresh ───────────────────────────────────────────────────────
@@ -222,8 +220,8 @@ public class UserActivity extends AppCompatActivity
         );
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
-            // ✅ Manual pull-to-refresh triggers a fresh one-time fetch
-            fetchNotificationsOnce();
+            detachRealtimeListener();
+            attachRealtimeListener();
             Toast.makeText(this, "Refreshing notifications...", Toast.LENGTH_SHORT).show();
         });
     }
@@ -235,7 +233,7 @@ public class UserActivity extends AppCompatActivity
         runOnUiThread(this::refreshAll);
     }
 
-    // ── Refresh UI ────────────────────────────────────────────────────────────
+    // ── Refresh ───────────────────────────────────────────────────────────────
 
     private void refreshAll() {
         refreshSummaryCounts();
@@ -375,6 +373,7 @@ public class UserActivity extends AppCompatActivity
         View row = LayoutInflater.from(this)
                 .inflate(R.layout.item_notification_row, notificationsContainer, false);
 
+        // ✅ Correct ID: tvAvatar is a TextView showing sender's first letter
         TextView tvAvatar  = row.findViewById(R.id.tvAvatar);
         TextView tvName    = row.findViewById(R.id.tvSenderName);
         TextView tvMessage = row.findViewById(R.id.tvMessage);
@@ -383,22 +382,19 @@ public class UserActivity extends AppCompatActivity
         View     divider   = row.findViewById(R.id.vDivider);
 
         if (tvAvatar != null) {
-            String name   = (item.senderName != null && !item.senderName.isEmpty())
+            String name = (item.senderName != null && !item.senderName.isEmpty())
                     ? item.senderName : "N";
-            String letter = String.valueOf(name.charAt(0)).toUpperCase();
-            tvAvatar.setText(letter);
-            tvAvatar.setBackgroundResource(R.drawable.avatar_teal);
-            tvAvatar.setTextColor(Color.WHITE);
+            tvAvatar.setText(String.valueOf(name.charAt(0)).toUpperCase());
         }
 
-        tvName.setText(item.senderName);
-        tvMessage.setText(item.message);
-        tvDate.setText(item.dateLabel);
+        if (tvName    != null) tvName.setText(item.senderName);
+        if (tvMessage != null) tvMessage.setText(item.message);
+        if (tvDate    != null) tvDate.setText(item.dateLabel);
 
         if (divider != null) divider.setVisibility(View.GONE);
 
         applyReadStyle(tvName, tvMessage, item.isRead);
-        applyStarColor(tvStar, item.isStarred);
+        if (tvStar != null) applyStarColor(tvStar, item.isStarred);
 
         row.setOnClickListener(v -> {
             Intent intent = new Intent(this, NotifActivity.class);
@@ -406,21 +402,24 @@ public class UserActivity extends AppCompatActivity
             startActivity(intent);
         });
 
-        tvStar.setOnClickListener(v -> {
-            if (item.isStarred) {
-                NotificationStore.getInstance().unstar(item.id);
-                item.isStarred = false;
-            } else {
-                NotificationStore.getInstance().star(item.id);
-                item.isStarred = true;
-            }
-            applyStarColor(tvStar, item.isStarred);
-        });
+        if (tvStar != null) {
+            tvStar.setOnClickListener(v -> {
+                if (item.isStarred) {
+                    NotificationStore.getInstance().unstar(item.id);
+                    item.isStarred = false;
+                } else {
+                    NotificationStore.getInstance().star(item.id);
+                    item.isStarred = true;
+                }
+                applyStarColor(tvStar, item.isStarred);
+            });
+        }
 
         return row;
     }
 
     private void applyReadStyle(TextView tvName, TextView tvMessage, boolean isRead) {
+        if (tvName == null || tvMessage == null) return;
         if (isRead) {
             tvName.setTextColor(Color.parseColor("#668899"));
             tvMessage.setTextColor(Color.parseColor("#446677"));
@@ -448,12 +447,10 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
-    private String formatTimestampPH(Long ts) {
+    private String formatTimestamp(Long ts) {
         if (ts == null || ts == 0) return "Now";
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat(
-                    "MMM d · hh:mm a", Locale.getDefault());
-            sdf.setTimeZone(PH_TIMEZONE);
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM d", Locale.getDefault());
             return sdf.format(new Date(ts));
         } catch (Exception e) {
             return "Now";
