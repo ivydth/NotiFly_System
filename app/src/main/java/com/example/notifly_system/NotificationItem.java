@@ -9,6 +9,7 @@ public class NotificationItem {
     public String  originalCategory;
     public boolean isStarred;
     public boolean isRead;
+    public boolean isArchived;
     public int     avatarResId;
 
     public NotificationItem(String id, String senderName, String message,
@@ -22,6 +23,7 @@ public class NotificationItem {
         this.originalCategory = category;
         this.isStarred        = isStarred;
         this.isRead           = false;
+        this.isArchived       = false;
         this.avatarResId      = avatarResId;
     }
 }
