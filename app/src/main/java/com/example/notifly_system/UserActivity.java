@@ -96,7 +96,7 @@ public class UserActivity extends AppCompatActivity
         ivHome                 = findViewById(R.id.ivHome);
         ivSearch               = findViewById(R.id.ivSearch);
         ivBell                 = findViewById(R.id.ivBell);
-        tvBellBadge            = findViewById(R.id.tvBellBadge); // ✅ connected to XML badge
+        tvBellBadge            = findViewById(R.id.tvBellBadge);
 
         mAuth    = FirebaseAuth.getInstance();
         database = FirebaseDatabase.getInstance(
@@ -222,7 +222,7 @@ public class UserActivity extends AppCompatActivity
         // Bell tap → mark all seen (badge resets) then open notification screen
         ivBell.setOnClickListener(v -> {
             NotificationStore.getInstance().markAllSeen();
-            refreshBellBadge(); // ✅ immediately hides badge on tap
+            refreshBellBadge();
             startActivity(new Intent(this, NotifActivity1.class));
         });
 
@@ -252,6 +252,7 @@ public class UserActivity extends AppCompatActivity
     // ── Notification preview ──────────────────────────────────────────────────
 
     private void showNotificationsForCategory(String category) {
+        // Remove all rows except the first child (tvEmptyState)
         while (notificationsContainer.getChildCount() > 1) {
             notificationsContainer.removeViewAt(1);
         }
@@ -274,9 +275,12 @@ public class UserActivity extends AppCompatActivity
             return;
         }
 
+        // ✅ FIXED: loop through ALL items, not just items.get(0)
         tvEmptyState.setVisibility(View.GONE);
-        View row = buildNotificationRow(items.get(0));
-        notificationsContainer.addView(row);
+        for (NotificationItem item : items) {
+            View row = buildNotificationRow(item);
+            notificationsContainer.addView(row);
+        }
     }
 
     private View buildNotificationRow(NotificationItem item) {
