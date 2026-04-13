@@ -68,13 +68,16 @@ public class UserActivity extends AppCompatActivity
     DatabaseReference notificationsRef;
     DatabaseReference presenceRef;
 
-    ValueEventListener notifListener;
-
     // ── State ─────────────────────────────────────────────────────────────────
 
     String currentUsername      = "User";
     String currentEmail         = "";
     int    selectedCardPosition = -1;
+
+    // Tracks whether we have done the very first load this session.
+    // We only auto-fetch once (on first launch). After that the user
+    // must pull-to-refresh to see new notifications.
+    private boolean initialLoadDone = false;
 
     private static final String[] SECTION_TITLES = {
             "Unread", "Announcements", "Events", "Starred"
@@ -128,19 +131,22 @@ public class UserActivity extends AppCompatActivity
         NotificationStore.getInstance().addListener(this);
         loadUserData();
         setOnlineStatus(true);
-        // KEY FIX: always detach first so we get a guaranteed fresh
-        // listener every time the screen comes back into view.
-        // This ensures notifications sent while the app was in the
-        // background or on another screen appear instantly on return.
-        attachRealtimeListener();
-        refreshAll();
+
+        // Only do the automatic first fetch once per session.
+        // After that, the user must pull-to-refresh manually.
+        if (!initialLoadDone) {
+            initialLoadDone = true;
+            fetchNotificationsOnce();
+        } else {
+            // Just redraw whatever is already in the store — no network call.
+            refreshAll();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         NotificationStore.getInstance().removeListener(this);
-        detachRealtimeListener();
         setOnlineStatus(false);
     }
 
@@ -153,18 +159,19 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
-    // ── Realtime Firebase listener ────────────────────────────────────────────
+    // ── One-time Firebase fetch ───────────────────────────────────────────────
 
     /**
-     * Always detaches the old listener before attaching a new one.
-     * This guarantees a fresh onDataChange fires every time the user
-     * returns to this screen — no stale state, no missed notifications.
+     * Fetches notifications from Firebase ONCE (addListenerForSingleValueEvent).
+     * This means:
+     *  - On first open → loads what is currently in Firebase.
+     *  - When admin sends a new notification → it will NOT appear automatically.
+     *  - The user must pull-to-refresh to trigger another call to this method.
      */
-    private void attachRealtimeListener() {
-        // Always start clean
-        detachRealtimeListener();
+    private void fetchNotificationsOnce() {
+        if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(true);
 
-        notifListener = new ValueEventListener() {
+        notificationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 List<NotificationItem> incoming = new ArrayList<>();
@@ -193,32 +200,19 @@ public class UserActivity extends AppCompatActivity
                 // Sort newest first before handing to the store
                 incoming.sort((a, b) -> Long.compare(b.timestamp, a.timestamp));
 
-                // Full replace sync — store clears and rebuilds from Firebase
+                // Full replace sync — store clears and rebuilds from Firebase snapshot
                 NotificationStore.getInstance().syncFromFirebase(incoming);
 
-                if (swipeRefreshLayout != null) {
-                    swipeRefreshLayout.setRefreshing(false);
-                }
+                if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
             }
 
             @Override
             public void onCancelled(DatabaseError error) {
-                if (swipeRefreshLayout != null) {
-                    swipeRefreshLayout.setRefreshing(false);
-                }
+                if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
                 Toast.makeText(UserActivity.this,
                         "Failed to load notifications.", Toast.LENGTH_SHORT).show();
             }
-        };
-
-        notificationsRef.addValueEventListener(notifListener);
-    }
-
-    private void detachRealtimeListener() {
-        if (notifListener != null) {
-            notificationsRef.removeEventListener(notifListener);
-            notifListener = null;
-        }
+        });
     }
 
     // ── Pull-to-refresh ───────────────────────────────────────────────────────
@@ -236,8 +230,9 @@ public class UserActivity extends AppCompatActivity
         );
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
-            // Force a clean re-attach so Firebase fires onDataChange immediately
-            attachRealtimeListener();
+            // Manual pull-to-refresh: do a fresh one-time fetch from Firebase.
+            // This is the ONLY way new notifications from the admin will appear.
+            fetchNotificationsOnce();
             Toast.makeText(this, "Refreshing notifications...", Toast.LENGTH_SHORT).show();
         });
     }
@@ -447,10 +442,6 @@ public class UserActivity extends AppCompatActivity
 
     // ── Glow pulse animation ──────────────────────────────────────────────────
 
-    /**
-     * Pulses the dot between full opacity and 20% opacity on a 900ms loop,
-     * giving it a soft glowing effect.
-     */
     private void startGlowPulse(View dot) {
         AlphaAnimation pulse = new AlphaAnimation(1f, 0.2f);
         pulse.setDuration(900);
