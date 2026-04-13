@@ -69,20 +69,20 @@ public class ArcActivity extends AppCompatActivity
     }
 
     private void setListeners() {
-        btnMenu.setOnClickListener(v ->
+        if (btnMenu    != null) btnMenu.setOnClickListener(v ->
                 startActivity(new Intent(this, UserMenu.class)));
 
-        btnProfile.setOnClickListener(v ->
+        if (btnProfile != null) btnProfile.setOnClickListener(v ->
                 startActivity(new Intent(this, ProfileActivity.class)));
 
-        ivHome.setOnClickListener(v -> {
+        if (ivHome     != null) ivHome.setOnClickListener(v -> {
             startActivity(new Intent(this, UserActivity.class));
             finish();
         });
 
-        ivSearch.setOnClickListener(v -> { /* TODO */ });
+        if (ivSearch   != null) ivSearch.setOnClickListener(v -> { /* TODO */ });
 
-        ivBell.setOnClickListener(v -> {
+        if (ivBell     != null) ivBell.setOnClickListener(v -> {
             startActivity(new Intent(this, NotifActivity1.class));
             finish();
         });
@@ -91,23 +91,24 @@ public class ArcActivity extends AppCompatActivity
     // ── Load ──────────────────────────────────────────────────────────────────
 
     private void loadArchivedNotifications() {
+        if (archiveContainer == null) return;
         archiveContainer.removeAllViews();
 
         List<NotificationItem> archived =
                 NotificationStore.getInstance().getArchived();
 
         if (archived.isEmpty()) {
-            emptyState.setVisibility(View.VISIBLE);
-            archiveContainer.setVisibility(View.GONE);
+            if (emptyState       != null) emptyState.setVisibility(View.VISIBLE);
+            if (archiveContainer != null) archiveContainer.setVisibility(View.GONE);
             return;
         }
 
-        emptyState.setVisibility(View.GONE);
-        archiveContainer.setVisibility(View.VISIBLE);
+        if (emptyState       != null) emptyState.setVisibility(View.GONE);
+        if (archiveContainer != null) archiveContainer.setVisibility(View.VISIBLE);
 
         for (int i = 0; i < archived.size(); i++) {
             View row = buildArchiveRow(archived.get(i), i < archived.size() - 1);
-            archiveContainer.addView(row);
+            if (row != null) archiveContainer.addView(row);
         }
     }
 
@@ -117,6 +118,8 @@ public class ArcActivity extends AppCompatActivity
         View row = LayoutInflater.from(this)
                 .inflate(R.layout.item_notification_row, archiveContainer, false);
 
+        if (row == null) return null;
+
         View     avatar    = row.findViewById(R.id.ivAvatar);
         TextView tvName    = row.findViewById(R.id.tvSenderName);
         TextView tvMessage = row.findViewById(R.id.tvMessage);
@@ -124,35 +127,46 @@ public class ArcActivity extends AppCompatActivity
         TextView tvStar    = row.findViewById(R.id.tvStar);
         View     divider   = row.findViewById(R.id.vDivider);
 
-        avatar.setBackgroundResource(item.avatarResId);
-        tvName.setText(item.senderName);
-        tvMessage.setText(item.message);
-        tvDate.setText(item.dateLabel);
-
-        // Dim read items, bright for unread even in archive
-        if (item.isRead) {
-            tvName.setTextColor(Color.parseColor("#668899"));
-            tvMessage.setTextColor(Color.parseColor("#446677"));
-        } else {
-            tvName.setTextColor(Color.WHITE);
-            tvMessage.setTextColor(Color.parseColor("#AACCDD"));
+        // ✅ Null-safe avatar — only set background if view and resource exist
+        if (avatar != null && item.avatarResId != 0) {
+            try {
+                avatar.setBackgroundResource(item.avatarResId);
+            } catch (Exception e) {
+                avatar.setBackgroundResource(R.drawable.avatar_teal);
+            }
         }
 
-        // Star toggles — item stays in archive regardless
-        applyStarColor(tvStar, item.isStarred);
-        tvStar.setOnClickListener(v -> {
-            if (item.isStarred) {
-                NotificationStore.getInstance().unstar(item.id);
-                item.isStarred = false;
-            } else {
-                NotificationStore.getInstance().star(item.id);
-                item.isStarred = true;
-            }
-            applyStarColor(tvStar, item.isStarred);
-        });
+        if (tvName    != null) tvName.setText(item.senderName);
+        if (tvMessage != null) tvMessage.setText(item.message);
+        if (tvDate    != null) tvDate.setText(item.dateLabel);
 
-        // Tapping the row opens full notification detail
-        // NotifActivity handles both archived and non-archived items
+        // Dim read items, bright for unread
+        if (tvName != null && tvMessage != null) {
+            if (item.isRead) {
+                tvName.setTextColor(Color.parseColor("#668899"));
+                tvMessage.setTextColor(Color.parseColor("#446677"));
+            } else {
+                tvName.setTextColor(Color.WHITE);
+                tvMessage.setTextColor(Color.parseColor("#AACCDD"));
+            }
+        }
+
+        // Star toggle
+        if (tvStar != null) {
+            applyStarColor(tvStar, item.isStarred);
+            tvStar.setOnClickListener(v -> {
+                if (item.isStarred) {
+                    NotificationStore.getInstance().unstar(item.id);
+                    item.isStarred = false;
+                } else {
+                    NotificationStore.getInstance().star(item.id);
+                    item.isStarred = true;
+                }
+                applyStarColor(tvStar, item.isStarred);
+            });
+        }
+
+        // Row tap → open full notification detail
         row.setOnClickListener(v -> {
             Intent intent = new Intent(this, NotifActivity.class);
             intent.putExtra(NotifActivity.EXTRA_NOTIF_ID, item.id);
