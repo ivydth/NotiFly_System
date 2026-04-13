@@ -96,7 +96,7 @@ public class UserActivity extends AppCompatActivity
         ivHome                 = findViewById(R.id.ivHome);
         ivSearch               = findViewById(R.id.ivSearch);
         ivBell                 = findViewById(R.id.ivBell);
-        tvBellBadge            = findViewById(R.id.tvBellBadge);
+        tvBellBadge            = findViewById(R.id.tvBellBadge); // ✅ connected to XML badge
 
         mAuth    = FirebaseAuth.getInstance();
         database = FirebaseDatabase.getInstance(
@@ -222,7 +222,7 @@ public class UserActivity extends AppCompatActivity
         // Bell tap → mark all seen (badge resets) then open notification screen
         ivBell.setOnClickListener(v -> {
             NotificationStore.getInstance().markAllSeen();
-            refreshBellBadge();
+            refreshBellBadge(); // ✅ immediately hides badge on tap
             startActivity(new Intent(this, NotifActivity1.class));
         });
 
