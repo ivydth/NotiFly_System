@@ -13,7 +13,12 @@ public class NotificationStore {
     private final List<NotificationItem> items     = new ArrayList<>();
     private final List<StoreListener>    listeners = new ArrayList<>();
 
-    private NotificationStore() { seedSampleData(); }
+    // Tracks how many Firebase notifications have been seen
+    // so the bell badge shows only NEW ones
+    private int lastSeenCount = 0;
+    private int newCount      = 0;
+
+    private NotificationStore() {}
 
     public static synchronized NotificationStore getInstance() {
         if (instance == null) instance = new NotificationStore();
@@ -34,29 +39,51 @@ public class NotificationStore {
         for (StoreListener l : new ArrayList<>(listeners)) l.onStoreChanged();
     }
 
-    // ── Seed data ─────────────────────────────────────────────────────────────
+    // ── Firebase sync ─────────────────────────────────────────────────────────
 
-    private void seedSampleData() {
-        items.add(new NotificationItem(
-                "1", "System",
-                "You have 3 unread messages waiting.",
-                "Now", "Unread", false, R.drawable.avatar_teal));
+    /**
+     * Called by FirebaseNotifSyncService whenever the /notifications node
+     * changes. Merges incoming Firebase items into the store without
+     * duplicating existing ones, then recalculates the new-notification count.
+     */
+    public synchronized void syncFromFirebase(List<NotificationItem> incoming) {
+        for (NotificationItem incoming_item : incoming) {
+            boolean exists = false;
+            for (NotificationItem existing : items) {
+                if (existing.id.equals(incoming_item.id)) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                items.add(incoming_item);
+            }
+        }
 
-        items.add(new NotificationItem(
-                "2", "Admin",
-                "Scheduled maintenance on Sunday 10 PM.",
-                "Mon", "Announcements", false, R.drawable.avatar_teal));
+        // New count = total Firebase items minus how many the user has seen
+        int total = incoming.size();
+        newCount  = Math.max(0, total - lastSeenCount);
 
-        items.add(new NotificationItem(
-                "3", "Events Bot",
-                "Team meeting tomorrow at 9 AM.",
-                "Tue", "Events", false, R.drawable.avatar_teal));
+        notifyListeners();
+    }
 
-        NotificationItem starred = new NotificationItem(
-                "4", "You",
-                "You starred this important reminder.",
-                "Wed", "Starred", true, R.drawable.avatar_teal);
-        items.add(starred);
+    /**
+     * Call this when the user opens the bell / notification screen
+     * so the badge resets to 0.
+     */
+    public synchronized void markAllSeen() {
+        lastSeenCount = getTotalFirebaseCount();
+        newCount      = 0;
+        notifyListeners();
+    }
+
+    private int getTotalFirebaseCount() {
+        return items.size();
+    }
+
+    /** How many NEW notifications have arrived since the user last opened bell. */
+    public synchronized int getNewCount() {
+        return newCount;
     }
 
     // ── Queries ───────────────────────────────────────────────────────────────
