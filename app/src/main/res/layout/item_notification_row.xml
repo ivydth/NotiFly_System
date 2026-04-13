@@ -109,5 +109,11 @@
         android:layout_height="1dp"
         android:background="#1A5BCCE8"
         android:visibility="gone" />
+    <View
+    android:id="@+id/vNewDot"
+    android:layout_width="9dp"
+    android:layout_height="9dp"
+    android:background="@drawable/dot_teal_glow"
+    android:visibility="invisible" />
 
 </LinearLayout>
