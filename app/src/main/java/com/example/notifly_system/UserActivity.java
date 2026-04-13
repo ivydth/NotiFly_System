@@ -128,6 +128,10 @@ public class UserActivity extends AppCompatActivity
         NotificationStore.getInstance().addListener(this);
         loadUserData();
         setOnlineStatus(true);
+        // KEY FIX: always detach first so we get a guaranteed fresh
+        // listener every time the screen comes back into view.
+        // This ensures notifications sent while the app was in the
+        // background or on another screen appear instantly on return.
         attachRealtimeListener();
         refreshAll();
     }
@@ -151,8 +155,14 @@ public class UserActivity extends AppCompatActivity
 
     // ── Realtime Firebase listener ────────────────────────────────────────────
 
+    /**
+     * Always detaches the old listener before attaching a new one.
+     * This guarantees a fresh onDataChange fires every time the user
+     * returns to this screen — no stale state, no missed notifications.
+     */
     private void attachRealtimeListener() {
-        if (notifListener != null) return;
+        // Always start clean
+        detachRealtimeListener();
 
         notifListener = new ValueEventListener() {
             @Override
@@ -180,9 +190,10 @@ public class UserActivity extends AppCompatActivity
                     incoming.add(item);
                 }
 
-                // Sort newest first before syncing
+                // Sort newest first before handing to the store
                 incoming.sort((a, b) -> Long.compare(b.timestamp, a.timestamp));
 
+                // Full replace sync — store clears and rebuilds from Firebase
                 NotificationStore.getInstance().syncFromFirebase(incoming);
 
                 if (swipeRefreshLayout != null) {
@@ -225,7 +236,7 @@ public class UserActivity extends AppCompatActivity
         );
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
-            detachRealtimeListener();
+            // Force a clean re-attach so Firebase fires onDataChange immediately
             attachRealtimeListener();
             Toast.makeText(this, "Refreshing notifications...", Toast.LENGTH_SHORT).show();
         });
