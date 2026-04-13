@@ -39,6 +39,8 @@ public class ArcActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
+        // ✅ Register as StoreListener so star/unstar here triggers
+        // onStoreChanged() in UserActivity too — updating dashboard live
         NotificationStore.getInstance().addListener(this);
         loadArchivedNotifications();
     }
@@ -51,6 +53,20 @@ public class ArcActivity extends AppCompatActivity
 
     // ── StoreListener ─────────────────────────────────────────────────────────
 
+    /**
+     * Called automatically whenever star(), unstar(), archive(), or any
+     * mutation fires notifyListeners() in NotificationStore.
+     *
+     * When the user stars a notification here:
+     *   star(id) → notifyListeners()
+     *     → ArcActivity.onStoreChanged()  → redraws archive list (star turns gold)
+     *     → UserActivity.onStoreChanged() → refreshSummaryCounts() → Starred card +1
+     *
+     * When the user unstars:
+     *   unstar(id) → notifyListeners()
+     *     → ArcActivity.onStoreChanged()  → redraws archive list (star turns dim)
+     *     → UserActivity.onStoreChanged() → refreshSummaryCounts() → Starred card -1
+     */
     @Override
     public void onStoreChanged() {
         runOnUiThread(this::loadArchivedNotifications);
@@ -121,7 +137,7 @@ public class ArcActivity extends AppCompatActivity
 
         if (row == null) return null;
 
-        // ✅ Correct ID: tvAvatar is a TextView showing the sender's first letter
+        // ✅ Correct ID — tvAvatar is a TextView showing sender's first letter
         TextView tvAvatar  = row.findViewById(R.id.tvAvatar);
         TextView tvName    = row.findViewById(R.id.tvSenderName);
         TextView tvMessage = row.findViewById(R.id.tvMessage);
@@ -129,7 +145,6 @@ public class ArcActivity extends AppCompatActivity
         TextView tvStar    = row.findViewById(R.id.tvStar);
         View     divider   = row.findViewById(R.id.vDivider);
 
-        // Show first letter of sender name in the avatar circle
         if (tvAvatar != null) {
             String name = (item.senderName != null && !item.senderName.isEmpty())
                     ? item.senderName : "N";
@@ -140,7 +155,6 @@ public class ArcActivity extends AppCompatActivity
         if (tvMessage != null) tvMessage.setText(item.message);
         if (tvDate    != null) tvDate.setText(item.dateLabel);
 
-        // Dim read items, bright for unread
         if (tvName != null && tvMessage != null) {
             if (item.isRead) {
                 tvName.setTextColor(Color.parseColor("#668899"));
@@ -151,7 +165,11 @@ public class ArcActivity extends AppCompatActivity
             }
         }
 
-        // Star toggle
+        // ✅ Star toggle inside archive
+        // star()   → notifyListeners() → UserActivity.onStoreChanged()
+        //          → refreshSummaryCounts() → Starred card count goes UP
+        // unstar() → notifyListeners() → UserActivity.onStoreChanged()
+        //          → refreshSummaryCounts() → Starred card count goes DOWN
         if (tvStar != null) {
             applyStarColor(tvStar, item.isStarred);
             tvStar.setOnClickListener(v -> {
