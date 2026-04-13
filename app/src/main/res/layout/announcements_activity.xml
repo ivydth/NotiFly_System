@@ -15,514 +15,133 @@
         android:scaleType="centerCrop"
         android:contentDescription="@null" />
 
-    <!-- Scrollable content -->
-    <androidx.core.widget.NestedScrollView
+    <!-- Swipe-to-refresh wraps the scrollable content -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="80dp"
-        android:clipToPadding="false"
-        android:background="@android:color/transparent">
+        android:layout_marginBottom="60dp">
 
-        <LinearLayout
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_height="match_parent"
+            android:paddingBottom="16dp"
+            android:clipToPadding="false"
+            android:background="@android:color/transparent">
 
-            <!-- TOP APP BAR -->
-            <RelativeLayout
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:gravity="center_vertical">
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-                <!-- Menu -->
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/btnMenu"
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Menu"
-                    android:padding="6dp"
-                    android:src="@drawable/ic_menu"
-                    app:tint="#FFFFFF" />
-
-                <!-- Logo + App Title centered -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
-                    android:orientation="horizontal"
+                <!-- TOP APP BAR -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
                     android:gravity="center_vertical">
 
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/ic_logo"
-                        android:scaleType="fitCenter"
-                        android:contentDescription="@null" />
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/btnMenu"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Menu"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_menu"
+                        app:tint="#FFFFFF" />
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="NotiFly"
-                        android:textColor="#FFFFFF"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/fredoka_one"
-                        android:layout_marginStart="8dp" />
+                        android:layout_centerInParent="true"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
-                </LinearLayout>
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/ic_logo"
+                            android:scaleType="fitCenter"
+                            android:contentDescription="@null" />
 
-                <!-- Profile -->
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/btnProfile"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:src="@drawable/ic_profile"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="4dp"
-                    android:contentDescription="Profile"
-                    app:tint="#FFFFFF" />
-            </RelativeLayout>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="NotiFly"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/fredoka_one"
+                            android:layout_marginStart="8dp" />
 
-            <!-- Section Label -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ANNOUNCEMENTS"
-                android:textColor="#AACCDD"
-                android:textSize="11sp"
-                android:letterSpacing="0.15"
-                android:layout_marginStart="16dp"
-                android:layout_marginBottom="6dp" />
+                    </LinearLayout>
 
-            <!-- Card — marginBottom keeps it above bottom nav -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="12dp"
-                android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="#771A2E3E"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp">
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/btnProfile"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_profile"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:padding="4dp"
+                        android:contentDescription="Profile"
+                        app:tint="#FFFFFF" />
 
-                <LinearLayout
+                </RelativeLayout>
+
+                <!-- Section Label -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ANNOUNCEMENTS"
+                    android:textColor="#AACCDD"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.15"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginBottom="6dp" />
+
+                <!-- Empty state — shown when no announcements exist -->
+                <TextView
+                    android:id="@+id/tvEmptyState"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="4dp">
+                    android:text="No announcements yet"
+                    android:textColor="#668899"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:padding="48dp"
+                    android:visibility="gone" />
 
-                    <!-- Row -->
-                    <RelativeLayout
+                <!-- Dynamic rows card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="#771A2E3E"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp">
+
+                    <!-- Java populates this with item_notification_row views -->
+                    <LinearLayout
+                        android:id="@+id/notificationsContainer"
                         android:layout_width="match_parent"
-                        android:layout_height="70dp"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp">
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="4dp" />
 
-                        <!-- Blank icon placeholder -->
-                        <View
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:background="@drawable/avatar_teal" />
+                </androidx.cardview.widget.CardView>
 
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:layout_marginStart="56dp"
-                            android:layout_marginEnd="52dp"
-                            android:text="Message"
-                            android:textColor="#FFFFFF"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
 
-                        <!-- DATE + indicator centered in fixed column -->
-                        <LinearLayout
-                            android:layout_width="44dp"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical"
-                            android:gravity="center">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="DATE"
-                                android:textColor="#AACCDD"
-                                android:textSize="10sp"
-                                android:layout_gravity="center" />
-                            <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:layout_marginTop="4dp"
-                                android:layout_gravity="center"
-                                android:background="@drawable/dot_blue" />
-                        </LinearLayout>
-                    </RelativeLayout>
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#22FFFFFF" android:layout_marginStart="68dp"/>
-                    <!-- Row -->
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="70dp"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp">
-
-                        <!-- Blank icon placeholder -->
-                        <View
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:background="@drawable/avatar_teal" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:layout_marginStart="56dp"
-                            android:layout_marginEnd="52dp"
-                            android:text="Message"
-                            android:textColor="#FFFFFF"
-                            android:textSize="15sp" />
-
-                        <!-- DATE + indicator centered in fixed column -->
-                        <LinearLayout
-                            android:layout_width="44dp"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical"
-                            android:gravity="center">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="DATE"
-                                android:textColor="#AACCDD"
-                                android:textSize="10sp"
-                                android:layout_gravity="center" />
-                            <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:layout_marginTop="4dp"
-                                android:layout_gravity="center"
-                                android:background="@drawable/dot_blue" />
-                        </LinearLayout>
-                    </RelativeLayout>
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#22FFFFFF" android:layout_marginStart="68dp"/>
-                    <!-- Row -->
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="70dp"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp">
-
-                        <!-- Blank icon placeholder -->
-                        <View
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:background="@drawable/avatar_teal" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:layout_marginStart="56dp"
-                            android:layout_marginEnd="52dp"
-                            android:text="Message"
-                            android:textColor="#FFFFFF"
-                            android:textSize="15sp" />
-
-                        <!-- DATE + indicator centered in fixed column -->
-                        <LinearLayout
-                            android:layout_width="44dp"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical"
-                            android:gravity="center">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="DATE"
-                                android:textColor="#AACCDD"
-                                android:textSize="10sp"
-                                android:layout_gravity="center" />
-                            <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:layout_marginTop="4dp"
-                                android:layout_gravity="center"
-                                android:background="@drawable/dot_blue" />
-                        </LinearLayout>
-                    </RelativeLayout>
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#22FFFFFF" android:layout_marginStart="68dp"/>
-                    <!-- Row -->
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="70dp"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp">
-
-                        <!-- Blank icon placeholder -->
-                        <View
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:background="@drawable/avatar_teal" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:layout_marginStart="56dp"
-                            android:layout_marginEnd="52dp"
-                            android:text="Message"
-                            android:textColor="#FFFFFF"
-                            android:textSize="15sp" />
-
-                        <!-- DATE + indicator centered in fixed column -->
-                        <LinearLayout
-                            android:layout_width="44dp"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical"
-                            android:gravity="center">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="DATE"
-                                android:textColor="#AACCDD"
-                                android:textSize="10sp"
-                                android:layout_gravity="center" />
-                            <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:layout_marginTop="4dp"
-                                android:layout_gravity="center"
-                                android:background="@drawable/dot_blue" />
-                        </LinearLayout>
-                    </RelativeLayout>
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#22FFFFFF" android:layout_marginStart="68dp"/>
-                    <!-- Row -->
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="70dp"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp">
-
-                        <!-- Blank icon placeholder -->
-                        <View
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:background="@drawable/avatar_teal" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:layout_marginStart="56dp"
-                            android:layout_marginEnd="52dp"
-                            android:text="Message"
-                            android:textColor="#FFFFFF"
-                            android:textSize="15sp" />
-
-                        <!-- DATE + indicator centered in fixed column -->
-                        <LinearLayout
-                            android:layout_width="44dp"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical"
-                            android:gravity="center">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="DATE"
-                                android:textColor="#AACCDD"
-                                android:textSize="10sp"
-                                android:layout_gravity="center" />
-                            <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:layout_marginTop="4dp"
-                                android:layout_gravity="center"
-                                android:background="@drawable/dot_blue" />
-                        </LinearLayout>
-                    </RelativeLayout>
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#22FFFFFF" android:layout_marginStart="68dp"/>
-                    <!-- Row -->
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="70dp"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp">
-
-                        <!-- Blank icon placeholder -->
-                        <View
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:background="@drawable/avatar_teal" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:layout_marginStart="56dp"
-                            android:layout_marginEnd="52dp"
-                            android:text="Message"
-                            android:textColor="#FFFFFF"
-                            android:textSize="15sp" />
-
-                        <!-- DATE + indicator centered in fixed column -->
-                        <LinearLayout
-                            android:layout_width="44dp"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical"
-                            android:gravity="center">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="DATE"
-                                android:textColor="#AACCDD"
-                                android:textSize="10sp"
-                                android:layout_gravity="center" />
-                            <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:layout_marginTop="4dp"
-                                android:layout_gravity="center"
-                                android:background="@drawable/dot_blue" />
-                        </LinearLayout>
-                    </RelativeLayout>
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#22FFFFFF" android:layout_marginStart="68dp"/>
-                    <!-- Row -->
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="70dp"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp">
-
-                        <!-- Blank icon placeholder -->
-                        <View
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:background="@drawable/avatar_teal" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:layout_marginStart="56dp"
-                            android:layout_marginEnd="52dp"
-                            android:text="Message"
-                            android:textColor="#FFFFFF"
-                            android:textSize="15sp" />
-
-                        <!-- DATE + indicator centered in fixed column -->
-                        <LinearLayout
-                            android:layout_width="44dp"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical"
-                            android:gravity="center">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="DATE"
-                                android:textColor="#AACCDD"
-                                android:textSize="10sp"
-                                android:layout_gravity="center" />
-                            <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:layout_marginTop="4dp"
-                                android:layout_gravity="center"
-                                android:background="@drawable/dot_blue" />
-                        </LinearLayout>
-                    </RelativeLayout>
-                    <View android:layout_width="match_parent" android:layout_height="1dp"
-                        android:background="#22FFFFFF" android:layout_marginStart="68dp"/>
-                    <!-- Row -->
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="70dp"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp">
-
-                        <!-- Blank icon placeholder -->
-                        <View
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:background="@drawable/avatar_teal" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:layout_marginStart="56dp"
-                            android:layout_marginEnd="52dp"
-                            android:text="Message"
-                            android:textColor="#FFFFFF"
-                            android:textSize="15sp" />
-
-                        <!-- DATE + indicator centered in fixed column -->
-                        <LinearLayout
-                            android:layout_width="44dp"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical"
-                            android:gravity="center">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="DATE"
-                                android:textColor="#AACCDD"
-                                android:textSize="10sp"
-                                android:layout_gravity="center" />
-                            <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:layout_marginTop="4dp"
-                                android:layout_gravity="center"
-                                android:background="@drawable/dot_blue" />
-                        </LinearLayout>
-                    </RelativeLayout>
-
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!-- BOTTOM NAV BAR -->
     <LinearLayout
@@ -571,20 +190,40 @@
                 app:tint="#FFFFFF" />
         </FrameLayout>
 
-        <LinearLayout
+        <!-- Bell with badge -->
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:orientation="vertical">
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/ivBell"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
+                android:layout_gravity="center"
                 android:src="@drawable/ic_notif_bell"
                 android:contentDescription="Notifications"
                 app:tint="#FFFFFF" />
-        </LinearLayout>
+
+            <!-- Badge dot over the bell -->
+            <TextView
+                android:id="@+id/tvBellBadge"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center"
+                android:layout_marginStart="12dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/dot_teal_glow"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+        </FrameLayout>
 
     </LinearLayout>
 
