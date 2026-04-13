@@ -22,7 +22,7 @@ public class NotifActivity extends AppCompatActivity {
     private TextView       tvFullDate;
     private View           unreadDot;
     private MaterialButton btnMarkRead;
-    private MaterialButton btnDelete;
+    private MaterialButton btnArchive;
 
     private NotificationItem currentItem;
 
@@ -36,6 +36,8 @@ public class NotifActivity extends AppCompatActivity {
         setupClickListeners();
     }
 
+    // ── Init ──────────────────────────────────────────────────────────────────
+
     private void initViews() {
         btnBack       = findViewById(R.id.btnBack);
         tvSenderName  = findViewById(R.id.tvSenderName);
@@ -45,8 +47,10 @@ public class NotifActivity extends AppCompatActivity {
         tvFullDate    = findViewById(R.id.tvFullDate);
         unreadDot     = findViewById(R.id.unreadDot);
         btnMarkRead   = findViewById(R.id.btnMarkRead);
-        btnDelete     = findViewById(R.id.btnDelete);
+        btnArchive    = findViewById(R.id.btnDelete); // same ID, relabeled in XML
     }
+
+    // ── Load data ─────────────────────────────────────────────────────────────
 
     private void loadNotificationData() {
         String notifId = getIntent().getStringExtra(EXTRA_NOTIF_ID);
@@ -66,24 +70,26 @@ public class NotifActivity extends AppCompatActivity {
             return;
         }
 
+        // Populate views
         tvSenderName.setText(currentItem.senderName);
         tvDate.setText(currentItem.dateLabel);
         tvFullDate.setText(currentItem.dateLabel);
         tvNotifTitle.setText(currentItem.senderName);
         tvFullMessage.setText(currentItem.message);
 
-        // Auto-mark as read the moment the screen opens
-        if (!currentItem.isRead) {
-            NotificationStore.getInstance().markRead(currentItem.id);
-            currentItem.isRead = true;
-        }
-
+        // ── NO auto-mark on open ──────────────────────────────────────────────
+        // The unread dot stays visible until the user explicitly
+        // presses "Mark as Read". isRead state is shown as-is.
         updateReadState(currentItem.isRead);
     }
 
+    // ── Click listeners ───────────────────────────────────────────────────────
+
     private void setupClickListeners() {
+
         btnBack.setOnClickListener(v -> onBackPressed());
 
+        // Mark as Read — only works if not already read
         btnMarkRead.setOnClickListener(v -> {
             if (!currentItem.isRead) {
                 NotificationStore.getInstance().markRead(currentItem.id);
@@ -95,12 +101,14 @@ public class NotifActivity extends AppCompatActivity {
             }
         });
 
-        // Dismiss — just closes the screen, notification stays in store
-        btnDelete.setOnClickListener(v -> {
-            Toast.makeText(this, "Notification dismissed", Toast.LENGTH_SHORT).show();
+        // Archive — closes the screen, notification stays in the store
+        btnArchive.setOnClickListener(v -> {
+            Toast.makeText(this, "Notification archived", Toast.LENGTH_SHORT).show();
             finish();
         });
     }
+
+    // ── UI state ──────────────────────────────────────────────────────────────
 
     private void updateReadState(boolean read) {
         if (read) {
