@@ -83,6 +83,7 @@ public class ArcActivity extends AppCompatActivity
         if (ivSearch   != null) ivSearch.setOnClickListener(v -> { /* TODO */ });
 
         if (ivBell     != null) ivBell.setOnClickListener(v -> {
+            NotificationStore.getInstance().markAllSeen();
             startActivity(new Intent(this, NotifActivity1.class));
             finish();
         });
@@ -120,20 +121,19 @@ public class ArcActivity extends AppCompatActivity
 
         if (row == null) return null;
 
-        View     avatar    = row.findViewById(R.id.ivAvatar);
+        // ✅ Correct ID: tvAvatar is a TextView showing the sender's first letter
+        TextView tvAvatar  = row.findViewById(R.id.tvAvatar);
         TextView tvName    = row.findViewById(R.id.tvSenderName);
         TextView tvMessage = row.findViewById(R.id.tvMessage);
         TextView tvDate    = row.findViewById(R.id.tvDate);
         TextView tvStar    = row.findViewById(R.id.tvStar);
         View     divider   = row.findViewById(R.id.vDivider);
 
-        // ✅ Null-safe avatar — only set background if view and resource exist
-        if (avatar != null && item.avatarResId != 0) {
-            try {
-                avatar.setBackgroundResource(item.avatarResId);
-            } catch (Exception e) {
-                avatar.setBackgroundResource(R.drawable.avatar_teal);
-            }
+        // Show first letter of sender name in the avatar circle
+        if (tvAvatar != null) {
+            String name = (item.senderName != null && !item.senderName.isEmpty())
+                    ? item.senderName : "N";
+            tvAvatar.setText(String.valueOf(name.charAt(0)).toUpperCase());
         }
 
         if (tvName    != null) tvName.setText(item.senderName);
