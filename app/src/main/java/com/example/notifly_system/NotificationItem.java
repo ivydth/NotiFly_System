@@ -10,7 +10,7 @@ public class NotificationItem {
     public boolean isStarred;
     public boolean isRead;
     public boolean isArchived;
-    public long    timestamp;        // ← from Firebase
+    public long    timestamp;
     public int     avatarResId;
 
     public NotificationItem(String id, String senderName, String message,
