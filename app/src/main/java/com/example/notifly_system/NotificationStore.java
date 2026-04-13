@@ -18,11 +18,80 @@ public class NotificationStore {
     private int lastSeenCount = 0;
     private int newCount      = 0;
 
-    private NotificationStore() {}
+    // Flag so sample data is only injected once
+    private boolean samplesLoaded = false;
+
+    private NotificationStore() {
+        loadSampleData();
+    }
 
     public static synchronized NotificationStore getInstance() {
         if (instance == null) instance = new NotificationStore();
         return instance;
+    }
+
+    // ── Sample / Placeholder Data ─────────────────────────────────────────────
+
+    /**
+     * Pre-populates the store with placeholder notifications so the
+     * home screen is never blank while Firebase loads.
+     * These are replaced/merged once syncFromFirebase() is called.
+     */
+    private void loadSampleData() {
+        if (samplesLoaded) return;
+        samplesLoaded = true;
+
+        // Format: id, senderName, message, dateLabel,
+        //         avatarResId, originalCategory, isRead, isStarred, isArchived
+        items.add(new NotificationItem(
+                "sample_1",
+                "Admin",
+                "Welcome to NotiFly! Your notifications will appear here.",
+                "Today",
+                R.drawable.avatar_teal,
+                "Announcements",
+                false, false, false
+        ));
+
+        items.add(new NotificationItem(
+                "sample_2",
+                "System",
+                "School event: Foundation Day celebration on April 20.",
+                "Yesterday",
+                R.drawable.avatar_teal,
+                "Events",
+                false, false, false
+        ));
+
+        items.add(new NotificationItem(
+                "sample_3",
+                "Class Adviser",
+                "Reminder: Submit your project requirements by Friday.",
+                "Apr 11",
+                R.drawable.avatar_teal,
+                "Announcements",
+                true, false, false
+        ));
+
+        items.add(new NotificationItem(
+                "sample_4",
+                "Registrar",
+                "Enrollment for next semester is now open.",
+                "Apr 10",
+                R.drawable.avatar_teal,
+                "Announcements",
+                false, true, false
+        ));
+
+        items.add(new NotificationItem(
+                "sample_5",
+                "Guidance Office",
+                "Career talk scheduled for April 18 at the auditorium.",
+                "Apr 9",
+                R.drawable.avatar_teal,
+                "Events",
+                true, false, false
+        ));
     }
 
     // ── Listener management ───────────────────────────────────────────────────
@@ -43,10 +112,16 @@ public class NotificationStore {
 
     /**
      * Called by FirebaseNotifSyncService whenever the /notifications node
-     * changes. Merges incoming Firebase items into the store without
-     * duplicating existing ones, then recalculates the new-notification count.
+     * changes. On first Firebase sync, removes sample placeholders first,
+     * then merges real items in without duplicating.
      */
     public synchronized void syncFromFirebase(List<NotificationItem> incoming) {
+        // On first real sync, strip out sample_ placeholders so real data
+        // takes over cleanly
+        if (!incoming.isEmpty()) {
+            items.removeIf(n -> n.id.startsWith("sample_"));
+        }
+
         for (NotificationItem incoming_item : incoming) {
             boolean exists = false;
             for (NotificationItem existing : items) {
