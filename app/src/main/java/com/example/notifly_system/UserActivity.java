@@ -555,18 +555,24 @@ public class UserActivity extends AppCompatActivity
     // ── Animation helpers ─────────────────────────────────────────────────────
 
     static void animateLift(View root) {
-        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), -14f);
-        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation", root.getElevation(), 20f);
-        ty.setDuration(180); elev.setDuration(180);
-        new AnimatorSet() {{ playTogether(ty, elev); start(); }};
-    }
+    ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), -14f);
+    ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation", root.getElevation(), 20f);
+    ty.setDuration(180);
+    elev.setDuration(180);
+    AnimatorSet set = new AnimatorSet();
+    set.playTogether(ty, elev);
+    set.start();
+}
 
-    static void animateDrop(View root) {
-        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), 0f);
-        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation", root.getElevation(), 4f);
-        ty.setDuration(200); elev.setDuration(200);
-        new AnimatorSet() {{ playTogether(ty, elev); start(); }};
-    }
+        static void animateDrop(View root) {
+    ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), 0f);
+    ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation", root.getElevation(), 4f);
+    ty.setDuration(200);
+    elev.setDuration(200);
+    AnimatorSet set = new AnimatorSet();
+    set.playTogether(ty, elev);
+    set.start();
+}
 
     // ── Inner types ───────────────────────────────────────────────────────────
 
