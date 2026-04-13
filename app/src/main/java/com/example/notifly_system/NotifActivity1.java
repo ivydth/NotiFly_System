@@ -26,40 +26,40 @@ import java.util.Locale;
 
 public class NotifActivity1 extends AppCompatActivity {
 
-    // Top bar
     AppCompatImageView btnMenu;
     TextView           btnProfile;
-
-    // Bottom nav
     AppCompatImageView ivHome, ivSearch, ivBell;
-
-    // Notification list container
-    LinearLayout notifContainer;
-
-    // Pull-to-refresh
+    LinearLayout       notifContainer;
     SwipeRefreshLayout swipeRefreshLayout;
 
-    // Firebase
     FirebaseAuth      mAuth;
     DatabaseReference usersRef;
     DatabaseReference notificationsRef;
+
+    // Tracks whether we've done the first load this session
+    private boolean initialLoadDone = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.userdbtotalnotif_activity);
 
-        // ── INITIALIZE VIEWS ──────────────────────────────────────
-        btnMenu        = findViewById(R.id.btnMenu);
-        btnProfile     = findViewById(R.id.btnProfile);
-        ivHome         = findViewById(R.id.ivHome);
-        ivSearch       = findViewById(R.id.ivSearch);
-        ivBell         = findViewById(R.id.ivBell);
-        notifContainer = findViewById(R.id.notifContainer);
-
-        // SwipeRefreshLayout — wrap notifContainer in your XML with this view.
-        // If you don't have it yet, add it to userdbtotalnotif_activity.xml.
+        btnMenu            = findViewById(R.id.btnMenu);
+        btnProfile         = findViewById(R.id.btnProfile);
+        ivHome             = findViewById(R.id.ivHome);
+        ivSearch           = findViewById(R.id.ivSearch);
+        ivBell             = findViewById(R.id.ivBell);
+        notifContainer     = findViewById(R.id.notifContainer);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+
+        mAuth = FirebaseAuth.getInstance();
+        usersRef = FirebaseDatabase.getInstance(
+                "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        ).getReference("users");
+        notificationsRef = FirebaseDatabase.getInstance(
+                "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        ).getReference("notifications");
+
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setColorSchemeColors(
                     android.graphics.Color.parseColor("#00C9B1"),
@@ -69,142 +69,47 @@ public class NotifActivity1 extends AppCompatActivity {
             swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
                     android.graphics.Color.parseColor("#1E3A4A")
             );
-            // Pull-to-refresh is the ONLY way to load new notifications
-            swipeRefreshLayout.setOnRefreshListener(() -> {
-                android.widget.Toast.makeText(this,
-                        "Refreshing notifications...",
-                        android.widget.Toast.LENGTH_SHORT).show();
-                loadNotificationsOnce();
-            });
+            // Pull-to-refresh: the ONLY way new admin notifications appear here
+            swipeRefreshLayout.setOnRefreshListener(this::fetchAndRenderOnRefresh);
         }
 
-        // ── FIREBASE ──────────────────────────────────────────────
-        mAuth = FirebaseAuth.getInstance();
-        usersRef = FirebaseDatabase.getInstance(
-                "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
-        ).getReference("users");
-        notificationsRef = FirebaseDatabase.getInstance(
-                "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
-        ).getReference("notifications");
-
-        // ── BUTTON LISTENERS ──────────────────────────────────────
         btnMenu.setOnClickListener(v -> {
             startActivity(new Intent(this, UserMenu.class));
             overridePendingTransition(0, 0);
         });
-
         btnProfile.setOnClickListener(v ->
                 startActivity(new Intent(this, ProfileActivity.class)));
-
         ivHome.setOnClickListener(v -> {
             startActivity(new Intent(this, UserActivity.class));
             overridePendingTransition(0, 0);
         });
+        ivSearch.setOnClickListener(v -> { /* TODO */ });
+        ivBell.setOnClickListener(v -> { /* already here */ });
 
-        ivSearch.setOnClickListener(v -> {
-            // TODO: navigate to search
-        });
-
-        ivBell.setOnClickListener(v -> {
-            // already here
-        });
-
-        // ── LOAD DATA (once on open) ───────────────────────────────
         loadProfileAvatar();
-        loadNotificationsOnce();
+        // First open: fetch and render immediately
+        fetchAndRenderNow();
+        initialLoadDone = true;
     }
 
-    // ── Profile avatar ────────────────────────────────────────────
-
-    private void loadProfileAvatar() {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) return;
-
-        usersRef.child(currentUser.getUid())
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot snapshot) {
-                        String username  = snapshot.child("username").getValue(String.class);
-                        String firstName = snapshot.child("firstName").getValue(String.class);
-
-                        String displayName;
-                        if (username != null && !username.isEmpty()) {
-                            displayName = username;
-                        } else if (firstName != null && !firstName.isEmpty()) {
-                            displayName = firstName;
-                        } else {
-                            displayName = "U";
-                        }
-
-                        btnProfile.setText(
-                                String.valueOf(displayName.charAt(0)).toUpperCase());
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError error) {
-                        btnProfile.setText("U");
-                    }
-                });
-    }
-
-    // ── One-time notification fetch ───────────────────────────────
+    // ── First-open fetch (renders immediately) ────────────────────────────────
 
     /**
-     * Fetches notifications from Firebase ONCE using addListenerForSingleValueEvent.
-     *
-     * Notifications sent by the admin will NOT appear automatically.
-     * The user must pull-to-refresh to call this method again and see new items.
+     * Fetches notifications once and renders them immediately.
+     * Only called on first open so the user sees existing notifications.
      */
-    private void loadNotificationsOnce() {
+    private void fetchAndRenderNow() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
-            return;
-        }
-
+        if (currentUser == null) { startActivity(new Intent(this, LoginActivity.class)); finish(); return; }
         if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(true);
 
-        // KEY CHANGE: addListenerForSingleValueEvent instead of addValueEventListener.
-        // This fires exactly once — no real-time updates, no auto-appearing notifications.
         notificationsRef.orderByChild("timestamp")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot snapshot) {
-                        List<DataSnapshot> notifList = new ArrayList<>();
-                        for (DataSnapshot child : snapshot.getChildren()) {
-                            notifList.add(0, child); // newest first
-                        }
-
-                        notifContainer.removeAllViews();
-
-                        if (notifList.isEmpty()) {
-                            showEmptyState();
-                        } else {
-                            for (int i = 0; i < notifList.size(); i++) {
-                                DataSnapshot notif = notifList.get(i);
-
-                                String title     = notif.child("title").getValue(String.class);
-                                String body      = notif.child("body").getValue(String.class);
-                                Long   timestamp = notif.child("timestamp").getValue(Long.class);
-
-                                if (title == null) title = "Notification";
-                                if (body  == null) body  = "";
-
-                                String dateStr = "—";
-                                if (timestamp != null) {
-                                    SimpleDateFormat sdf =
-                                            new SimpleDateFormat("MMM d", Locale.getDefault());
-                                    dateStr = sdf.format(new Date(timestamp));
-                                }
-
-                                addNotifRow(title, body, dateStr, i < notifList.size() - 1);
-                            }
-                        }
-
+                        renderNotifications(snapshot);
                         if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
                     }
-
                     @Override
                     public void onCancelled(DatabaseError error) {
                         if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
@@ -213,7 +118,88 @@ public class NotifActivity1 extends AppCompatActivity {
                 });
     }
 
-    // ── Row builder ───────────────────────────────────────────────
+    // ── Pull-to-refresh fetch (the only gate for new notifications) ───────────
+
+    /**
+     * Called only when the user manually pulls down to refresh.
+     * This is the ONLY way notifications sent by the admin become visible here.
+     * Uses addListenerForSingleValueEvent — fires once, no real-time stream.
+     */
+    private void fetchAndRenderOnRefresh() {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) { startActivity(new Intent(this, LoginActivity.class)); finish(); return; }
+
+        notificationsRef.orderByChild("timestamp")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot snapshot) {
+                        renderNotifications(snapshot);
+                        if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
+                    }
+                    @Override
+                    public void onCancelled(DatabaseError error) {
+                        if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
+                        showErrorState(error.getMessage());
+                    }
+                });
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+
+    private void renderNotifications(DataSnapshot snapshot) {
+        List<DataSnapshot> notifList = new ArrayList<>();
+        for (DataSnapshot child : snapshot.getChildren()) {
+            notifList.add(0, child); // newest first
+        }
+
+        notifContainer.removeAllViews();
+
+        if (notifList.isEmpty()) {
+            showEmptyState();
+            return;
+        }
+
+        for (int i = 0; i < notifList.size(); i++) {
+            DataSnapshot notif = notifList.get(i);
+            String title     = notif.child("title").getValue(String.class);
+            String body      = notif.child("body").getValue(String.class);
+            Long   timestamp = notif.child("timestamp").getValue(Long.class);
+
+            if (title == null) title = "Notification";
+            if (body  == null) body  = "";
+
+            String dateStr = "—";
+            if (timestamp != null) {
+                dateStr = new SimpleDateFormat("MMM d", Locale.getDefault())
+                        .format(new Date(timestamp));
+            }
+            addNotifRow(title, body, dateStr, i < notifList.size() - 1);
+        }
+    }
+
+    // ── Profile avatar ────────────────────────────────────────────────────────
+
+    private void loadProfileAvatar() {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) return;
+        usersRef.child(currentUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot snapshot) {
+                        String username  = snapshot.child("username").getValue(String.class);
+                        String firstName = snapshot.child("firstName").getValue(String.class);
+                        String displayName;
+                        if (username != null && !username.isEmpty()) displayName = username;
+                        else if (firstName != null && !firstName.isEmpty()) displayName = firstName;
+                        else displayName = "U";
+                        btnProfile.setText(String.valueOf(displayName.charAt(0)).toUpperCase());
+                    }
+                    @Override
+                    public void onCancelled(DatabaseError error) { btnProfile.setText("U"); }
+                });
+    }
+
+    // ── Row builder ───────────────────────────────────────────────────────────
 
     private void addNotifRow(String title, String body, String date, boolean showDivider) {
         android.widget.RelativeLayout row = new android.widget.RelativeLayout(this);
@@ -223,7 +209,6 @@ public class NotifActivity1 extends AppCompatActivity {
         row.setLayoutParams(rowParams);
         row.setPadding(dpToPx(12), 0, dpToPx(12), 0);
 
-        // Avatar
         android.view.View avatar = new android.view.View(this);
         android.widget.RelativeLayout.LayoutParams avatarParams =
                 new android.widget.RelativeLayout.LayoutParams(dpToPx(44), dpToPx(44));
@@ -234,14 +219,12 @@ public class NotifActivity1 extends AppCompatActivity {
         avatar.setId(android.view.View.generateViewId());
         row.addView(avatar);
 
-        // Text block
         LinearLayout textBlock = new LinearLayout(this);
         textBlock.setOrientation(LinearLayout.VERTICAL);
         textBlock.setGravity(android.view.Gravity.CENTER_VERTICAL);
         android.widget.RelativeLayout.LayoutParams textParams =
                 new android.widget.RelativeLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT);
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         textParams.addRule(android.widget.RelativeLayout.CENTER_VERTICAL);
         textParams.setMarginStart(dpToPx(56));
         textParams.setMarginEnd(dpToPx(52));
@@ -269,10 +252,8 @@ public class NotifActivity1 extends AppCompatActivity {
             tvBody.setLayoutParams(bodyParams);
             textBlock.addView(tvBody);
         }
-
         row.addView(textBlock);
 
-        // Right column (date + dot)
         LinearLayout rightCol = new LinearLayout(this);
         rightCol.setOrientation(LinearLayout.VERTICAL);
         rightCol.setGravity(android.view.Gravity.CENTER);
@@ -301,7 +282,6 @@ public class NotifActivity1 extends AppCompatActivity {
         row.addView(rightCol);
         notifContainer.addView(row);
 
-        // Divider
         if (showDivider) {
             android.view.View divider = new android.view.View(this);
             LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
@@ -313,7 +293,7 @@ public class NotifActivity1 extends AppCompatActivity {
         }
     }
 
-    // ── Empty / error states ──────────────────────────────────────
+    // ── Empty / error ─────────────────────────────────────────────────────────
 
     private void showEmptyState() {
         TextView empty = new TextView(this);
@@ -321,10 +301,8 @@ public class NotifActivity1 extends AppCompatActivity {
         empty.setTextColor(0xFFAACCDD);
         empty.setTextSize(14);
         empty.setGravity(android.view.Gravity.CENTER);
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(120));
-        empty.setLayoutParams(p);
-        notifContainer.addView(empty);
+        notifContainer.addView(empty, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(120)));
     }
 
     private void showErrorState(String msg) {
@@ -333,35 +311,24 @@ public class NotifActivity1 extends AppCompatActivity {
         err.setTextColor(0xFFFF6B6B);
         err.setTextSize(13);
         err.setGravity(android.view.Gravity.CENTER);
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(120));
-        err.setLayoutParams(p);
-        notifContainer.addView(err);
+        notifContainer.addView(err, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(120)));
     }
 
-    // ── Online presence ────────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     @Override
     protected void onResume() {
         super.onResume();
         loadProfileAvatar();
         setOnlineStatus(true);
-        // NOTE: We do NOT call loadNotificationsOnce() here on purpose.
-        // Notifications only refresh when the user pulls-to-refresh.
+        // Do NOT re-fetch here — user must pull-to-refresh to see new notifications
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         setOnlineStatus(false);
-    }
-
-    private void setOnlineStatus(boolean isOnline) {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) return;
-        DatabaseReference presenceRef = usersRef.child(currentUser.getUid()).child("online");
-        presenceRef.setValue(isOnline);
-        if (isOnline) presenceRef.onDisconnect().setValue(false);
     }
 
     @Override
@@ -373,8 +340,15 @@ public class NotifActivity1 extends AppCompatActivity {
         }
     }
 
+    private void setOnlineStatus(boolean isOnline) {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) return;
+        DatabaseReference presenceRef = usersRef.child(currentUser.getUid()).child("online");
+        presenceRef.setValue(isOnline);
+        if (isOnline) presenceRef.onDisconnect().setValue(false);
+    }
+
     private int dpToPx(int dp) {
-        float density = getResources().getDisplayMetrics().density;
-        return Math.round(dp * density);
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 }
