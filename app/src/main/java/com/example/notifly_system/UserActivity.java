@@ -74,9 +74,8 @@ public class UserActivity extends AppCompatActivity
     String currentEmail         = "";
     int    selectedCardPosition = -1;
 
-    // Tracks whether we have done the very first load this session.
-    // We only auto-fetch once (on first launch). After that the user
-    // must pull-to-refresh to see new notifications.
+    // Only auto-fetch+apply once on first launch so existing notifications
+    // are visible immediately. After that, only pull-to-refresh reveals new ones.
     private boolean initialLoadDone = false;
 
     private static final String[] SECTION_TITLES = {
@@ -132,13 +131,14 @@ public class UserActivity extends AppCompatActivity
         loadUserData();
         setOnlineStatus(true);
 
-        // Only do the automatic first fetch once per session.
-        // After that, the user must pull-to-refresh manually.
         if (!initialLoadDone) {
+            // First open: fetch from Firebase and apply immediately so existing
+            // notifications are visible right away.
             initialLoadDone = true;
-            fetchNotificationsOnce();
+            fetchAndApplyNow();
         } else {
-            // Just redraw whatever is already in the store — no network call.
+            // Returning to screen: just redraw the store as-is.
+            // New notifications from admin are NOT shown until pull-to-refresh.
             refreshAll();
         }
     }
@@ -159,50 +159,21 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
-    // ── One-time Firebase fetch ───────────────────────────────────────────────
+    // ── First-launch fetch (applies immediately) ──────────────────────────────
 
     /**
-     * Fetches notifications from Firebase ONCE (addListenerForSingleValueEvent).
-     * This means:
-     *  - On first open → loads what is currently in Firebase.
-     *  - When admin sends a new notification → it will NOT appear automatically.
-     *  - The user must pull-to-refresh to trigger another call to this method.
+     * Used only on the very first launch.
+     * Fetches Firebase data and immediately makes it visible.
      */
-    private void fetchNotificationsOnce() {
+    private void fetchAndApplyNow() {
         if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(true);
 
         notificationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
-                List<NotificationItem> incoming = new ArrayList<>();
-
-                for (DataSnapshot child : snapshot.getChildren()) {
-                    String id     = child.getKey();
-                    String title  = child.child("title").getValue(String.class);
-                    String body   = child.child("body").getValue(String.class);
-                    String target = child.child("target").getValue(String.class);
-                    Long   ts     = child.child("timestamp").getValue(Long.class);
-
-                    if (title == null) title = "Notification";
-                    if (body  == null) body  = "";
-
-                    String category  = mapTargetToCategory(target);
-                    String dateLabel = formatTimestamp(ts);
-
-                    NotificationItem item = new NotificationItem(
-                            id, title, body, dateLabel, category, false,
-                            R.drawable.avatar_teal
-                    );
-                    if (ts != null) item.timestamp = ts;
-                    incoming.add(item);
-                }
-
-                // Sort newest first before handing to the store
-                incoming.sort((a, b) -> Long.compare(b.timestamp, a.timestamp));
-
-                // Full replace sync — store clears and rebuilds from Firebase snapshot
-                NotificationStore.getInstance().syncFromFirebase(incoming);
-
+                NotificationStore store = NotificationStore.getInstance();
+                store.syncFromFirebase(parseSnapshot(snapshot));
+                store.applyPending(); // immediate — first load only
                 if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
             }
 
@@ -215,7 +186,63 @@ public class UserActivity extends AppCompatActivity
         });
     }
 
-    // ── Pull-to-refresh ───────────────────────────────────────────────────────
+    // ── Pull-to-refresh fetch (applies after fetch completes) ─────────────────
+
+    /**
+     * Used only when the user manually pulls to refresh.
+     * Fetches Firebase data, syncs to pending buffer, then applies it.
+     * This is the ONLY way new admin notifications become visible.
+     */
+    private void fetchAndApplyOnRefresh() {
+        notificationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                NotificationStore store = NotificationStore.getInstance();
+                store.syncFromFirebase(parseSnapshot(snapshot));
+                store.applyPending(); // reveals any new notifications from admin
+                if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
+                Toast.makeText(UserActivity.this,
+                        "Failed to refresh.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // ── Parse Firebase snapshot ───────────────────────────────────────────────
+
+    private List<NotificationItem> parseSnapshot(DataSnapshot snapshot) {
+        List<NotificationItem> incoming = new ArrayList<>();
+
+        for (DataSnapshot child : snapshot.getChildren()) {
+            String id     = child.getKey();
+            String title  = child.child("title").getValue(String.class);
+            String body   = child.child("body").getValue(String.class);
+            String target = child.child("target").getValue(String.class);
+            Long   ts     = child.child("timestamp").getValue(Long.class);
+
+            if (title == null) title = "Notification";
+            if (body  == null) body  = "";
+
+            String category  = mapTargetToCategory(target);
+            String dateLabel = formatTimestamp(ts);
+
+            NotificationItem item = new NotificationItem(
+                    id, title, body, dateLabel, category, false,
+                    R.drawable.avatar_teal
+            );
+            if (ts != null) item.timestamp = ts;
+            incoming.add(item);
+        }
+
+        incoming.sort((a, b) -> Long.compare(b.timestamp, a.timestamp));
+        return incoming;
+    }
+
+    // ── Pull-to-refresh setup ─────────────────────────────────────────────────
 
     private void setupSwipeRefresh() {
         if (swipeRefreshLayout == null) return;
@@ -229,12 +256,7 @@ public class UserActivity extends AppCompatActivity
                 Color.parseColor("#1E3A4A")
         );
 
-        swipeRefreshLayout.setOnRefreshListener(() -> {
-            // Manual pull-to-refresh: do a fresh one-time fetch from Firebase.
-            // This is the ONLY way new notifications from the admin will appear.
-            fetchNotificationsOnce();
-            Toast.makeText(this, "Refreshing notifications...", Toast.LENGTH_SHORT).show();
-        });
+        swipeRefreshLayout.setOnRefreshListener(this::fetchAndApplyOnRefresh);
     }
 
     // ── StoreListener ─────────────────────────────────────────────────────────
@@ -244,7 +266,7 @@ public class UserActivity extends AppCompatActivity
         runOnUiThread(this::refreshAll);
     }
 
-    // ── Refresh ───────────────────────────────────────────────────────────────
+    // ── Refresh UI ────────────────────────────────────────────────────────────
 
     private void refreshAll() {
         refreshSummaryCounts();
@@ -257,7 +279,6 @@ public class UserActivity extends AppCompatActivity
     private void refreshSummaryCounts() {
         if (summaryAdapter == null) return;
         NotificationStore store = NotificationStore.getInstance();
-
         summaryAdapter.updateCount(0, String.valueOf(store.getUnreadCount()));
         for (int i = 1; i <= 2; i++) {
             summaryAdapter.updateCount(i,
@@ -348,7 +369,7 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
-    // ── Notification preview ──────────────────────────────────────────────────
+    // ── Notification list ─────────────────────────────────────────────────────
 
     private void showNotificationsForCategory(String category) {
         while (notificationsContainer.getChildCount() > 1) {
@@ -375,8 +396,7 @@ public class UserActivity extends AppCompatActivity
 
         tvEmptyState.setVisibility(View.GONE);
         for (NotificationItem item : items) {
-            View row = buildNotificationRow(item);
-            notificationsContainer.addView(row);
+            notificationsContainer.addView(buildNotificationRow(item));
         }
     }
 
@@ -391,16 +411,11 @@ public class UserActivity extends AppCompatActivity
         TextView tvStar    = row.findViewById(R.id.tvStar);
         View     divider   = row.findViewById(R.id.vDivider);
 
-        // ── Glowing teal dot — shown only for unseen notifications ────────────
         View vNewDot = row.findViewById(R.id.vNewDot);
         if (vNewDot != null) {
             boolean isNew = NotificationStore.getInstance().isNew(item.id);
-            if (isNew) {
-                vNewDot.setVisibility(View.VISIBLE);
-                startGlowPulse(vNewDot);
-            } else {
-                vNewDot.setVisibility(View.INVISIBLE);
-            }
+            vNewDot.setVisibility(isNew ? View.VISIBLE : View.INVISIBLE);
+            if (isNew) startGlowPulse(vNewDot);
         }
 
         if (tvAvatar != null) {
@@ -412,8 +427,7 @@ public class UserActivity extends AppCompatActivity
         if (tvName    != null) tvName.setText(item.senderName);
         if (tvMessage != null) tvMessage.setText(item.message);
         if (tvDate    != null) tvDate.setText(item.dateLabel);
-
-        if (divider != null) divider.setVisibility(View.GONE);
+        if (divider   != null) divider.setVisibility(View.GONE);
 
         applyReadStyle(tvName, tvMessage, item.isRead);
         if (tvStar != null) applyStarColor(tvStar, item.isStarred);
@@ -440,7 +454,7 @@ public class UserActivity extends AppCompatActivity
         return row;
     }
 
-    // ── Glow pulse animation ──────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void startGlowPulse(View dot) {
         AlphaAnimation pulse = new AlphaAnimation(1f, 0.2f);
@@ -467,8 +481,6 @@ public class UserActivity extends AppCompatActivity
                 : Color.parseColor("#44AACCDD"));
     }
 
-    // ── Firebase helpers ──────────────────────────────────────────────────────
-
     private String mapTargetToCategory(String target) {
         if (target == null) return "Unread";
         switch (target.toLowerCase()) {
@@ -482,8 +494,7 @@ public class UserActivity extends AppCompatActivity
     private String formatTimestamp(Long ts) {
         if (ts == null || ts == 0) return "Now";
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("MMM d", Locale.getDefault());
-            return sdf.format(new Date(ts));
+            return new SimpleDateFormat("MMM d", Locale.getDefault()).format(new Date(ts));
         } catch (Exception e) {
             return "Now";
         }
@@ -504,17 +515,14 @@ public class UserActivity extends AppCompatActivity
             finish();
             return;
         }
-
         database.child(currentUser.getUid())
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot snapshot) {
                         if (!snapshot.exists()) return;
-
                         String firstName = snapshot.child("firstName").getValue(String.class);
                         String username  = snapshot.child("username").getValue(String.class);
                         String email     = snapshot.child("email").getValue(String.class);
-
                         if (username != null && !username.isEmpty()) {
                             tvWelcomeUser.setText(username + "!");
                             currentUsername = username;
@@ -525,15 +533,10 @@ public class UserActivity extends AppCompatActivity
                             tvWelcomeUser.setText("User!");
                             currentUsername = "User";
                         }
-
                         btnProfile.setText(currentUsername.substring(0, 1).toUpperCase());
-
-                        currentEmail = (email != null && !email.isEmpty())
-                                ? email
-                                : (currentUser.getEmail() != null
-                                        ? currentUser.getEmail() : "");
+                        currentEmail = (email != null && !email.isEmpty()) ? email
+                                : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
                     }
-
                     @Override
                     public void onCancelled(DatabaseError error) {
                         tvWelcomeUser.setText("User!");
@@ -541,8 +544,6 @@ public class UserActivity extends AppCompatActivity
                     }
                 });
     }
-
-    // ── Utility ───────────────────────────────────────────────────────────────
 
     private static int indexOf(String[] arr, String value) {
         for (int i = 0; i < arr.length; i++) {
@@ -554,46 +555,29 @@ public class UserActivity extends AppCompatActivity
     // ── Animation helpers ─────────────────────────────────────────────────────
 
     static void animateLift(View root) {
-        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY",
-                root.getTranslationY(), -14f);
-        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation",
-                root.getElevation(), 20f);
+        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), -14f);
+        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation", root.getElevation(), 20f);
         ty.setDuration(180); elev.setDuration(180);
-        AnimatorSet set = new AnimatorSet();
-        set.playTogether(ty, elev);
-        set.start();
+        new AnimatorSet() {{ playTogether(ty, elev); start(); }};
     }
 
     static void animateDrop(View root) {
-        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY",
-                root.getTranslationY(), 0f);
-        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation",
-                root.getElevation(), 4f);
+        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), 0f);
+        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation", root.getElevation(), 4f);
         ty.setDuration(200); elev.setDuration(200);
-        AnimatorSet set = new AnimatorSet();
-        set.playTogether(ty, elev);
-        set.start();
+        new AnimatorSet() {{ playTogether(ty, elev); start(); }};
     }
 
-    // ── Interfaces / Models ───────────────────────────────────────────────────
+    // ── Inner types ───────────────────────────────────────────────────────────
 
-    interface OnCardTappedListener {
-        void onTapped(int position);
-    }
+    interface OnCardTappedListener { void onTapped(int position); }
 
     static class SummaryCard {
-        String count;
-        String label;
-        String colorHex;
-
+        String count, label, colorHex;
         SummaryCard(String count, String label, String colorHex) {
-            this.count    = count;
-            this.label    = label;
-            this.colorHex = colorHex;
+            this.count = count; this.label = label; this.colorHex = colorHex;
         }
     }
-
-    // ── SummaryCardAdapter ────────────────────────────────────────────────────
 
     static class SummaryCardAdapter
             extends RecyclerView.Adapter<SummaryCardAdapter.CardViewHolder> {
@@ -601,55 +585,40 @@ public class UserActivity extends AppCompatActivity
         private final Context              context;
         private final List<SummaryCard>    items;
         private final OnCardTappedListener listener;
-
         private int     selectedPosition = -1;
-        private float   touchStartX      = 0f;
-        private float   touchStartY      = 0f;
-        private boolean isDragging       = false;
-
+        private float   touchStartX = 0f, touchStartY = 0f;
+        private boolean isDragging  = false;
         private static final int DRAG_THRESHOLD_DP = 8;
 
-        SummaryCardAdapter(Context context, List<SummaryCard> items,
-                           OnCardTappedListener listener) {
-            this.context  = context;
-            this.items    = items;
-            this.listener = listener;
+        SummaryCardAdapter(Context context, List<SummaryCard> items, OnCardTappedListener listener) {
+            this.context = context; this.items = items; this.listener = listener;
         }
 
-        @NonNull
-        @Override
+        @NonNull @Override
         public CardViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(context)
-                    .inflate(R.layout.item_summary_card, parent, false);
-            return new CardViewHolder(v);
+            return new CardViewHolder(LayoutInflater.from(context)
+                    .inflate(R.layout.item_summary_card, parent, false));
         }
 
         @Override
         public void onBindViewHolder(@NonNull CardViewHolder holder, int position) {
             SummaryCard card     = items.get(position);
             boolean     selected = (position == selectedPosition);
-
             holder.tvCount.setText(card.count);
             holder.tvCount.setTextColor(Color.parseColor(card.colorHex));
             holder.tvLabel.setText(card.label);
-
             applyState(holder, card, selected, false);
 
-            float threshold = DRAG_THRESHOLD_DP
-                    * context.getResources().getDisplayMetrics().density;
-
+            float threshold = DRAG_THRESHOLD_DP * context.getResources().getDisplayMetrics().density;
             holder.itemView.setOnTouchListener((v, event) -> {
                 int pos = holder.getAdapterPosition();
                 if (pos == RecyclerView.NO_ID) return false;
-
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        touchStartX = event.getRawX();
-                        touchStartY = event.getRawY();
-                        isDragging  = false;
+                        touchStartX = event.getRawX(); touchStartY = event.getRawY();
+                        isDragging = false;
                         v.getParent().requestDisallowInterceptTouchEvent(true);
                         return true;
-
                     case MotionEvent.ACTION_MOVE:
                         float dx = Math.abs(event.getRawX() - touchStartX);
                         float dy = Math.abs(event.getRawY() - touchStartY);
@@ -658,7 +627,6 @@ public class UserActivity extends AppCompatActivity
                             v.getParent().requestDisallowInterceptTouchEvent(false);
                         }
                         return !isDragging;
-
                     case MotionEvent.ACTION_UP:
                         v.getParent().requestDisallowInterceptTouchEvent(false);
                         if (!isDragging) {
@@ -678,7 +646,6 @@ public class UserActivity extends AppCompatActivity
                         }
                         isDragging = false;
                         return true;
-
                     case MotionEvent.ACTION_CANCEL:
                         v.getParent().requestDisallowInterceptTouchEvent(false);
                         isDragging = false;
@@ -688,44 +655,28 @@ public class UserActivity extends AppCompatActivity
             });
         }
 
-        private void applyState(CardViewHolder holder, SummaryCard card,
-                                boolean selected, boolean animate) {
+        private void applyState(CardViewHolder holder, SummaryCard card, boolean selected, boolean animate) {
             View root = holder.itemView;
-
-            if (animate) {
-                if (selected) animateLift(root);
-                else          animateDrop(root);
-            } else {
-                root.setTranslationY(selected ? -14f : 0f);
-                root.setElevation(selected ? 20f : 4f);
-            }
-
+            if (animate) { if (selected) animateLift(root); else animateDrop(root); }
+            else { root.setTranslationY(selected ? -14f : 0f); root.setElevation(selected ? 20f : 4f); }
             if (holder.cardView != null) {
                 if (selected) {
                     int a = Color.parseColor(card.colorHex);
-                    int r = Math.max(0, Math.min(255,
-                            (int)(0x1E + 0.20f * (Color.red(a)   - 0x1E))));
-                    int g = Math.max(0, Math.min(255,
-                            (int)(0x3A + 0.20f * (Color.green(a) - 0x3A))));
-                    int b = Math.max(0, Math.min(255,
-                            (int)(0x4A + 0.20f * (Color.blue(a)  - 0x4A))));
+                    int r = Math.max(0, Math.min(255, (int)(0x1E + 0.20f * (Color.red(a)   - 0x1E))));
+                    int g = Math.max(0, Math.min(255, (int)(0x3A + 0.20f * (Color.green(a) - 0x3A))));
+                    int b = Math.max(0, Math.min(255, (int)(0x4A + 0.20f * (Color.blue(a)  - 0x4A))));
                     holder.cardView.setCardBackgroundColor(Color.rgb(r, g, b));
                 } else {
                     holder.cardView.setCardBackgroundColor(Color.parseColor("#1E3A4A"));
                 }
             }
-
             if (holder.viewGlow != null) {
                 holder.viewGlow.setGlowColor(Color.parseColor(card.colorHex));
-                holder.viewGlow.animate()
-                        .alpha(selected ? 1f : 0f)
-                        .setDuration(animate ? 220 : 0)
-                        .start();
+                holder.viewGlow.animate().alpha(selected ? 1f : 0f).setDuration(animate ? 220 : 0).start();
             }
         }
 
-        @Override
-        public int getItemCount() { return items.size(); }
+        @Override public int getItemCount() { return items.size(); }
 
         public void updateCount(int position, String newCount) {
             if (position < 0 || position >= items.size()) return;
@@ -734,11 +685,9 @@ public class UserActivity extends AppCompatActivity
         }
 
         static class CardViewHolder extends RecyclerView.ViewHolder {
-            TextView tvCount;
-            TextView tvLabel;
+            TextView tvCount, tvLabel;
             CardView cardView;
             GlowView viewGlow;
-
             CardViewHolder(@NonNull View itemView) {
                 super(itemView);
                 tvCount  = itemView.findViewById(R.id.tvCount);
