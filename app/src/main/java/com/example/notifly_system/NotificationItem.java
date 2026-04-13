@@ -10,6 +10,7 @@ public class NotificationItem {
     public boolean isStarred;
     public boolean isRead;
     public boolean isArchived;
+    public long    timestamp;        // ← from Firebase
     public int     avatarResId;
 
     public NotificationItem(String id, String senderName, String message,
@@ -24,6 +25,7 @@ public class NotificationItem {
         this.isStarred        = isStarred;
         this.isRead           = false;
         this.isArchived       = false;
+        this.timestamp        = 0;
         this.avatarResId      = avatarResId;
     }
 }
