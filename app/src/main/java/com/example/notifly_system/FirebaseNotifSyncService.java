@@ -1,7 +1,5 @@
 package com.example.notifly_system;
 
-import android.content.Context;
-
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -47,11 +45,11 @@ public class FirebaseNotifSyncService {
                 List<NotificationItem> incoming = new ArrayList<>();
 
                 for (DataSnapshot child : snapshot.getChildren()) {
-                    String id        = child.getKey();
-                    String title     = child.child("title").getValue(String.class);
-                    String body      = child.child("body").getValue(String.class);
-                    String target    = child.child("target").getValue(String.class);
-                    Long   ts        = child.child("timestamp").getValue(Long.class);
+                    String id     = child.getKey();
+                    String title  = child.child("title").getValue(String.class);
+                    String body   = child.child("body").getValue(String.class);
+                    String target = child.child("target").getValue(String.class);
+                    Long   ts     = child.child("timestamp").getValue(Long.class);
 
                     if (title == null) title = "Notification";
                     if (body  == null) body  = "";
@@ -62,13 +60,15 @@ public class FirebaseNotifSyncService {
                     // Format timestamp into a readable date label
                     String dateLabel = formatTimestamp(ts);
 
+                    // Constructor: id, senderName, message, dateLabel,
+                    //              category, isStarred, avatarResId
                     NotificationItem item = new NotificationItem(
                             id,
                             title,       // senderName = title from admin
                             body,        // message    = body from admin
                             dateLabel,
                             category,
-                            false,
+                            false,       // isStarred  = false by default
                             R.drawable.avatar_teal
                     );
                     if (ts != null) item.timestamp = ts;
@@ -76,13 +76,14 @@ public class FirebaseNotifSyncService {
                     incoming.add(item);
                 }
 
-                // Push to store — this triggers StoreListeners on all screens
+                // Push to store — triggers StoreListeners on all screens
+                // and replaces sample data if real notifications exist
                 NotificationStore.getInstance().syncFromFirebase(incoming);
             }
 
             @Override
             public void onCancelled(DatabaseError error) {
-                // Silent fail — store keeps whatever it had
+                // Silent fail — store keeps whatever it had (samples or real)
             }
         };
 
