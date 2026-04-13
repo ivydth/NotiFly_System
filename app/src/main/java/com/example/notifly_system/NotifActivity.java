@@ -48,7 +48,7 @@ public class NotifActivity extends AppCompatActivity {
         tvFullDate    = findViewById(R.id.tvFullDate);
         unreadDot     = findViewById(R.id.unreadDot);
         btnMarkRead   = findViewById(R.id.btnMarkRead);
-        btnArchive    = findViewById(R.id.btnDelete); // same ID, relabeled in XML
+        btnArchive    = findViewById(R.id.btnDelete);
     }
 
     // ── Load data ─────────────────────────────────────────────────────────────
@@ -57,10 +57,21 @@ public class NotifActivity extends AppCompatActivity {
         String notifId = getIntent().getStringExtra(EXTRA_NOTIF_ID);
 
         if (notifId != null) {
-            for (NotificationItem n : NotificationStore.getInstance().getAll()) {
+            // Search all items including archived ones so archive screen
+            // can also open this detail view
+            for (NotificationItem n : NotificationStore.getInstance().getArchived()) {
                 if (n.id.equals(notifId)) {
                     currentItem = n;
                     break;
+                }
+            }
+            // If not found in archive, check normal items
+            if (currentItem == null) {
+                for (NotificationItem n : NotificationStore.getInstance().getAll()) {
+                    if (n.id.equals(notifId)) {
+                        currentItem = n;
+                        break;
+                    }
                 }
             }
         }
@@ -79,6 +90,7 @@ public class NotifActivity extends AppCompatActivity {
 
         // No auto-mark — user must press the button
         updateReadState(currentItem.isRead);
+        updateArchiveButton(currentItem.isArchived);
     }
 
     // ── Click listeners ───────────────────────────────────────────────────────
@@ -87,7 +99,7 @@ public class NotifActivity extends AppCompatActivity {
 
         btnBack.setOnClickListener(v -> onBackPressed());
 
-        // Mark as Read — only works if not already read
+        // Toggles between Mark as Read and Mark as Unread
         btnMarkRead.setOnClickListener(v -> {
             if (!currentItem.isRead) {
                 NotificationStore.getInstance().markRead(currentItem.id);
@@ -95,19 +107,30 @@ public class NotifActivity extends AppCompatActivity {
                 updateReadState(true);
                 Toast.makeText(this, "Marked as read", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "Already marked as read", Toast.LENGTH_SHORT).show();
+                NotificationStore.getInstance().markUnread(currentItem.id);
+                currentItem.isRead = false;
+                updateReadState(false);
+                Toast.makeText(this, "Marked as unread", Toast.LENGTH_SHORT).show();
             }
         });
 
-        // Archive — moves notification to archive and opens ArcActivity
+        // Toggles between Archive and Unarchive
         btnArchive.setOnClickListener(v -> {
-            NotificationStore.getInstance().archive(currentItem.id);
-            Toast.makeText(this, "Notification archived", Toast.LENGTH_SHORT).show();
-            // Go straight to the archive screen so user sees it land there
-            Intent intent = new Intent(this, ArcActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-            finish();
+            if (!currentItem.isArchived) {
+                NotificationStore.getInstance().archive(currentItem.id);
+                currentItem.isArchived = true;
+                Toast.makeText(this, "Notification archived", Toast.LENGTH_SHORT).show();
+                // Navigate to archive so user sees it land there
+                Intent intent = new Intent(this, ArcActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                finish();
+            } else {
+                NotificationStore.getInstance().unarchive(currentItem.id);
+                currentItem.isArchived = false;
+                updateArchiveButton(false);
+                Toast.makeText(this, "Removed from archive", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
@@ -116,14 +139,22 @@ public class NotifActivity extends AppCompatActivity {
     private void updateReadState(boolean read) {
         if (read) {
             unreadDot.setVisibility(View.GONE);
-            btnMarkRead.setText("Already Read");
-            btnMarkRead.setAlpha(0.5f);
-            btnMarkRead.setEnabled(false);
+            btnMarkRead.setText("Mark as Unread");
+            btnMarkRead.setAlpha(1f);
+            btnMarkRead.setEnabled(true);
         } else {
             unreadDot.setVisibility(View.VISIBLE);
             btnMarkRead.setText("Mark as Read");
             btnMarkRead.setAlpha(1f);
             btnMarkRead.setEnabled(true);
+        }
+    }
+
+    private void updateArchiveButton(boolean archived) {
+        if (archived) {
+            btnArchive.setText("Remove from Archive");
+        } else {
+            btnArchive.setText("Archive");
         }
     }
 }
