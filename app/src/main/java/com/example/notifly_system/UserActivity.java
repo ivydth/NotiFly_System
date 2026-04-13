@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class UserActivity extends AppCompatActivity
         implements NotificationStore.StoreListener {
@@ -58,7 +59,7 @@ public class UserActivity extends AppCompatActivity
     AppCompatImageView ivHome, ivSearch, ivBell;
     TextView           tvBellBadge;
 
-    // ✅ Pull-to-refresh
+    // Pull-to-refresh
     SwipeRefreshLayout swipeRefreshLayout;
 
     // ── Firebase ──────────────────────────────────────────────────────────────
@@ -76,6 +77,9 @@ public class UserActivity extends AppCompatActivity
     String currentUsername      = "User";
     String currentEmail         = "";
     int    selectedCardPosition = -1;
+
+    // Philippines timezone (UTC+8)
+    private static final TimeZone PH_TIMEZONE = TimeZone.getTimeZone("Asia/Manila");
 
     private static final String[] SECTION_TITLES = {
             "Unread", "Announcements", "Events", "Starred"
@@ -109,11 +113,11 @@ public class UserActivity extends AppCompatActivity
         tvBellBadge            = findViewById(R.id.tvBellBadge);
         swipeRefreshLayout     = findViewById(R.id.swipeRefreshLayout);
 
-        mAuth             = FirebaseAuth.getInstance();
-        database          = FirebaseDatabase.getInstance(
+        mAuth            = FirebaseAuth.getInstance();
+        database         = FirebaseDatabase.getInstance(
                 "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
         ).getReference("users");
-        notificationsRef  = FirebaseDatabase.getInstance(
+        notificationsRef = FirebaseDatabase.getInstance(
                 "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
         ).getReference("notifications");
 
@@ -129,7 +133,7 @@ public class UserActivity extends AppCompatActivity
         NotificationStore.getInstance().addListener(this);
         loadUserData();
         setOnlineStatus(true);
-        attachRealtimeListener(); // ✅ start realtime Firebase listener
+        attachRealtimeListener();
         refreshAll();
     }
 
@@ -137,7 +141,7 @@ public class UserActivity extends AppCompatActivity
     protected void onPause() {
         super.onPause();
         NotificationStore.getInstance().removeListener(this);
-        detachRealtimeListener(); // ✅ stop listener to save resources
+        detachRealtimeListener();
         setOnlineStatus(false);
     }
 
@@ -152,11 +156,6 @@ public class UserActivity extends AppCompatActivity
 
     // ── Realtime Firebase listener ────────────────────────────────────────────
 
-    /**
-     * Attaches a realtime ValueEventListener to /notifications.
-     * Any change in Firebase (new notification added by admin) will
-     * immediately sync to the store and update the UI + bell badge.
-     */
     private void attachRealtimeListener() {
         if (notifListener != null) return; // already attached
 
@@ -167,19 +166,23 @@ public class UserActivity extends AppCompatActivity
 
                 for (DataSnapshot child : snapshot.getChildren()) {
                     String id     = child.getKey();
+                    String sender = child.child("sender").getValue(String.class);
                     String title  = child.child("title").getValue(String.class);
                     String body   = child.child("body").getValue(String.class);
                     String target = child.child("target").getValue(String.class);
                     Long   ts     = child.child("timestamp").getValue(Long.class);
 
-                    if (title == null) title = "Notification";
-                    if (body  == null) body  = "";
+                    if (sender == null || sender.isEmpty()) sender = "NotiFly System";
+                    if (title  == null) title  = "Notification";
+                    if (body   == null) body   = "";
 
                     String category  = mapTargetToCategory(target);
-                    String dateLabel = formatTimestamp(ts);
+                    // ✅ Format with Philippines time (date + time)
+                    String dateLabel = formatTimestampPH(ts);
 
                     NotificationItem item = new NotificationItem(
                             id,
+                            sender,   // ✅ senderName = sender field from Firebase
                             title,
                             body,
                             dateLabel,
@@ -191,10 +194,8 @@ public class UserActivity extends AppCompatActivity
                     incoming.add(item);
                 }
 
-                // Sync to store — updates badge + UI automatically via onStoreChanged()
                 NotificationStore.getInstance().syncFromFirebase(incoming);
 
-                // Stop the swipe refresh spinner if it was spinning
                 if (swipeRefreshLayout != null) {
                     swipeRefreshLayout.setRefreshing(false);
                 }
@@ -222,26 +223,19 @@ public class UserActivity extends AppCompatActivity
 
     // ── Pull-to-refresh ───────────────────────────────────────────────────────
 
-    /**
-     * Swipe down on the screen to manually force a Firebase re-fetch.
-     * The realtime listener already handles automatic updates, but this
-     * gives users a visible way to confirm everything is up to date.
-     */
     private void setupSwipeRefresh() {
         if (swipeRefreshLayout == null) return;
 
-        // Match the app's color scheme
         swipeRefreshLayout.setColorSchemeColors(
-                Color.parseColor("#00C9B1"),  // teal
-                Color.parseColor("#5BB8FF"),  // blue
-                Color.parseColor("#C084FC")   // purple
+                Color.parseColor("#00C9B1"),
+                Color.parseColor("#5BB8FF"),
+                Color.parseColor("#C084FC")
         );
         swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
                 Color.parseColor("#1E3A4A")
         );
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
-            // Detach and re-attach to force a fresh fetch
             detachRealtimeListener();
             attachRealtimeListener();
             Toast.makeText(this, "Refreshing notifications...", Toast.LENGTH_SHORT).show();
@@ -252,7 +246,6 @@ public class UserActivity extends AppCompatActivity
 
     @Override
     public void onStoreChanged() {
-        // Called on background thread by Firebase — post to UI thread
         runOnUiThread(this::refreshAll);
     }
 
@@ -280,7 +273,8 @@ public class UserActivity extends AppCompatActivity
 
     /**
      * Shows or hides the red badge on the bell icon.
-     * Number = how many notifications arrived since user last tapped bell.
+     * The badge is anchored tightly to the top-right corner of ivBell
+     * via the XML layout (negative margins on tvBellBadge).
      */
     private void refreshBellBadge() {
         if (tvBellBadge == null) return;
@@ -335,7 +329,6 @@ public class UserActivity extends AppCompatActivity
 
         ivSearch.setOnClickListener(v -> { /* TODO */ });
 
-        // Bell tap → mark all seen (badge resets to 0) then open notification screen
         ivBell.setOnClickListener(v -> {
             NotificationStore.getInstance().markAllSeen();
             refreshBellBadge();
@@ -397,18 +390,38 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Builds one notification row.
+     *
+     * ✅ The avatar circle now shows the FIRST LETTER of the sender name,
+     *    just like the HTML admin panel preview. This way the user sees
+     *    which sender sent the notification at a glance.
+     */
     private View buildNotificationRow(NotificationItem item) {
         View row = LayoutInflater.from(this)
                 .inflate(R.layout.item_notification_row, notificationsContainer, false);
 
-        View     avatar    = row.findViewById(R.id.ivAvatar);
+        // ✅ Sender avatar — shows first letter of sender name
+        TextView tvAvatar  = row.findViewById(R.id.tvAvatar);
         TextView tvName    = row.findViewById(R.id.tvSenderName);
         TextView tvMessage = row.findViewById(R.id.tvMessage);
         TextView tvDate    = row.findViewById(R.id.tvDate);
         TextView tvStar    = row.findViewById(R.id.tvStar);
         View     divider   = row.findViewById(R.id.vDivider);
 
-        avatar.setBackgroundResource(item.avatarResId);
+        // ── Sender initial avatar ──────────────────────────────────────────
+        if (tvAvatar != null) {
+            String name   = (item.senderName != null && !item.senderName.isEmpty())
+                    ? item.senderName : "N";
+            String letter = String.valueOf(name.charAt(0)).toUpperCase();
+            tvAvatar.setText(letter);
+
+            // Assign a consistent color per sender letter so it always
+            // looks the same (A = teal, B = blue, etc.)
+            tvAvatar.setBackgroundResource(R.drawable.avatar_teal);
+            tvAvatar.setTextColor(Color.WHITE);
+        }
+
         tvName.setText(item.senderName);
         tvMessage.setText(item.message);
         tvDate.setText(item.dateLabel);
@@ -466,10 +479,17 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
-    private String formatTimestamp(Long ts) {
+    /**
+     * Formats a Firebase timestamp into Philippine Standard Time (UTC+8).
+     * Shows: "Apr 13 · 10:45 AM"
+     * Falls back to "Now" if timestamp is null.
+     */
+    private String formatTimestampPH(Long ts) {
         if (ts == null || ts == 0) return "Now";
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("MMM d", Locale.getDefault());
+            SimpleDateFormat sdf = new SimpleDateFormat(
+                    "MMM d · hh:mm a", Locale.getDefault());
+            sdf.setTimeZone(PH_TIMEZONE); // ✅ Philippines time (UTC+8)
             return sdf.format(new Date(ts));
         } catch (Exception e) {
             return "Now";
