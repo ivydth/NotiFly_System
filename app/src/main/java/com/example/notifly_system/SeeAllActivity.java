@@ -115,22 +115,22 @@ public class SeeAllActivity extends AppCompatActivity
     }
 
     private void setupClickListeners() {
-        btnMenu.setOnClickListener(v -> {
+        if (btnMenu    != null) btnMenu.setOnClickListener(v -> {
             startActivity(new Intent(this, UserMenu.class));
             overridePendingTransition(0, 0);
         });
 
-        btnProfile.setOnClickListener(v ->
+        if (btnProfile != null) btnProfile.setOnClickListener(v ->
                 startActivity(new Intent(this, ProfileActivity.class)));
 
-        ivHome.setOnClickListener(v -> {
+        if (ivHome     != null) ivHome.setOnClickListener(v -> {
             startActivity(new Intent(this, UserActivity.class));
             finish();
         });
 
-        ivSearch.setOnClickListener(v -> { /* TODO */ });
+        if (ivSearch   != null) ivSearch.setOnClickListener(v -> { /* TODO */ });
 
-        ivBell.setOnClickListener(v ->
+        if (ivBell     != null) ivBell.setOnClickListener(v ->
                 startActivity(new Intent(this, NotifActivity1.class)));
     }
 
@@ -195,27 +195,39 @@ public class SeeAllActivity extends AppCompatActivity
         public void onBindViewHolder(@NonNull VH h, int position) {
             NotificationItem item = data.get(position);
 
-            h.avatar.setBackgroundResource(item.avatarResId);
-            h.tvName.setText(item.senderName);
-            h.tvMessage.setText(item.message);
-            h.tvDate.setText(item.dateLabel);
-
-            // Dim already-read items
-            if (item.isRead) {
-                h.tvName.setTextColor(Color.parseColor("#668899"));
-                h.tvMessage.setTextColor(Color.parseColor("#446677"));
-            } else {
-                h.tvName.setTextColor(Color.WHITE);
-                h.tvMessage.setTextColor(Color.parseColor("#AACCDD"));
+            // ✅ Null-safe avatar — same fix as ArcActivity
+            if (h.avatar != null && item.avatarResId != 0) {
+                try {
+                    h.avatar.setBackgroundResource(item.avatarResId);
+                } catch (Exception e) {
+                    h.avatar.setBackgroundResource(R.drawable.avatar_teal);
+                }
             }
 
-            applyStarColor(h.tvStar, item.isStarred);
+            if (h.tvName    != null) h.tvName.setText(item.senderName);
+            if (h.tvMessage != null) h.tvMessage.setText(item.message);
+            if (h.tvDate    != null) h.tvDate.setText(item.dateLabel);
 
-            // Star tap — must not also trigger row tap
-            h.tvStar.setOnClickListener(v -> {
-                if (starListener != null) starListener.onStarClick(item);
+            // Dim already-read items
+            if (h.tvName != null && h.tvMessage != null) {
+                if (item.isRead) {
+                    h.tvName.setTextColor(Color.parseColor("#668899"));
+                    h.tvMessage.setTextColor(Color.parseColor("#446677"));
+                } else {
+                    h.tvName.setTextColor(Color.WHITE);
+                    h.tvMessage.setTextColor(Color.parseColor("#AACCDD"));
+                }
+            }
+
+            if (h.tvStar != null) {
                 applyStarColor(h.tvStar, item.isStarred);
-            });
+
+                // Star tap — must not also trigger row tap
+                h.tvStar.setOnClickListener(v -> {
+                    if (starListener != null) starListener.onStarClick(item);
+                    applyStarColor(h.tvStar, item.isStarred);
+                });
+            }
 
             // Row tap → open NotifActivity
             h.itemView.setOnClickListener(v -> {
