@@ -109,34 +109,56 @@ public class NotificationStore {
     // ── Firebase sync ─────────────────────────────────────────────────────────
 
     /**
-     * Called by FirebaseNotifSyncService / UserActivity realtime listener.
-     * Strips samples when real data arrives, merges without duplicating,
-     * recalculates bell badge count.
-     * Incoming list is expected to already be sorted newest-first by the caller.
-     * The internal list is re-sorted after every sync to guarantee order.
+     * Called every time the Firebase realtime listener fires (onDataChange).
+     *
+     * KEY FIX: Instead of merging incrementally (which skips new items whose
+     * IDs were never seen), we do a FULL REPLACE every time:
+     *   1. Remove all sample placeholders.
+     *   2. Remove all non-starred, non-archived real notifications —
+     *      they will be fully replaced by the fresh Firebase snapshot.
+     *   3. Keep starred/archived items so user actions are not lost.
+     *   4. Add every item from the incoming snapshot. For items already
+     *      preserved in step 3, carry over their star/archive/read flags.
+     *   5. Re-sort newest-first and recalculate the bell badge.
+     *
+     * This guarantees that a notification sent from the admin panel appears
+     * immediately the next time onDataChange fires — no manual refresh needed.
      */
     public synchronized void syncFromFirebase(List<NotificationItem> incoming) {
-        if (!incoming.isEmpty()) {
-            items.removeIf(n -> n.id.startsWith("sample_"));
+
+        // Step 1 — always strip samples
+        items.removeIf(n -> n.id.startsWith("sample_"));
+
+        // Step 2 — snapshot the current user-action flags before clearing
+        // so we can carry them over to the freshly synced items
+        List<NotificationItem> preserved = new ArrayList<>();
+        for (NotificationItem n : items) {
+            if (n.isStarred || n.isArchived || n.isRead) {
+                preserved.add(n);
+            }
         }
 
+        // Step 3 — clear all current real items; we are doing a full replace
+        items.clear();
+
+        // Step 4 — add every item from Firebase
         for (NotificationItem incomingItem : incoming) {
-            boolean exists = false;
-            for (NotificationItem existing : items) {
-                if (existing.id.equals(incomingItem.id)) {
-                    exists = true;
+            // Carry over user-set flags from preserved list
+            for (NotificationItem p : preserved) {
+                if (p.id.equals(incomingItem.id)) {
+                    incomingItem.isStarred  = p.isStarred;
+                    incomingItem.isArchived = p.isArchived;
+                    incomingItem.isRead     = p.isRead;
                     break;
                 }
             }
-            if (!exists) {
-                items.add(incomingItem);
-            }
+            items.add(incomingItem);
         }
 
-        // Always keep internal list newest-first
+        // Step 5 — sort newest-first
         items.sort(NEWEST_FIRST);
 
-        // Bell badge = items the user hasn't seen yet
+        // Step 6 — recalculate bell badge
         newCount = 0;
         for (NotificationItem n : items) {
             if (!n.id.startsWith("sample_") && !seenIds.contains(n.id)) {
@@ -202,14 +224,11 @@ public class NotificationStore {
     /**
      * ALL starred notifications — includes BOTH archived and non-archived,
      * newest first.
-     * ✅ This is the key fix: removing the !isArchived filter means that
-     * starring a notification inside ArcActivity immediately updates the
-     * Starred count on the UserActivity dashboard, and unstarring removes it.
      */
     public synchronized List<NotificationItem> getStarred() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
-            if (n.isStarred) result.add(n); // ✅ no isArchived filter
+            if (n.isStarred) result.add(n);
         }
         result.sort(NEWEST_FIRST);
         return result;
