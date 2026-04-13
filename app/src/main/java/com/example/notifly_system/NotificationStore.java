@@ -1,6 +1,7 @@
 package com.example.notifly_system;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class NotificationStore {
@@ -16,6 +17,11 @@ public class NotificationStore {
 
     private int     newCount      = 0;
     private boolean samplesLoaded = false;
+
+    // ── Newest-first comparator ───────────────────────────────────────────────
+
+    private static final Comparator<NotificationItem> NEWEST_FIRST =
+            (a, b) -> Long.compare(b.timestamp, a.timestamp);
 
     private NotificationStore() {
         loadSampleData();
@@ -106,6 +112,8 @@ public class NotificationStore {
      * Called by FirebaseNotifSyncService / UserActivity realtime listener.
      * Strips samples when real data arrives, merges without duplicating,
      * recalculates bell badge count.
+     * Incoming list is expected to already be sorted newest-first by the caller.
+     * The internal list is re-sorted after every sync to guarantee order.
      */
     public synchronized void syncFromFirebase(List<NotificationItem> incoming) {
         if (!incoming.isEmpty()) {
@@ -124,6 +132,9 @@ public class NotificationStore {
                 items.add(incomingItem);
             }
         }
+
+        // Always keep internal list newest-first
+        items.sort(NEWEST_FIRST);
 
         // Bell badge = items the user hasn't seen yet
         newCount = 0;
@@ -157,27 +168,30 @@ public class NotificationStore {
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
-    /** All non-archived notifications. */
+    /** All non-archived notifications, newest first. */
     public synchronized List<NotificationItem> getAll() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
             if (!n.isArchived) result.add(n);
         }
+        result.sort(NEWEST_FIRST);
         return result;
     }
 
-    /** Non-archived notifications matching a specific category. */
+    /** Non-archived notifications matching a specific category, newest first. */
     public synchronized List<NotificationItem> getByCategory(String category) {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
             if (!n.isArchived && n.originalCategory.equalsIgnoreCase(category))
                 result.add(n);
         }
+        result.sort(NEWEST_FIRST);
         return result;
     }
 
     /**
-     * ALL starred notifications — includes BOTH archived and non-archived.
+     * ALL starred notifications — includes BOTH archived and non-archived,
+     * newest first.
      * ✅ This is the key fix: removing the !isArchived filter means that
      * starring a notification inside ArcActivity immediately updates the
      * Starred count on the UserActivity dashboard, and unstarring removes it.
@@ -187,10 +201,11 @@ public class NotificationStore {
         for (NotificationItem n : items) {
             if (n.isStarred) result.add(n); // ✅ no isArchived filter
         }
+        result.sort(NEWEST_FIRST);
         return result;
     }
 
-    /** Unread notifications — not archived, category Unread, not yet read. */
+    /** Unread notifications — not archived, category Unread, not yet read, newest first. */
     public synchronized List<NotificationItem> getUnread() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -199,6 +214,7 @@ public class NotificationStore {
                     && !n.isRead)
                 result.add(n);
         }
+        result.sort(NEWEST_FIRST);
         return result;
     }
 
@@ -213,12 +229,13 @@ public class NotificationStore {
         return count;
     }
 
-    /** All archived notifications. */
+    /** All archived notifications, newest first. */
     public synchronized List<NotificationItem> getArchived() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
             if (n.isArchived) result.add(n);
         }
+        result.sort(NEWEST_FIRST);
         return result;
     }
 
@@ -229,6 +246,7 @@ public class NotificationStore {
             if (n.id.equals(item.id)) return;
         }
         items.add(item);
+        items.sort(NEWEST_FIRST);
         notifyListeners();
     }
 
