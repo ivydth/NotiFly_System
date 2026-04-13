@@ -166,6 +166,16 @@ public class NotificationStore {
         return newCount;
     }
 
+    /**
+     * Returns true if this notification has NOT been seen yet by the user.
+     * Used to show the glowing teal dot on new notification rows.
+     * Samples are always considered seen and will never show the dot.
+     */
+    public synchronized boolean isNew(String id) {
+        if (id == null || id.startsWith("sample_")) return false;
+        return !seenIds.contains(id);
+    }
+
     // ── Queries ───────────────────────────────────────────────────────────────
 
     /** All non-archived notifications, newest first. */
