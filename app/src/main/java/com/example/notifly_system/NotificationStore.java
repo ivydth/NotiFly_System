@@ -15,8 +15,8 @@ public class NotificationStore {
 
     // Tracks how many Firebase notifications have been seen
     // so the bell badge shows only NEW ones
-    private int lastSeenCount = 0;
-    private int newCount      = 0;
+    private int     lastSeenCount = 0;
+    private int     newCount      = 0;
 
     // Flag so sample data is only injected once
     private boolean samplesLoaded = false;
@@ -35,22 +35,24 @@ public class NotificationStore {
     /**
      * Pre-populates the store with placeholder notifications so the
      * home screen is never blank while Firebase loads.
-     * These are replaced/merged once syncFromFirebase() is called.
+     * These are replaced/merged once syncFromFirebase() is called
+     * with real data.
+     *
+     * Constructor order:
+     * id, senderName, message, dateLabel, category, isStarred, avatarResId
      */
     private void loadSampleData() {
         if (samplesLoaded) return;
         samplesLoaded = true;
 
-        // Format: id, senderName, message, dateLabel,
-        //         avatarResId, originalCategory, isRead, isStarred, isArchived
         items.add(new NotificationItem(
                 "sample_1",
                 "Admin",
                 "Welcome to NotiFly! Your notifications will appear here.",
                 "Today",
-                R.drawable.avatar_teal,
                 "Announcements",
-                false, false, false
+                false,
+                R.drawable.avatar_teal
         ));
 
         items.add(new NotificationItem(
@@ -58,9 +60,9 @@ public class NotificationStore {
                 "System",
                 "School event: Foundation Day celebration on April 20.",
                 "Yesterday",
-                R.drawable.avatar_teal,
                 "Events",
-                false, false, false
+                false,
+                R.drawable.avatar_teal
         ));
 
         items.add(new NotificationItem(
@@ -68,9 +70,9 @@ public class NotificationStore {
                 "Class Adviser",
                 "Reminder: Submit your project requirements by Friday.",
                 "Apr 11",
-                R.drawable.avatar_teal,
                 "Announcements",
-                true, false, false
+                false,
+                R.drawable.avatar_teal
         ));
 
         items.add(new NotificationItem(
@@ -78,9 +80,9 @@ public class NotificationStore {
                 "Registrar",
                 "Enrollment for next semester is now open.",
                 "Apr 10",
-                R.drawable.avatar_teal,
                 "Announcements",
-                false, true, false
+                true,           // starred so Starred summary card also shows data
+                R.drawable.avatar_teal
         ));
 
         items.add(new NotificationItem(
@@ -88,9 +90,9 @@ public class NotificationStore {
                 "Guidance Office",
                 "Career talk scheduled for April 18 at the auditorium.",
                 "Apr 9",
-                R.drawable.avatar_teal,
                 "Events",
-                true, false, false
+                false,
+                R.drawable.avatar_teal
         ));
     }
 
@@ -112,26 +114,26 @@ public class NotificationStore {
 
     /**
      * Called by FirebaseNotifSyncService whenever the /notifications node
-     * changes. On first Firebase sync, removes sample placeholders first,
-     * then merges real items in without duplicating.
+     * changes. On first real Firebase sync, removes sample placeholders so
+     * real data takes over cleanly. If Firebase returns an empty list,
+     * samples are kept so the screen is never blank.
      */
     public synchronized void syncFromFirebase(List<NotificationItem> incoming) {
-        // On first real sync, strip out sample_ placeholders so real data
-        // takes over cleanly
+        // Only strip samples when real data actually arrives
         if (!incoming.isEmpty()) {
             items.removeIf(n -> n.id.startsWith("sample_"));
         }
 
-        for (NotificationItem incoming_item : incoming) {
+        for (NotificationItem incomingItem : incoming) {
             boolean exists = false;
             for (NotificationItem existing : items) {
-                if (existing.id.equals(incoming_item.id)) {
+                if (existing.id.equals(incomingItem.id)) {
                     exists = true;
                     break;
                 }
             }
             if (!exists) {
-                items.add(incoming_item);
+                items.add(incomingItem);
             }
         }
 
