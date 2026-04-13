@@ -20,6 +20,7 @@ public class NotifActivity extends AppCompatActivity {
     private TextView       tvNotifTitle;
     private TextView       tvFullMessage;
     private TextView       tvFullDate;
+    private TextView       tvAvatar;       // ✅ sender avatar circle
     private View           unreadDot;
     private MaterialButton btnMarkRead;
     private MaterialButton btnArchive;
@@ -45,6 +46,7 @@ public class NotifActivity extends AppCompatActivity {
         tvNotifTitle  = findViewById(R.id.tvNotifTitle);
         tvFullMessage = findViewById(R.id.tvFullMessage);
         tvFullDate    = findViewById(R.id.tvFullDate);
+        tvAvatar      = findViewById(R.id.tvAvatar);   // ✅ avatar letter
         unreadDot     = findViewById(R.id.unreadDot);
         btnMarkRead   = findViewById(R.id.btnMarkRead);
         btnArchive    = findViewById(R.id.btnDelete);
@@ -80,11 +82,39 @@ public class NotifActivity extends AppCompatActivity {
             return;
         }
 
+        // ✅ FIX: The message field is stored as "title: body" merged together.
+        //    Split on the first ": " to get title and body separately for display.
+        String rawMessage   = currentItem.message != null ? currentItem.message : "";
+        String displayTitle;
+        String displayBody;
+
+        int separatorIdx = rawMessage.indexOf(": ");
+        if (separatorIdx > 0) {
+            displayTitle = rawMessage.substring(0, separatorIdx);
+            displayBody  = rawMessage.substring(separatorIdx + 2);
+        } else {
+            // No separator — treat the whole thing as the body
+            displayTitle = currentItem.senderName != null ? currentItem.senderName : "Notification";
+            displayBody  = rawMessage;
+        }
+
+        // ✅ FIX: Sender name goes in the sender row (not the title field)
         tvSenderName.setText(currentItem.senderName);
         tvDate.setText(currentItem.dateLabel);
         tvFullDate.setText(currentItem.dateLabel);
-        tvNotifTitle.setText(currentItem.senderName);
-        tvFullMessage.setText(currentItem.message);
+
+        // ✅ FIX: Title shows the actual notification title, NOT the sender name
+        tvNotifTitle.setText(displayTitle);
+
+        // ✅ FIX: Body shows just the message body
+        tvFullMessage.setText(displayBody);
+
+        // ✅ FIX: Avatar shows first letter of sender name
+        if (tvAvatar != null) {
+            String name   = (currentItem.senderName != null && !currentItem.senderName.isEmpty())
+                    ? currentItem.senderName : "N";
+            tvAvatar.setText(String.valueOf(name.charAt(0)).toUpperCase());
+        }
 
         // No auto-mark — user must press the button
         updateReadState(currentItem.isRead);
@@ -113,7 +143,6 @@ public class NotifActivity extends AppCompatActivity {
         });
 
         // Toggles between Archive and Remove from Archive
-        // No navigation — just shows a toast and stays on the screen
         btnArchive.setOnClickListener(v -> {
             if (!currentItem.isArchived) {
                 NotificationStore.getInstance().archive(currentItem.id);
