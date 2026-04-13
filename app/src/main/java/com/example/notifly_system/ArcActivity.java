@@ -88,10 +88,9 @@ public class ArcActivity extends AppCompatActivity
         });
     }
 
-    // ── Load archived notifications ───────────────────────────────────────────
+    // ── Load ──────────────────────────────────────────────────────────────────
 
     private void loadArchivedNotifications() {
-        // Clear all existing rows
         archiveContainer.removeAllViews();
 
         List<NotificationItem> archived =
@@ -107,18 +106,13 @@ public class ArcActivity extends AppCompatActivity
         archiveContainer.setVisibility(View.VISIBLE);
 
         for (int i = 0; i < archived.size(); i++) {
-            NotificationItem item = archived.get(i);
-            View row = buildArchiveRow(item, i < archived.size() - 1);
+            View row = buildArchiveRow(archived.get(i), i < archived.size() - 1);
             archiveContainer.addView(row);
         }
     }
 
     // ── Row builder ───────────────────────────────────────────────────────────
 
-    /**
-     * Inflates item_notification_row.xml, binds the archived item,
-     * and tapping the row opens NotifActivity to view full details.
-     */
     private View buildArchiveRow(NotificationItem item, boolean showDivider) {
         View row = LayoutInflater.from(this)
                 .inflate(R.layout.item_notification_row, archiveContainer, false);
@@ -135,11 +129,16 @@ public class ArcActivity extends AppCompatActivity
         tvMessage.setText(item.message);
         tvDate.setText(item.dateLabel);
 
-        // Archived items are always dimmed — they have been dealt with
-        tvName.setTextColor(Color.parseColor("#668899"));
-        tvMessage.setTextColor(Color.parseColor("#446677"));
+        // Dim read items, bright for unread even in archive
+        if (item.isRead) {
+            tvName.setTextColor(Color.parseColor("#668899"));
+            tvMessage.setTextColor(Color.parseColor("#446677"));
+        } else {
+            tvName.setTextColor(Color.WHITE);
+            tvMessage.setTextColor(Color.parseColor("#AACCDD"));
+        }
 
-        // Star still works inside archive
+        // Star toggles — item stays in archive regardless
         applyStarColor(tvStar, item.isStarred);
         tvStar.setOnClickListener(v -> {
             if (item.isStarred) {
@@ -152,7 +151,8 @@ public class ArcActivity extends AppCompatActivity
             applyStarColor(tvStar, item.isStarred);
         });
 
-        // Tapping the row opens the full notification detail
+        // Tapping the row opens full notification detail
+        // NotifActivity handles both archived and non-archived items
         row.setOnClickListener(v -> {
             Intent intent = new Intent(this, NotifActivity.class);
             intent.putExtra(NotifActivity.EXTRA_NOTIF_ID, item.id);
