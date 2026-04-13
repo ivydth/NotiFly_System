@@ -1,6 +1,5 @@
 package com.example.notifly_system;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -57,8 +56,7 @@ public class NotifActivity extends AppCompatActivity {
         String notifId = getIntent().getStringExtra(EXTRA_NOTIF_ID);
 
         if (notifId != null) {
-            // Search all items including archived ones so archive screen
-            // can also open this detail view
+            // Check archived items first so archive screen rows open correctly
             for (NotificationItem n : NotificationStore.getInstance().getArchived()) {
                 if (n.id.equals(notifId)) {
                     currentItem = n;
@@ -114,17 +112,14 @@ public class NotifActivity extends AppCompatActivity {
             }
         });
 
-        // Toggles between Archive and Unarchive
+        // Toggles between Archive and Remove from Archive
+        // No navigation — just shows a toast and stays on the screen
         btnArchive.setOnClickListener(v -> {
             if (!currentItem.isArchived) {
                 NotificationStore.getInstance().archive(currentItem.id);
                 currentItem.isArchived = true;
-                Toast.makeText(this, "Notification archived", Toast.LENGTH_SHORT).show();
-                // Navigate to archive so user sees it land there
-                Intent intent = new Intent(this, ArcActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-                finish();
+                updateArchiveButton(true);
+                Toast.makeText(this, "Archived", Toast.LENGTH_SHORT).show();
             } else {
                 NotificationStore.getInstance().unarchive(currentItem.id);
                 currentItem.isArchived = false;
@@ -140,14 +135,12 @@ public class NotifActivity extends AppCompatActivity {
         if (read) {
             unreadDot.setVisibility(View.GONE);
             btnMarkRead.setText("Mark as Unread");
-            btnMarkRead.setAlpha(1f);
-            btnMarkRead.setEnabled(true);
         } else {
             unreadDot.setVisibility(View.VISIBLE);
             btnMarkRead.setText("Mark as Read");
-            btnMarkRead.setAlpha(1f);
-            btnMarkRead.setEnabled(true);
         }
+        btnMarkRead.setAlpha(1f);
+        btnMarkRead.setEnabled(true);
     }
 
     private void updateArchiveButton(boolean archived) {
