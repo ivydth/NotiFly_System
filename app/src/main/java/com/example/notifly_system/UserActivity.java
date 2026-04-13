@@ -10,7 +10,6 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -59,7 +58,6 @@ public class UserActivity extends AppCompatActivity
     AppCompatImageView ivHome, ivSearch, ivBell;
     TextView           tvBellBadge;
 
-    // Pull-to-refresh
     SwipeRefreshLayout swipeRefreshLayout;
 
     // ── Firebase ──────────────────────────────────────────────────────────────
@@ -69,16 +67,12 @@ public class UserActivity extends AppCompatActivity
     DatabaseReference notificationsRef;
     DatabaseReference presenceRef;
 
-    // Realtime listener — kept as a field so it can be removed on pause
-    ValueEventListener notifListener;
-
     // ── State ─────────────────────────────────────────────────────────────────
 
     String currentUsername      = "User";
     String currentEmail         = "";
     int    selectedCardPosition = -1;
 
-    // Philippines timezone (UTC+8)
     private static final TimeZone PH_TIMEZONE = TimeZone.getTimeZone("Asia/Manila");
 
     private static final String[] SECTION_TITLES = {
@@ -133,15 +127,14 @@ public class UserActivity extends AppCompatActivity
         NotificationStore.getInstance().addListener(this);
         loadUserData();
         setOnlineStatus(true);
-        attachRealtimeListener();
-        refreshAll();
+        // ✅ One-time fetch on resume — NOT a realtime listener
+        fetchNotificationsOnce();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         NotificationStore.getInstance().removeListener(this);
-        detachRealtimeListener();
         setOnlineStatus(false);
     }
 
@@ -154,12 +147,15 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
-    // ── Realtime Firebase listener ────────────────────────────────────────────
+    // ── One-time fetch (NOT realtime) ─────────────────────────────────────────
 
-    private void attachRealtimeListener() {
-        if (notifListener != null) return; // already attached
-
-        notifListener = new ValueEventListener() {
+    /**
+     * Fetches notifications from Firebase exactly once.
+     * New notifications sent by the admin will NOT appear automatically —
+     * the user must pull-to-refresh or re-open the app to see them.
+     */
+    private void fetchNotificationsOnce() {
+        notificationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 List<NotificationItem> incoming = new ArrayList<>();
@@ -178,9 +174,7 @@ public class UserActivity extends AppCompatActivity
 
                     String category  = mapTargetToCategory(target);
                     String dateLabel = formatTimestampPH(ts);
-
-                    // ✅ FIX: merge title + body into the single "message" parameter
-                    String message = title.isEmpty() ? body : title + ": " + body;
+                    String message   = title.isEmpty() ? body : title + ": " + body;
 
                     NotificationItem item = new NotificationItem(
                             id,
@@ -210,16 +204,7 @@ public class UserActivity extends AppCompatActivity
                 Toast.makeText(UserActivity.this,
                         "Failed to load notifications.", Toast.LENGTH_SHORT).show();
             }
-        };
-
-        notificationsRef.addValueEventListener(notifListener);
-    }
-
-    private void detachRealtimeListener() {
-        if (notifListener != null) {
-            notificationsRef.removeEventListener(notifListener);
-            notifListener = null;
-        }
+        });
     }
 
     // ── Pull-to-refresh ───────────────────────────────────────────────────────
@@ -237,8 +222,8 @@ public class UserActivity extends AppCompatActivity
         );
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
-            detachRealtimeListener();
-            attachRealtimeListener();
+            // ✅ Manual pull-to-refresh triggers a fresh one-time fetch
+            fetchNotificationsOnce();
             Toast.makeText(this, "Refreshing notifications...", Toast.LENGTH_SHORT).show();
         });
     }
@@ -250,7 +235,7 @@ public class UserActivity extends AppCompatActivity
         runOnUiThread(this::refreshAll);
     }
 
-    // ── Refresh ───────────────────────────────────────────────────────────────
+    // ── Refresh UI ────────────────────────────────────────────────────────────
 
     private void refreshAll() {
         refreshSummaryCounts();
