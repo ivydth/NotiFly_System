@@ -10,15 +10,11 @@ public class NotificationStore {
     }
 
     private static NotificationStore instance;
-    private final List<NotificationItem> items     = new ArrayList<>();
-    private final List<StoreListener>    listeners = new ArrayList<>();
+    private final List<NotificationItem> items       = new ArrayList<>();
+    private final List<StoreListener>    listeners   = new ArrayList<>();
+    private final List<String>           seenIds     = new ArrayList<>();
 
-    // Tracks how many Firebase notifications have been seen
-    // so the bell badge shows only NEW ones
-    private int     lastSeenCount = 0;
     private int     newCount      = 0;
-
-    // Flag so sample data is only injected once
     private boolean samplesLoaded = false;
 
     private NotificationStore() {
@@ -30,70 +26,66 @@ public class NotificationStore {
         return instance;
     }
 
-    // ── Sample / Placeholder Data ─────────────────────────────────────────────
+    // ── Sample Data ───────────────────────────────────────────────────────────
 
     /**
-     * Pre-populates the store with placeholder notifications so the
-     * home screen is never blank while Firebase loads.
-     * These are replaced/merged once syncFromFirebase() is called
-     * with real data.
+     * One sample per category so every card and section has a placeholder
+     * while Firebase loads. Samples are removed the moment real data arrives.
      *
-     * Constructor order:
-     * id, senderName, message, dateLabel, category, isStarred, avatarResId
+     * Constructor: id, senderName, message, dateLabel, category, isStarred, avatarResId
      */
     private void loadSampleData() {
         if (samplesLoaded) return;
         samplesLoaded = true;
 
+        // 1 sample for Unread
         items.add(new NotificationItem(
-                "sample_1",
+                "sample_unread",
+                "System",
+                "You have a new message waiting for you.",
+                "Today",
+                "Unread",
+                false,
+                R.drawable.avatar_teal
+        ));
+
+        // 1 sample for Announcements
+        items.add(new NotificationItem(
+                "sample_announcement",
                 "Admin",
-                "Welcome to NotiFly! Your notifications will appear here.",
+                "Welcome to NotiFly! Stay tuned for updates.",
                 "Today",
                 "Announcements",
                 false,
                 R.drawable.avatar_teal
         ));
 
+        // 1 sample for Events
         items.add(new NotificationItem(
-                "sample_2",
+                "sample_event",
                 "System",
-                "School event: Foundation Day celebration on April 20.",
+                "Upcoming event: Foundation Day on April 20.",
                 "Yesterday",
                 "Events",
                 false,
                 R.drawable.avatar_teal
         ));
 
+        // 1 sample for Starred (pre-starred so Starred card shows data)
         items.add(new NotificationItem(
-                "sample_3",
-                "Class Adviser",
-                "Reminder: Submit your project requirements by Friday.",
-                "Apr 11",
-                "Announcements",
-                false,
-                R.drawable.avatar_teal
-        ));
-
-        items.add(new NotificationItem(
-                "sample_4",
+                "sample_starred",
                 "Registrar",
                 "Enrollment for next semester is now open.",
                 "Apr 10",
                 "Announcements",
-                true,           // starred so Starred summary card also shows data
+                true,
                 R.drawable.avatar_teal
         ));
 
-        items.add(new NotificationItem(
-                "sample_5",
-                "Guidance Office",
-                "Career talk scheduled for April 18 at the auditorium.",
-                "Apr 9",
-                "Events",
-                false,
-                R.drawable.avatar_teal
-        ));
+        // Mark all samples as already seen — they should NOT count as new
+        for (NotificationItem n : items) {
+            seenIds.add(n.id);
+        }
     }
 
     // ── Listener management ───────────────────────────────────────────────────
@@ -113,17 +105,18 @@ public class NotificationStore {
     // ── Firebase sync ─────────────────────────────────────────────────────────
 
     /**
-     * Called by FirebaseNotifSyncService whenever the /notifications node
-     * changes. On first real Firebase sync, removes sample placeholders so
-     * real data takes over cleanly. If Firebase returns an empty list,
-     * samples are kept so the screen is never blank.
+     * Called by FirebaseNotifSyncService whenever /notifications changes.
+     * - Removes sample placeholders when real data arrives.
+     * - Merges new Firebase items without duplicating.
+     * - Bell badge = count of Firebase IDs not yet in seenIds.
      */
     public synchronized void syncFromFirebase(List<NotificationItem> incoming) {
-        // Only strip samples when real data actually arrives
+        // Strip samples only when real data exists
         if (!incoming.isEmpty()) {
             items.removeIf(n -> n.id.startsWith("sample_"));
         }
 
+        // Merge incoming — skip duplicates
         for (NotificationItem incomingItem : incoming) {
             boolean exists = false;
             for (NotificationItem existing : items) {
@@ -137,28 +130,33 @@ public class NotificationStore {
             }
         }
 
-        // New count = total Firebase items minus how many the user has seen
-        int total = incoming.size();
-        newCount  = Math.max(0, total - lastSeenCount);
+        // Recalculate new count:
+        // any Firebase item whose ID is NOT in seenIds is "new"
+        newCount = 0;
+        for (NotificationItem n : items) {
+            if (!n.id.startsWith("sample_") && !seenIds.contains(n.id)) {
+                newCount++;
+            }
+        }
 
         notifyListeners();
     }
 
     /**
-     * Call this when the user opens the bell / notification screen
-     * so the badge resets to 0.
+     * Call when the user opens the bell / notification screen.
+     * Marks all current items as seen so badge resets to 0.
      */
     public synchronized void markAllSeen() {
-        lastSeenCount = getTotalFirebaseCount();
-        newCount      = 0;
+        for (NotificationItem n : items) {
+            if (!seenIds.contains(n.id)) {
+                seenIds.add(n.id);
+            }
+        }
+        newCount = 0;
         notifyListeners();
     }
 
-    private int getTotalFirebaseCount() {
-        return items.size();
-    }
-
-    /** How many NEW notifications have arrived since the user last opened bell. */
+    /** How many NEW notifications arrived since the user last opened bell. */
     public synchronized int getNewCount() {
         return newCount;
     }
