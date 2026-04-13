@@ -177,14 +177,15 @@ public class UserActivity extends AppCompatActivity
                     if (body   == null) body   = "";
 
                     String category  = mapTargetToCategory(target);
-                    // ✅ Format with Philippines time (date + time)
                     String dateLabel = formatTimestampPH(ts);
+
+                    // ✅ FIX: merge title + body into the single "message" parameter
+                    String message = title.isEmpty() ? body : title + ": " + body;
 
                     NotificationItem item = new NotificationItem(
                             id,
-                            sender,   // ✅ senderName = sender field from Firebase
-                            title,
-                            body,
+                            sender,
+                            message,
                             dateLabel,
                             category,
                             false,
@@ -271,11 +272,6 @@ public class UserActivity extends AppCompatActivity
         summaryAdapter.updateCount(3, String.valueOf(store.getStarred().size()));
     }
 
-    /**
-     * Shows or hides the red badge on the bell icon.
-     * The badge is anchored tightly to the top-right corner of ivBell
-     * via the XML layout (negative margins on tvBellBadge).
-     */
     private void refreshBellBadge() {
         if (tvBellBadge == null) return;
         int count = NotificationStore.getInstance().getNewCount();
@@ -390,18 +386,10 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
-    /**
-     * Builds one notification row.
-     *
-     * ✅ The avatar circle now shows the FIRST LETTER of the sender name,
-     *    just like the HTML admin panel preview. This way the user sees
-     *    which sender sent the notification at a glance.
-     */
     private View buildNotificationRow(NotificationItem item) {
         View row = LayoutInflater.from(this)
                 .inflate(R.layout.item_notification_row, notificationsContainer, false);
 
-        // ✅ Sender avatar — shows first letter of sender name
         TextView tvAvatar  = row.findViewById(R.id.tvAvatar);
         TextView tvName    = row.findViewById(R.id.tvSenderName);
         TextView tvMessage = row.findViewById(R.id.tvMessage);
@@ -409,15 +397,11 @@ public class UserActivity extends AppCompatActivity
         TextView tvStar    = row.findViewById(R.id.tvStar);
         View     divider   = row.findViewById(R.id.vDivider);
 
-        // ── Sender initial avatar ──────────────────────────────────────────
         if (tvAvatar != null) {
             String name   = (item.senderName != null && !item.senderName.isEmpty())
                     ? item.senderName : "N";
             String letter = String.valueOf(name.charAt(0)).toUpperCase();
             tvAvatar.setText(letter);
-
-            // Assign a consistent color per sender letter so it always
-            // looks the same (A = teal, B = blue, etc.)
             tvAvatar.setBackgroundResource(R.drawable.avatar_teal);
             tvAvatar.setTextColor(Color.WHITE);
         }
@@ -479,17 +463,12 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
-    /**
-     * Formats a Firebase timestamp into Philippine Standard Time (UTC+8).
-     * Shows: "Apr 13 · 10:45 AM"
-     * Falls back to "Now" if timestamp is null.
-     */
     private String formatTimestampPH(Long ts) {
         if (ts == null || ts == 0) return "Now";
         try {
             SimpleDateFormat sdf = new SimpleDateFormat(
                     "MMM d · hh:mm a", Locale.getDefault());
-            sdf.setTimeZone(PH_TIMEZONE); // ✅ Philippines time (UTC+8)
+            sdf.setTimeZone(PH_TIMEZONE);
             return sdf.format(new Date(ts));
         } catch (Exception e) {
             return "Now";
