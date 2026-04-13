@@ -61,7 +61,6 @@ public class NotificationStore {
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
-    /** All non-archived items. */
     public synchronized List<NotificationItem> getAll() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -70,7 +69,6 @@ public class NotificationStore {
         return result;
     }
 
-    /** Non-archived items matching originalCategory. */
     public synchronized List<NotificationItem> getByCategory(String category) {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -80,7 +78,6 @@ public class NotificationStore {
         return result;
     }
 
-    /** Non-archived starred items. */
     public synchronized List<NotificationItem> getStarred() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -89,7 +86,6 @@ public class NotificationStore {
         return result;
     }
 
-    /** Non-archived unread items. */
     public synchronized List<NotificationItem> getUnread() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -101,7 +97,6 @@ public class NotificationStore {
         return result;
     }
 
-    /** Count of non-archived unread items. */
     public synchronized int getUnreadCount() {
         int count = 0;
         for (NotificationItem n : items) {
@@ -112,7 +107,6 @@ public class NotificationStore {
         return count;
     }
 
-    /** All archived items. */
     public synchronized List<NotificationItem> getArchived() {
         List<NotificationItem> result = new ArrayList<>();
         for (NotificationItem n : items) {
@@ -135,7 +129,6 @@ public class NotificationStore {
         for (NotificationItem n : items) {
             if (n.id.equals(id)) {
                 n.isStarred = true;
-                n.category  = "Starred";
                 notifyListeners();
                 return;
             }
@@ -146,7 +139,6 @@ public class NotificationStore {
         for (NotificationItem n : items) {
             if (n.id.equals(id)) {
                 n.isStarred = false;
-                n.category  = n.originalCategory;
                 notifyListeners();
                 return;
             }
@@ -163,14 +155,30 @@ public class NotificationStore {
         }
     }
 
-    /**
-     * Archives an item — disappears from all normal lists
-     * and appears only in ArcActivity.
-     */
+    public synchronized void markUnread(String id) {
+        for (NotificationItem n : items) {
+            if (n.id.equals(id) && n.isRead) {
+                n.isRead = false;
+                notifyListeners();
+                return;
+            }
+        }
+    }
+
     public synchronized void archive(String id) {
         for (NotificationItem n : items) {
             if (n.id.equals(id)) {
                 n.isArchived = true;
+                notifyListeners();
+                return;
+            }
+        }
+    }
+
+    public synchronized void unarchive(String id) {
+        for (NotificationItem n : items) {
+            if (n.id.equals(id)) {
+                n.isArchived = false;
                 notifyListeners();
                 return;
             }
