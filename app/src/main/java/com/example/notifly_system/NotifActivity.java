@@ -1,5 +1,6 @@
 package com.example.notifly_system;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -70,16 +71,13 @@ public class NotifActivity extends AppCompatActivity {
             return;
         }
 
-        // Populate views
         tvSenderName.setText(currentItem.senderName);
         tvDate.setText(currentItem.dateLabel);
         tvFullDate.setText(currentItem.dateLabel);
         tvNotifTitle.setText(currentItem.senderName);
         tvFullMessage.setText(currentItem.message);
 
-        // ── NO auto-mark on open ──────────────────────────────────────────────
-        // The unread dot stays visible until the user explicitly
-        // presses "Mark as Read". isRead state is shown as-is.
+        // No auto-mark — user must press the button
         updateReadState(currentItem.isRead);
     }
 
@@ -101,9 +99,14 @@ public class NotifActivity extends AppCompatActivity {
             }
         });
 
-        // Archive — closes the screen, notification stays in the store
+        // Archive — moves notification to archive and opens ArcActivity
         btnArchive.setOnClickListener(v -> {
+            NotificationStore.getInstance().archive(currentItem.id);
             Toast.makeText(this, "Notification archived", Toast.LENGTH_SHORT).show();
+            // Go straight to the archive screen so user sees it land there
+            Intent intent = new Intent(this, ArcActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
             finish();
         });
     }
