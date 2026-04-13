@@ -132,13 +132,9 @@ public class UserActivity extends AppCompatActivity
         setOnlineStatus(true);
 
         if (!initialLoadDone) {
-            // First open: fetch from Firebase and apply immediately so existing
-            // notifications are visible right away.
             initialLoadDone = true;
             fetchAndApplyNow();
         } else {
-            // Returning to screen: just redraw the store as-is.
-            // New notifications from admin are NOT shown until pull-to-refresh.
             refreshAll();
         }
     }
@@ -159,12 +155,8 @@ public class UserActivity extends AppCompatActivity
         }
     }
 
-    // ── First-launch fetch (applies immediately) ──────────────────────────────
+    // ── First-launch fetch ────────────────────────────────────────────────────
 
-    /**
-     * Used only on the very first launch.
-     * Fetches Firebase data and immediately makes it visible.
-     */
     private void fetchAndApplyNow() {
         if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(true);
 
@@ -173,7 +165,7 @@ public class UserActivity extends AppCompatActivity
             public void onDataChange(DataSnapshot snapshot) {
                 NotificationStore store = NotificationStore.getInstance();
                 store.syncFromFirebase(parseSnapshot(snapshot));
-                store.applyPending(); // immediate — first load only
+                store.applyPending();
                 if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
             }
 
@@ -186,20 +178,15 @@ public class UserActivity extends AppCompatActivity
         });
     }
 
-    // ── Pull-to-refresh fetch (applies after fetch completes) ─────────────────
+    // ── Pull-to-refresh fetch ─────────────────────────────────────────────────
 
-    /**
-     * Used only when the user manually pulls to refresh.
-     * Fetches Firebase data, syncs to pending buffer, then applies it.
-     * This is the ONLY way new admin notifications become visible.
-     */
     private void fetchAndApplyOnRefresh() {
         notificationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 NotificationStore store = NotificationStore.getInstance();
                 store.syncFromFirebase(parseSnapshot(snapshot));
-                store.applyPending(); // reveals any new notifications from admin
+                store.applyPending();
                 if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
             }
 
@@ -214,20 +201,39 @@ public class UserActivity extends AppCompatActivity
 
     // ── Parse Firebase snapshot ───────────────────────────────────────────────
 
+    /**
+     * Reads every notification from Firebase.
+     *
+     * Firebase fields written by the admin HTML:
+     *   target      → "all" | "topic" | "single"
+     *   topicOrUser → "announcements" | "events"  (when target == "topic")
+     *                 user email                   (when target == "single")
+     *                 ""                           (when target == "all")
+     *
+     * Category mapping:
+     *   target == "all"    → "Announcements"   (broadcast to everyone)
+     *   target == "topic"  + topicOrUser == "announcements" → "Announcements"
+     *   target == "topic"  + topicOrUser == "events"        → "Events"
+     *   target == "single" → "Unread"          (direct message)
+     *   anything else      → "Unread"
+     */
     private List<NotificationItem> parseSnapshot(DataSnapshot snapshot) {
         List<NotificationItem> incoming = new ArrayList<>();
 
         for (DataSnapshot child : snapshot.getChildren()) {
-            String id     = child.getKey();
-            String title  = child.child("title").getValue(String.class);
-            String body   = child.child("body").getValue(String.class);
-            String target = child.child("target").getValue(String.class);
-            Long   ts     = child.child("timestamp").getValue(Long.class);
+            String id          = child.getKey();
+            String title       = child.child("title").getValue(String.class);
+            String body        = child.child("body").getValue(String.class);
+            String target      = child.child("target").getValue(String.class);
+            String topicOrUser = child.child("topicOrUser").getValue(String.class);
+            Long   ts          = child.child("timestamp").getValue(Long.class);
 
             if (title == null) title = "Notification";
             if (body  == null) body  = "";
 
-            String category  = mapTargetToCategory(target);
+            // ── FIX: derive category from BOTH target and topicOrUser ──
+            String category = mapTargetToCategory(target, topicOrUser);
+
             String dateLabel = formatTimestamp(ts);
 
             NotificationItem item = new NotificationItem(
@@ -481,13 +487,42 @@ public class UserActivity extends AppCompatActivity
                 : Color.parseColor("#44AACCDD"));
     }
 
-    private String mapTargetToCategory(String target) {
+    /**
+     * Maps the Firebase fields [target, topicOrUser] to a UI category.
+     *
+     * Admin HTML writes:
+     *   "All Users"               → target="all",    topicOrUser=""
+     *   "By Topic → Announcements"→ target="topic",  topicOrUser="announcements"
+     *   "By Topic → Events"       → target="topic",  topicOrUser="events"
+     *   "Single User"             → target="single", topicOrUser=<email>
+     *
+     * UI categories: "Announcements" | "Events" | "Unread"
+     */
+    private String mapTargetToCategory(String target, String topicOrUser) {
         if (target == null) return "Unread";
+
         switch (target.toLowerCase()) {
-            case "all":    return "Announcements";
-            case "topic":  return "Events";
-            case "single": return "Unread";
-            default:       return "Unread";
+            case "all":
+                // Broadcast to everyone → Announcements card
+                return "Announcements";
+
+            case "topic":
+                // Check which topic was chosen by the admin
+                if (topicOrUser != null) {
+                    switch (topicOrUser.toLowerCase()) {
+                        case "announcements": return "Announcements";
+                        case "events":        return "Events";
+                    }
+                }
+                // topicOrUser missing or unknown → default to Announcements
+                return "Announcements";
+
+            case "single":
+                // Direct message to one user → Unread card
+                return "Unread";
+
+            default:
+                return "Unread";
         }
     }
 
@@ -555,24 +590,24 @@ public class UserActivity extends AppCompatActivity
     // ── Animation helpers ─────────────────────────────────────────────────────
 
     static void animateLift(View root) {
-    ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), -14f);
-    ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation", root.getElevation(), 20f);
-    ty.setDuration(180);
-    elev.setDuration(180);
-    AnimatorSet set = new AnimatorSet();
-    set.playTogether(ty, elev);
-    set.start();
-}
+        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), -14f);
+        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation", root.getElevation(), 20f);
+        ty.setDuration(180);
+        elev.setDuration(180);
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(ty, elev);
+        set.start();
+    }
 
-        static void animateDrop(View root) {
-    ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), 0f);
-    ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation", root.getElevation(), 4f);
-    ty.setDuration(200);
-    elev.setDuration(200);
-    AnimatorSet set = new AnimatorSet();
-    set.playTogether(ty, elev);
-    set.start();
-}
+    static void animateDrop(View root) {
+        ObjectAnimator ty   = ObjectAnimator.ofFloat(root, "translationY", root.getTranslationY(), 0f);
+        ObjectAnimator elev = ObjectAnimator.ofFloat(root, "elevation", root.getElevation(), 4f);
+        ty.setDuration(200);
+        elev.setDuration(200);
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(ty, elev);
+        set.start();
+    }
 
     // ── Inner types ───────────────────────────────────────────────────────────
 
