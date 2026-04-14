@@ -94,36 +94,51 @@ public class EventsActivity extends AppCompatActivity
     // ── Listeners ─────────────────────────────────────────────────────────────
 
     private void setListeners() {
-        btnMenu.setOnClickListener(v -> {
-            startActivity(new Intent(this, UserMenu.class));
-            overridePendingTransition(0, 0);
-        });
+        if (btnMenu != null) {
+            btnMenu.setOnClickListener(v -> {
+                startActivity(new Intent(this, UserMenu.class));
+                overridePendingTransition(0, 0);
+            });
+        }
 
-        btnProfile.setOnClickListener(v ->
-                startActivity(new Intent(this, ProfileActivity.class)));
+        if (btnProfile != null) {
+            btnProfile.setOnClickListener(v ->
+                    startActivity(new Intent(this, ProfileActivity.class)));
+        }
 
-        ivHome.setOnClickListener(v ->
-                startActivity(new Intent(this, UserActivity.class)));
+        if (ivHome != null) {
+            ivHome.setOnClickListener(v ->
+                    startActivity(new Intent(this, UserActivity.class)));
+        }
 
-        ivSearch.setOnClickListener(v -> {
-            // TODO: Open search screen
-        });
+        if (ivSearch != null) {
+            ivSearch.setOnClickListener(v -> {
+                // TODO: Open search screen
+            });
+        }
 
-        ivBell.setOnClickListener(v -> {
-            NotificationStore.getInstance().markAllSeen();
-            refreshBellBadge();
-            startActivity(new Intent(this, NotifActivity1.class));
-        });
+        if (ivBell != null) {
+            ivBell.setOnClickListener(v -> {
+                NotificationStore.getInstance().markAllSeen();
+                refreshBellBadge();
+                startActivity(new Intent(this, NotifActivity1.class));
+            });
+        }
 
-        swipeRefreshLayout.setColorSchemeColors(
-                Color.parseColor("#00C9B1"),
-                Color.parseColor("#5BB8FF"),
-                Color.parseColor("#C084FC")
-        );
-        swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
-                Color.parseColor("#1E3A4A")
-        );
-        swipeRefreshLayout.setOnRefreshListener(this::fetchAndApplyOnRefresh);
+        // ── FIX: guard swipeRefreshLayout — it is null when the view is
+        //         missing from events_activity.xml. Add the SwipeRefreshLayout
+        //         to your layout to re-enable pull-to-refresh. ──────────────
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setColorSchemeColors(
+                    Color.parseColor("#00C9B1"),
+                    Color.parseColor("#5BB8FF"),
+                    Color.parseColor("#C084FC")
+            );
+            swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
+                    Color.parseColor("#1E3A4A")
+            );
+            swipeRefreshLayout.setOnRefreshListener(this::fetchAndApplyOnRefresh);
+        }
     }
 
     // ── StoreListener ─────────────────────────────────────────────────────────
@@ -142,12 +157,12 @@ public class EventsActivity extends AppCompatActivity
                 NotificationStore store = NotificationStore.getInstance();
                 store.syncFromFirebase(parseSnapshot(snapshot));
                 store.applyPending();
-                swipeRefreshLayout.setRefreshing(false);
+                if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
             }
 
             @Override
             public void onCancelled(DatabaseError error) {
-                swipeRefreshLayout.setRefreshing(false);
+                if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
                 Toast.makeText(EventsActivity.this,
                         "Failed to refresh.", Toast.LENGTH_SHORT).show();
             }
@@ -164,15 +179,12 @@ public class EventsActivity extends AppCompatActivity
             String title       = child.child("title").getValue(String.class);
             String body        = child.child("body").getValue(String.class);
             String target      = child.child("target").getValue(String.class);
-            // FIX: read topicOrUser to correctly distinguish
-            // "topic → events" from "topic → announcements"
             String topicOrUser = child.child("topicOrUser").getValue(String.class);
             Long   ts          = child.child("timestamp").getValue(Long.class);
 
             if (title == null) title = "Notification";
             if (body  == null) body  = "";
 
-            // FIX: pass both fields into the mapping method
             String category  = mapTargetToCategory(target, topicOrUser);
             String dateLabel = formatTimestamp(ts);
 
@@ -205,18 +217,21 @@ public class EventsActivity extends AppCompatActivity
     // ── Render event rows ─────────────────────────────────────────────────────
 
     private void showEvents() {
+        if (notificationsContainer == null) return;
         notificationsContainer.removeAllViews();
 
         List<NotificationItem> items =
                 NotificationStore.getInstance().getByCategory("Events");
 
         if (items.isEmpty()) {
-            tvEmptyState.setVisibility(View.VISIBLE);
-            tvEmptyState.setText("No events yet");
+            if (tvEmptyState != null) {
+                tvEmptyState.setVisibility(View.VISIBLE);
+                tvEmptyState.setText("No events yet");
+            }
             return;
         }
 
-        tvEmptyState.setVisibility(View.GONE);
+        if (tvEmptyState != null) tvEmptyState.setVisibility(View.GONE);
 
         for (int i = 0; i < items.size(); i++) {
             NotificationItem item = items.get(i);
@@ -319,15 +334,6 @@ public class EventsActivity extends AppCompatActivity
                 : Color.parseColor("#44AACCDD"));
     }
 
-    /**
-     * FIX: Now accepts both `target` and `topicOrUser` from Firebase.
-     *
-     * Admin panel writes:
-     *   target = "all"    → broadcast, goes to Announcements
-     *   target = "topic"  → topicOrUser = "announcements" → Announcements
-     *                        topicOrUser = "events"        → Events
-     *   target = "single" → goes to Unread / inbox
-     */
     private String mapTargetToCategory(String target, String topicOrUser) {
         if (target == null) return "Unread";
         switch (target.toLowerCase()) {
