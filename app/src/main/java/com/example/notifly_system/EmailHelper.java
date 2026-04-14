@@ -18,13 +18,19 @@ public class EmailHelper {
     private static final String EMAILJS_URL = "https://api.emailjs.com/api/v1.0/email/send";
     private static final String PUBLIC_KEY  = "juGO7uo9O6udgw2xl";
 
-    // ── Welcome email (existing) ──────────────────────────────────
+    // ── Welcome email ─────────────────────────────────────────────
     private static final String WELCOME_SERVICE_ID  = "service_f3arbjq";
     private static final String WELCOME_TEMPLATE_ID = "template_bkf5619";
 
-    // ── Password reset email (new) ────────────────────────────────
+    // ── Password reset email ──────────────────────────────────────
     private static final String RESET_SERVICE_ID    = "service_f3arbjq";
     private static final String RESET_TEMPLATE_ID   = "template_0wzz2sp";
+
+    // ── Email change notification ─────────────────────────────────
+    // TODO: Replace "template_XXXXXXX" with your actual EmailJS
+    //       template ID after creating it (see instructions below).
+    private static final String EMAIL_CHANGE_SERVICE_ID  = "service_f3arbjq";
+    private static final String EMAIL_CHANGE_TEMPLATE_ID = "template_XXXXXXX";
 
     // ─────────────────────────────────────────────────────────────
     // Send welcome email on registration
@@ -87,6 +93,54 @@ public class EmailHelper {
                 data,
                 response -> android.util.Log.d("EmailJS", "Password reset email sent!"),
                 error    -> android.util.Log.e("EmailJS", "Failed to send reset email: " + error.toString())
+            ) {
+                @Override
+                public Map<String, String> getHeaders() {
+                    Map<String, String> headers = new HashMap<>();
+                    headers.put("Content-Type", "application/json");
+                    headers.put("origin", "http://localhost");
+                    return headers;
+                }
+            };
+
+            queue.add(request);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Send email change notification
+    //
+    // Sends to the NEW email address so the user can confirm
+    // they received it at their updated inbox.
+    //
+    // Template variables to set up in EmailJS:
+    //   {{username}}  — the user's display name
+    //   {{new_email}} — the new email address they switched to
+    //   {{to_email}}  — must match {{new_email}} (EmailJS recipient)
+    // ─────────────────────────────────────────────────────────────
+    public static void sendEmailChangedEmail(Context context, String username, String newEmail) {
+        RequestQueue queue = Volley.newRequestQueue(context);
+        try {
+            JSONObject templateParams = new JSONObject();
+            templateParams.put("username",  username);
+            templateParams.put("new_email", newEmail);
+            templateParams.put("to_email",  newEmail); // deliver to the new inbox
+
+            JSONObject data = new JSONObject();
+            data.put("service_id",      EMAIL_CHANGE_SERVICE_ID);
+            data.put("template_id",     EMAIL_CHANGE_TEMPLATE_ID);
+            data.put("user_id",         PUBLIC_KEY);
+            data.put("template_params", templateParams);
+
+            JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.POST,
+                EMAILJS_URL,
+                data,
+                response -> android.util.Log.d("EmailJS", "Email change notification sent!"),
+                error    -> android.util.Log.e("EmailJS", "Failed to send email change notification: " + error.toString())
             ) {
                 @Override
                 public Map<String, String> getHeaders() {
