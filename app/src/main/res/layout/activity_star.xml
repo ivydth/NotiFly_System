@@ -15,7 +15,7 @@
         android:scaleType="centerCrop"
         android:contentDescription="@null" />
 
-    <!-- SwipeRefreshLayout: pull-to-refresh for new notifications -->
+    <!-- Swipe-to-refresh wraps the scrollable content -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
@@ -25,7 +25,7 @@
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingBottom="80dp"
+            android:paddingBottom="16dp"
             android:clipToPadding="false"
             android:background="@android:color/transparent">
 
@@ -80,6 +80,7 @@
 
                     </LinearLayout>
 
+                    <!-- FIX: was TextView in old Java code; must be AppCompatImageView to match btnProfile field -->
                     <androidx.appcompat.widget.AppCompatImageView
                         android:id="@+id/btnProfile"
                         android:layout_width="40dp"
@@ -94,19 +95,32 @@
 
                 </RelativeLayout>
 
-                <!-- Section label — updated dynamically to match the category -->
+                <!-- FIX: added android:id so Java can set the text dynamically.
+                     The text is now set in setupSectionLabel() via tvSectionLabel.setText(category) -->
                 <TextView
                     android:id="@+id/tvSectionLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="ALL"
+                    android:text=""
                     android:textColor="#AACCDD"
                     android:textSize="11sp"
                     android:letterSpacing="0.15"
                     android:layout_marginStart="16dp"
                     android:layout_marginBottom="6dp" />
 
-                <!-- Notification card — same style as NotifActivity1 -->
+                <!-- Empty state — shown when the filtered list is empty -->
+                <TextView
+                    android:id="@+id/tvEmptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No notifications here."
+                    android:textColor="#668899"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:padding="48dp"
+                    android:visibility="gone" />
+
+                <!-- Dynamic rows card -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -117,9 +131,9 @@
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp">
 
-                    <!-- Dynamic container: rows built programmatically by SeeAllActivity -->
+                    <!-- FIX: id changed from notifContainer → notificationsContainer to match Java bindViews() -->
                     <LinearLayout
-                        android:id="@+id/notifContainer"
+                        android:id="@+id/notificationsContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
@@ -153,7 +167,6 @@
                 android:id="@+id/ivHome"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:scaleType="fitCenter"
                 android:src="@drawable/ic_home"
                 android:contentDescription="Home"
                 app:tint="#FFFFFF" />
@@ -180,20 +193,40 @@
                 app:tint="#FFFFFF" />
         </FrameLayout>
 
-        <LinearLayout
+        <!-- Bell with badge -->
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:orientation="vertical">
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/ivBell"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
+                android:layout_gravity="center"
                 android:src="@drawable/ic_notif_bell"
                 android:contentDescription="Notifications"
                 app:tint="#FFFFFF" />
-        </LinearLayout>
+
+            <!-- Badge dot over the bell -->
+            <TextView
+                android:id="@+id/tvBellBadge"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center"
+                android:layout_marginStart="12dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/dot_teal_glow"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+        </FrameLayout>
 
     </LinearLayout>
 
