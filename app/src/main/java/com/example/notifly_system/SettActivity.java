@@ -15,8 +15,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.chip.Chip;
-import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 public class SettActivity extends AppCompatActivity {
@@ -30,10 +28,6 @@ public class SettActivity extends AppCompatActivity {
     private CheckBox          checkAnnouncements;
     private CheckBox          checkEvents;
     private CheckBox          checkAlerts;
-    private ChipGroup         chipGroupFreq;
-    private Chip              chipLow;
-    private Chip              chipMed;
-    private Chip              chipHigh;
     private MaterialButton    btnSave;
 
     @Override
@@ -53,10 +47,6 @@ public class SettActivity extends AppCompatActivity {
         checkAnnouncements = findViewById(R.id.checkAnnouncements);
         checkEvents        = findViewById(R.id.checkEvents);
         checkAlerts        = findViewById(R.id.checkAlerts);
-        chipGroupFreq      = findViewById(R.id.chipGroupFreq);
-        chipLow            = findViewById(R.id.chipLow);
-        chipMed            = findViewById(R.id.chipMed);
-        chipHigh           = findViewById(R.id.chipHigh);
         btnSave            = findViewById(R.id.btnSave);
     }
 
@@ -89,11 +79,6 @@ public class SettActivity extends AppCompatActivity {
         checkEvents.setChecked(prefs.getBoolean("events",        true));
         checkAlerts.setChecked(prefs.getBoolean("alerts",        true));
 
-        String freq = prefs.getString("frequency", "med");
-        if (freq.equals("low"))       chipLow.setChecked(true);
-        else if (freq.equals("high")) chipHigh.setChecked(true);
-        else                          chipMed.setChecked(true);
-
         setChildrenEnabled(master);
     }
 
@@ -105,11 +90,6 @@ public class SettActivity extends AppCompatActivity {
         boolean events        = checkEvents.isChecked();
         boolean alerts        = checkAlerts.isChecked();
 
-        String frequency = "med";
-        int checkedChipId = chipGroupFreq.getCheckedChipId();
-        if      (checkedChipId == R.id.chipLow)  frequency = "low";
-        else if (checkedChipId == R.id.chipHigh) frequency = "high";
-
         // Persist all prefs — FirebaseNotifSyncService reads these live on every
         // new notification, so no restart needed for changes to take effect.
         SharedPreferences.Editor editor =
@@ -120,7 +100,6 @@ public class SettActivity extends AppCompatActivity {
         editor.putBoolean("announcements", announcements);
         editor.putBoolean("events",        events);
         editor.putBoolean("alerts",        alerts);
-        editor.putString("frequency",      frequency);
         editor.apply();
 
         // Recreate notification channels so system respects updated sound/vibration
@@ -137,10 +116,6 @@ public class SettActivity extends AppCompatActivity {
         checkAnnouncements.setEnabled(enabled);
         checkEvents.setEnabled(enabled);
         checkAlerts.setEnabled(enabled);
-        chipGroupFreq.setEnabled(enabled);
-        chipLow.setEnabled(enabled);
-        chipMed.setEnabled(enabled);
-        chipHigh.setEnabled(enabled);
     }
 
     // ── Recreate channels so Android picks up updated sound/vibration ─────────
