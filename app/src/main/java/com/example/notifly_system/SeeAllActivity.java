@@ -46,26 +46,26 @@ public class SeeAllActivity extends AppCompatActivity
     private AppCompatImageView btnSearch;
     private AppCompatImageView ivHome, ivBell;
 
-    private LinearLayout  searchBarContainer;
-    private EditText      etSearch;
+    private LinearLayout       searchBarContainer;
+    private EditText           etSearch;
     private AppCompatImageView btnClearSearch;
-    private View          searchDivider;
+    private View               searchDivider;
 
-    private LinearLayout  btnDateFilter;
-    private TextView      tvDateFilterLabel;
-    private TextView      btnClearDateFilter;
-    private TextView      tvNotifCount;
+    private LinearLayout btnDateFilter;
+    private TextView     tvDateFilterLabel;
+    private TextView     btnClearDateFilter;
+    private TextView     tvNotifCount;
 
-    private TextView      tvSectionLabel;
-    private LinearLayout  notificationsContainer;
+    private TextView     tvSectionLabel;
+    private LinearLayout notificationsContainer;
     private SwipeRefreshLayout swipeRefreshLayout;
 
     // ── State ─────────────────────────────────────────────────────────────────
 
-    private String            category    = "All";
-    private String            searchQuery = "";
-    private Calendar          selectedDate = null;      // null = no date filter active
-    private boolean           searchOpen  = false;
+    private String   category    = "All";
+    private String   searchQuery = "";
+    private Calendar selectedDate = null;
+    private boolean  searchOpen  = false;
     private DatabaseReference notificationsRef;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -203,7 +203,6 @@ public class SeeAllActivity extends AppCompatActivity
                     (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
             if (imm != null) imm.showSoftInput(etSearch, InputMethodManager.SHOW_IMPLICIT);
         } else {
-            // Close: clear query too
             if (etSearch != null) etSearch.setText("");
             searchQuery = "";
             hideKeyboard();
@@ -307,7 +306,6 @@ public class SeeAllActivity extends AppCompatActivity
     // ── Click listeners ───────────────────────────────────────────────────────
 
     private void setupClickListeners() {
-        // BACK BUTTON → UserActivity
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> {
                 startActivity(new Intent(this, UserActivity.class));
@@ -315,12 +313,10 @@ public class SeeAllActivity extends AppCompatActivity
             });
         }
 
-        // SEARCH ICON → toggle search bar
         if (btnSearch != null) {
             btnSearch.setOnClickListener(v -> toggleSearchBar());
         }
 
-        // HOME
         if (ivHome != null) {
             ivHome.setOnClickListener(v -> {
                 startActivity(new Intent(this, UserActivity.class));
@@ -328,7 +324,6 @@ public class SeeAllActivity extends AppCompatActivity
             });
         }
 
-        // BELL
         if (ivBell != null) {
             ivBell.setOnClickListener(v -> {
                 NotificationStore.getInstance().markAllSeen();
@@ -339,13 +334,6 @@ public class SeeAllActivity extends AppCompatActivity
 
     // ── Render from NotificationStore ─────────────────────────────────────────
 
-    /**
-     * Steps:
-     *  1. Get list based on category tab.
-     *  2. Apply date filter if a date was picked.
-     *  3. Apply search query filter on notification title.
-     *  4. Render rows.
-     */
     private void renderFromStore() {
         if (notificationsContainer == null) return;
         notificationsContainer.removeAllViews();
@@ -369,7 +357,7 @@ public class SeeAllActivity extends AppCompatActivity
             items = filterByDate(items, selectedDate);
         }
 
-        // Step 3 — search query (matches notification title, case-insensitive)
+        // Step 3 — search query
         if (!searchQuery.isEmpty()) {
             items = filterByTitle(items, searchQuery);
         }
@@ -389,10 +377,6 @@ public class SeeAllActivity extends AppCompatActivity
 
     // ── Filters ───────────────────────────────────────────────────────────────
 
-    /**
-     * Keeps only items whose timestamp falls on the same calendar day
-     * as the selected date (in the device's local timezone).
-     */
     private List<NotificationItem> filterByDate(
             List<NotificationItem> source, Calendar day) {
 
@@ -418,10 +402,6 @@ public class SeeAllActivity extends AppCompatActivity
         return result;
     }
 
-    /**
-     * Keeps only items whose title contains the query string
-     * (case-insensitive). Matches against item.senderName (title field).
-     */
     private List<NotificationItem> filterByTitle(
             List<NotificationItem> source, String query) {
 
@@ -460,10 +440,10 @@ public class SeeAllActivity extends AppCompatActivity
         int[] attrs = new int[]{android.R.attr.selectableItemBackground};
         row.setBackground(obtainStyledAttributes(attrs).getDrawable(0));
 
-        // Avatar
+        // ── Avatar ────────────────────────────────────────────────────────────
         View avatar = new View(this);
-        RelativeLayout.LayoutParams avatarParams = new RelativeLayout.LayoutParams(
-                dpToPx(44), dpToPx(44));
+        RelativeLayout.LayoutParams avatarParams =
+                new RelativeLayout.LayoutParams(dpToPx(44), dpToPx(44));
         avatarParams.addRule(RelativeLayout.ALIGN_PARENT_START);
         avatarParams.addRule(RelativeLayout.CENTER_VERTICAL);
         avatar.setLayoutParams(avatarParams);
@@ -471,7 +451,76 @@ public class SeeAllActivity extends AppCompatActivity
         avatar.setId(View.generateViewId());
         row.addView(avatar);
 
-        // Text block
+        // ── Star button (far right, vertically centred) ───────────────────────
+        TextView tvStar = new TextView(this);
+        tvStar.setId(View.generateViewId());
+        tvStar.setText("★");
+        tvStar.setTextSize(20);
+        tvStar.setGravity(Gravity.CENTER);
+        applyStarColor(tvStar, item.isStarred);
+
+        RelativeLayout.LayoutParams starParams =
+                new RelativeLayout.LayoutParams(dpToPx(36), dpToPx(36));
+        starParams.addRule(RelativeLayout.ALIGN_PARENT_END);
+        starParams.addRule(RelativeLayout.CENTER_VERTICAL);
+        tvStar.setLayoutParams(starParams);
+
+        // Intercept touch so the star tap doesn't also fire the row's onClick
+        tvStar.setClickable(true);
+        tvStar.setFocusable(true);
+        tvStar.setOnClickListener(v -> {
+            if (item.isStarred) {
+                NotificationStore.getInstance().unstar(item.id);
+                item.isStarred = false;
+            } else {
+                NotificationStore.getInstance().star(item.id);
+                item.isStarred = true;
+            }
+            applyStarColor(tvStar, item.isStarred);
+
+            // When viewing the Starred list, un-starring removes the item —
+            // trigger a full re-render so the list stays accurate.
+            if (category.equalsIgnoreCase("Starred")) {
+                renderFromStore();
+            }
+        });
+
+        row.addView(tvStar);
+
+        // ── Date + new-dot column (sits just to the left of the star) ─────────
+        LinearLayout rightCol = new LinearLayout(this);
+        rightCol.setOrientation(LinearLayout.VERTICAL);
+        rightCol.setGravity(Gravity.CENTER);
+        RelativeLayout.LayoutParams rightParams =
+                new RelativeLayout.LayoutParams(dpToPx(44), ViewGroup.LayoutParams.WRAP_CONTENT);
+        rightParams.addRule(RelativeLayout.LEFT_OF, tvStar.getId());
+        rightParams.addRule(RelativeLayout.CENTER_VERTICAL);
+        rightCol.setLayoutParams(rightParams);
+        rightCol.setId(View.generateViewId());
+
+        TextView tvDate = new TextView(this);
+        tvDate.setText(item.dateLabel != null ? item.dateLabel : "—");
+        tvDate.setTextColor(Color.parseColor("#AACCDD"));
+        tvDate.setTextSize(10);
+        tvDate.setGravity(Gravity.CENTER);
+        rightCol.addView(tvDate);
+
+        // Blue dot for unseen notifications
+        if (NotificationStore.getInstance().isNew(item.id)) {
+            View dot = new View(this);
+            LinearLayout.LayoutParams dotParams =
+                    new LinearLayout.LayoutParams(dpToPx(8), dpToPx(8));
+            dotParams.topMargin = dpToPx(4);
+            dotParams.gravity   = Gravity.CENTER_HORIZONTAL;
+            dot.setLayoutParams(dotParams);
+            dot.setBackgroundResource(R.drawable.dot_blue);
+            rightCol.addView(dot);
+        }
+
+        row.addView(rightCol);
+
+        // ── Text block (title + body) ──────────────────────────────────────────
+        // Sits between the avatar and the date column
         LinearLayout textBlock = new LinearLayout(this);
         textBlock.setOrientation(LinearLayout.VERTICAL);
         textBlock.setGravity(Gravity.CENTER_VERTICAL);
@@ -479,11 +528,11 @@ public class SeeAllActivity extends AppCompatActivity
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT);
         textParams.addRule(RelativeLayout.CENTER_VERTICAL);
+        textParams.addRule(RelativeLayout.LEFT_OF, rightCol.getId());
         textParams.setMarginStart(dpToPx(56));
-        textParams.setMarginEnd(dpToPx(52));
+        textParams.setMarginEnd(dpToPx(8));
         textBlock.setLayoutParams(textParams);
 
-        // Title
         TextView tvTitle = new TextView(this);
         tvTitle.setText(item.senderName != null && !item.senderName.isEmpty()
                 ? item.senderName : "Notification");
@@ -495,7 +544,6 @@ public class SeeAllActivity extends AppCompatActivity
         tvTitle.setEllipsize(TextUtils.TruncateAt.END);
         textBlock.addView(tvTitle);
 
-        // Body
         if (item.message != null && !item.message.isEmpty()) {
             TextView tvBody = new TextView(this);
             tvBody.setText(item.message);
@@ -511,40 +559,10 @@ public class SeeAllActivity extends AppCompatActivity
             tvBody.setLayoutParams(bodyParams);
             textBlock.addView(tvBody);
         }
+
         row.addView(textBlock);
 
-        // Right column — date + new dot
-        LinearLayout rightCol = new LinearLayout(this);
-        rightCol.setOrientation(LinearLayout.VERTICAL);
-        rightCol.setGravity(Gravity.CENTER);
-        RelativeLayout.LayoutParams rightParams = new RelativeLayout.LayoutParams(
-                dpToPx(44), ViewGroup.LayoutParams.WRAP_CONTENT);
-        rightParams.addRule(RelativeLayout.ALIGN_PARENT_END);
-        rightParams.addRule(RelativeLayout.CENTER_VERTICAL);
-        rightCol.setLayoutParams(rightParams);
-
-        TextView tvDate = new TextView(this);
-        tvDate.setText(item.dateLabel != null ? item.dateLabel : "—");
-        tvDate.setTextColor(Color.parseColor("#AACCDD"));
-        tvDate.setTextSize(10);
-        tvDate.setGravity(Gravity.CENTER);
-        rightCol.addView(tvDate);
-
-        // Blue dot for unseen
-        if (NotificationStore.getInstance().isNew(item.id)) {
-            View dot = new View(this);
-            LinearLayout.LayoutParams dotParams =
-                    new LinearLayout.LayoutParams(dpToPx(8), dpToPx(8));
-            dotParams.topMargin  = dpToPx(4);
-            dotParams.gravity    = Gravity.CENTER_HORIZONTAL;
-            dot.setLayoutParams(dotParams);
-            dot.setBackgroundResource(R.drawable.dot_blue);
-            rightCol.addView(dot);
-        }
-
-        row.addView(rightCol);
-
-        // Tap → mark read + open detail
+        // ── Row tap → mark read + open detail ────────────────────────────────
         row.setOnClickListener(v -> {
             NotificationStore.getInstance().markRead(item.id);
             Intent intent = new Intent(this, NotifActivity.class);
@@ -554,7 +572,7 @@ public class SeeAllActivity extends AppCompatActivity
 
         wrapper.addView(row);
 
-        // Divider
+        // ── Divider ───────────────────────────────────────────────────────────
         if (showDivider) {
             View divider = new View(this);
             LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
@@ -566,6 +584,14 @@ public class SeeAllActivity extends AppCompatActivity
         }
 
         return wrapper;
+    }
+
+    // ── Star colour helper ────────────────────────────────────────────────────
+
+    private void applyStarColor(TextView tvStar, boolean starred) {
+        tvStar.setTextColor(starred
+                ? Color.parseColor("#FFB347")    // gold  — starred
+                : Color.parseColor("#44AACCDD")); // dim   — not starred
     }
 
     // ── Empty state ───────────────────────────────────────────────────────────
