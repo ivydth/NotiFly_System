@@ -1,5 +1,6 @@
 package com.example.notifly_system; // TODO: Replace with your actual package name
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.CheckBox;
 import android.widget.Toast;
@@ -14,6 +15,8 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 
 public class SettActivity extends AppCompatActivity {
 
+    private static final String PREFS_NAME = "notifly_prefs";
+
     // Top bar
     private CardView btnBack;
 
@@ -24,7 +27,7 @@ public class SettActivity extends AppCompatActivity {
 
     // Notification type checkboxes
     private CheckBox checkAnnouncements;
-    private CheckBox checkEvents;       // ✅ was checkPromotions
+    private CheckBox checkEvents;
     private CheckBox checkAlerts;
 
     // Frequency chips
@@ -42,8 +45,8 @@ public class SettActivity extends AppCompatActivity {
         setContentView(R.layout.activity_settings);
 
         initViews();
-        setListeners();
         loadSavedPreferences();
+        setListeners();
     }
 
     private void initViews() {
@@ -54,7 +57,7 @@ public class SettActivity extends AppCompatActivity {
         switchVibration    = findViewById(R.id.switchVibration);
 
         checkAnnouncements = findViewById(R.id.checkAnnouncements);
-        checkEvents        = findViewById(R.id.checkEvents);     // ✅ was R.id.checkPromotions
+        checkEvents        = findViewById(R.id.checkEvents);
         checkAlerts        = findViewById(R.id.checkAlerts);
 
         chipGroupFreq      = findViewById(R.id.chipGroupFreq);
@@ -74,7 +77,7 @@ public class SettActivity extends AppCompatActivity {
             switchSound.setEnabled(isChecked);
             switchVibration.setEnabled(isChecked);
             checkAnnouncements.setEnabled(isChecked);
-            checkEvents.setEnabled(isChecked);       // ✅ was checkPromotions
+            checkEvents.setEnabled(isChecked);
             checkAlerts.setEnabled(isChecked);
             chipGroupFreq.setEnabled(isChecked);
             chipLow.setEnabled(isChecked);
@@ -86,7 +89,6 @@ public class SettActivity extends AppCompatActivity {
         findViewById(R.id.rowAnnouncements).setOnClickListener(v ->
                 checkAnnouncements.setChecked(!checkAnnouncements.isChecked()));
 
-        // ✅ was rowPromotions / checkPromotions
         findViewById(R.id.rowEvents).setOnClickListener(v ->
                 checkEvents.setChecked(!checkEvents.isChecked()));
 
@@ -97,19 +99,31 @@ public class SettActivity extends AppCompatActivity {
     }
 
     private void loadSavedPreferences() {
-        // TODO: Load from SharedPreferences or Firebase and apply to UI
-        // Example:
-        // SharedPreferences prefs = getSharedPreferences("notifly_prefs", MODE_PRIVATE);
-        // switchMaster.setChecked(prefs.getBoolean("master", true));
-        // switchSound.setChecked(prefs.getBoolean("sound", true));
-        // switchVibration.setChecked(prefs.getBoolean("vibration", false));
-        // checkAnnouncements.setChecked(prefs.getBoolean("announcements", true));
-        // checkEvents.setChecked(prefs.getBoolean("events", true));
-        // checkAlerts.setChecked(prefs.getBoolean("alerts", true));
-        // String freq = prefs.getString("frequency", "med");
-        // if (freq.equals("low")) chipLow.setChecked(true);
-        // else if (freq.equals("high")) chipHigh.setChecked(true);
-        // else chipMed.setChecked(true);
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+
+        boolean master = prefs.getBoolean("master", true);
+        switchMaster.setChecked(master);
+        switchSound.setChecked(prefs.getBoolean("sound", true));
+        switchVibration.setChecked(prefs.getBoolean("vibration", false));
+        checkAnnouncements.setChecked(prefs.getBoolean("announcements", true));
+        checkEvents.setChecked(prefs.getBoolean("events", true));
+        checkAlerts.setChecked(prefs.getBoolean("alerts", true));
+
+        String freq = prefs.getString("frequency", "med");
+        if (freq.equals("low"))       chipLow.setChecked(true);
+        else if (freq.equals("high")) chipHigh.setChecked(true);
+        else                          chipMed.setChecked(true);
+
+        // Apply master switch state to sub-settings on load
+        switchSound.setEnabled(master);
+        switchVibration.setEnabled(master);
+        checkAnnouncements.setEnabled(master);
+        checkEvents.setEnabled(master);
+        checkAlerts.setEnabled(master);
+        chipGroupFreq.setEnabled(master);
+        chipLow.setEnabled(master);
+        chipMed.setEnabled(master);
+        chipHigh.setEnabled(master);
     }
 
     private void savePreferences() {
@@ -117,7 +131,7 @@ public class SettActivity extends AppCompatActivity {
         boolean soundOn       = switchSound.isChecked();
         boolean vibrationOn   = switchVibration.isChecked();
         boolean announcements = checkAnnouncements.isChecked();
-        boolean events        = checkEvents.isChecked();   // ✅ was promotions
+        boolean events        = checkEvents.isChecked();
         boolean alerts        = checkAlerts.isChecked();
 
         String frequency = "med";
@@ -125,17 +139,15 @@ public class SettActivity extends AppCompatActivity {
         if (checkedChipId == R.id.chipLow)       frequency = "low";
         else if (checkedChipId == R.id.chipHigh) frequency = "high";
 
-        // TODO: Save to SharedPreferences or Firebase
-        // Example:
-        // SharedPreferences.Editor editor = getSharedPreferences("notifly_prefs", MODE_PRIVATE).edit();
-        // editor.putBoolean("master", masterOn);
-        // editor.putBoolean("sound", soundOn);
-        // editor.putBoolean("vibration", vibrationOn);
-        // editor.putBoolean("announcements", announcements);
-        // editor.putBoolean("events", events);     // ✅ was "promotions"
-        // editor.putBoolean("alerts", alerts);
-        // editor.putString("frequency", frequency);
-        // editor.apply();
+        SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
+        editor.putBoolean("master",        masterOn);
+        editor.putBoolean("sound",         soundOn);
+        editor.putBoolean("vibration",     vibrationOn);
+        editor.putBoolean("announcements", announcements);
+        editor.putBoolean("events",        events);
+        editor.putBoolean("alerts",        alerts);
+        editor.putString("frequency",      frequency);
+        editor.apply();
 
         Toast.makeText(this, "Preferences saved!", Toast.LENGTH_SHORT).show();
     }
