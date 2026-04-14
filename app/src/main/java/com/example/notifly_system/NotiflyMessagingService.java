@@ -23,13 +23,13 @@ import com.google.firebase.messaging.RemoteMessage;
 
 public class NotiflyMessagingService extends FirebaseMessagingService {
 
-    private static final String TAG           = "NotiflyFCM";
-    private static final String PREFS_NAME    = "notifly_prefs";
+    private static final String TAG               = "NotiflyFCM";
+    private static final String PREFS_NAME        = "notifly_prefs";
     public  static final String CHANNEL_ID        = "notifly_channel_sound";
     public  static final String CHANNEL_ID_SILENT = "notifly_channel_silent";
 
     // ─────────────────────────────────────────────
-    // Call once from NotiflyApplication.onCreate()
+    // Called once from NotiflyApplication.onCreate()
     // ─────────────────────────────────────────────
     public static void createChannels(Context context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
@@ -67,41 +67,56 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
     }
 
     // ─────────────────────────────────────────────
-    // Called every time an FCM message arrives
-    // NOTE: Only called when app is in FOREGROUND
-    // or when payload is DATA-ONLY (no notification block)
+    // NOTE: This service is only called when:
+    //   (a) app is in the FOREGROUND, or
+    //   (b) FCM payload is DATA-ONLY (no "notification" block)
+    //
+    // Your admin panel writes to Firebase Realtime DB only —
+    // it does NOT send FCM pushes. So real-time alerts are
+    // handled by FirebaseNotifSyncService, not here.
+    //
+    // This service handles any future FCM pushes you may add
+    // (e.g. from Firebase Cloud Functions or a backend server).
     // ─────────────────────────────────────────────
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
         Log.d(TAG, "onMessageReceived fired");
-        Log.d(TAG, "Data payload: " + remoteMessage.getData());
+        Log.d(TAG, "Data payload: "         + remoteMessage.getData());
         Log.d(TAG, "Notification payload: " + remoteMessage.getNotification());
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
-        // 1. Master switch check
+        // 1. Master switch
         if (!prefs.getBoolean("master", true)) {
             Log.d(TAG, "Master switch OFF — notification dropped");
             return;
         }
 
-        // 2. Notification type filter
+        // 2. Type filter — matches admin "target" / "topicOrUser" fields
         String type = remoteMessage.getData().get("type");
         if (type != null) {
-            if (type.equals("announcements") && !prefs.getBoolean("announcements", true)) return;
-            if (type.equals("events")        && !prefs.getBoolean("events",        true)) return;
-            if (type.equals("alerts")        && !prefs.getBoolean("alerts",        true)) return;
+            switch (type.toLowerCase()) {
+                case "announcements":
+                    if (!prefs.getBoolean("announcements", true)) return;
+                    break;
+                case "events":
+                    if (!prefs.getBoolean("events", true)) return;
+                    break;
+                case "alerts":
+                    if (!prefs.getBoolean("alerts", true)) return;
+                    break;
+            }
         }
 
-        // 3. Read sound & vibration prefs
+        // 3. Sound & vibration prefs
         boolean soundOn     = prefs.getBoolean("sound",     true);
         boolean vibrationOn = prefs.getBoolean("vibration", false);
 
         Log.d(TAG, "soundOn=" + soundOn + " vibrationOn=" + vibrationOn);
 
-        // 4. Get title & body
+        // 4. Title & body — prefer data payload over notification block
         String title = null;
         String body  = null;
         if (remoteMessage.getNotification() != null) {
@@ -116,12 +131,12 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
         // 5. Show the notification
         showNotification(title, body, soundOn, vibrationOn);
 
-        // 6. Trigger vibration independently
+        // 6. Vibration (independent of channel)
         if (vibrationOn) triggerVibration();
     }
 
     // ─────────────────────────────────────────────
-    // Build and post the notification
+    // Build and post the system notification
     // ─────────────────────────────────────────────
     private void showNotification(String title, String body,
                                   boolean soundOn, boolean vibrationOn) {
@@ -129,6 +144,7 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
         NotificationManager manager =
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
+        // Route to sound or silent channel based on pref
         String channelId = soundOn ? CHANNEL_ID : CHANNEL_ID_SILENT;
 
         Log.d(TAG, "Posting to channel: " + channelId);
@@ -145,10 +161,10 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
                 .setContentTitle(title)
                 .setContentText(body)
                 .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_HIGH) // needed for heads-up on API < 26
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(pendingIntent);
 
-        // Fallback for API < 26 (below Oreo, channels don't exist)
+        // Fallback for API < 26 (no channels)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             if (soundOn) {
                 Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
@@ -156,11 +172,7 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
             } else {
                 builder.setSound(null);
             }
-            if (vibrationOn) {
-                builder.setVibrate(new long[]{0, 300, 150, 300});
-            } else {
-                builder.setVibrate(null);
-            }
+            builder.setVibrate(vibrationOn ? new long[]{0, 300, 150, 300} : null);
         }
 
         manager.notify((int) System.currentTimeMillis(), builder.build());
@@ -176,8 +188,7 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
             VibratorManager vm = (VibratorManager) getSystemService(VIBRATOR_MANAGER_SERVICE);
             if (vm != null) {
                 vm.getDefaultVibrator().vibrate(
-                        VibrationEffect.createWaveform(pattern, -1)
-                );
+                        VibrationEffect.createWaveform(pattern, -1));
             }
         } else {
             Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
@@ -192,12 +203,12 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
     }
 
     // ─────────────────────────────────────────────
-    // Called when FCM assigns a new token
+    // Called when FCM assigns a new registration token
     // ─────────────────────────────────────────────
     @Override
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
         Log.d(TAG, "New FCM token: " + token);
-        // TODO: Send this token to your server/Firebase if needed
+        // TODO: Send token to your server or save to Firebase users/{uid}/fcmToken
     }
 }
