@@ -51,7 +51,7 @@ public class AnnActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.announcements_activity);
+        setContentView(R.layout.activity_star);
 
         initViews();
         initFirebase();
