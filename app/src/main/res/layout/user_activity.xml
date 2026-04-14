@@ -286,7 +286,7 @@
         android:background="@drawable/bottom_nav_bg"
         android:orientation="horizontal"
         android:gravity="center"
-        android:weightSum="3"
+        android:weightSum="2"
         android:clipChildren="false"
         android:clipToPadding="false"
         android:elevation="8dp"
@@ -310,31 +310,7 @@
 
         </LinearLayout>
 
-        <!-- SEARCH (FAB bubble) -->
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="80dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:clipChildren="false"
-            android:clipToPadding="false">
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/ivSearch"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:layout_gravity="center"
-                android:layout_marginBottom="20dp"
-                android:src="@drawable/ic_search"
-                android:background="@drawable/fab_teal_circle"
-                android:contentDescription="Search"
-                android:padding="12dp"
-                android:elevation="8dp"
-                app:tint="#FFFFFF" />
-
-        </FrameLayout>
-
-        <!-- BELL with badge — FrameLayout so badge overlaps the icon -->
+        <!-- BELL with badge -->
         <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -343,10 +319,6 @@
             android:clipChildren="false"
             android:clipToPadding="false">
 
-            <!--
-                Inner FrameLayout wraps ONLY the bell icon + badge together
-                so the badge is anchored to the icon, not the full cell.
-            -->
             <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -363,11 +335,6 @@
                     android:contentDescription="Notifications"
                     app:tint="#FFFFFF" />
 
-                <!--
-                    Badge sits at top-end of the bell icon.
-                    Negative margins pull it into the "upper right" corner
-                    of the icon so it looks like a proper notification bubble.
-                -->
                 <TextView
                     android:id="@+id/tvBellBadge"
                     android:layout_width="wrap_content"
