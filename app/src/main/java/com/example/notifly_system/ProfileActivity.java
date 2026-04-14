@@ -1,5 +1,6 @@
 package com.example.notifly_system;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
@@ -46,6 +47,9 @@ public class ProfileActivity extends AppCompatActivity {
     FirebaseAuth mAuth;
     DatabaseReference database;
 
+    // Holds the current email before any edits so we can detect a change
+    private String currentEmailBeforeEdit = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,8 +81,9 @@ public class ProfileActivity extends AppCompatActivity {
         // ── FIREBASE ──────────────────────────────────────────────
 
         mAuth    = FirebaseAuth.getInstance();
-        database = FirebaseDatabase.getInstance("https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/")
-                .getReference("users");
+        database = FirebaseDatabase.getInstance(
+                "https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        ).getReference("users");
 
         // ── LOAD USER DATA ────────────────────────────────────────
 
@@ -96,9 +101,8 @@ public class ProfileActivity extends AppCompatActivity {
 
         btnSaveProfile.setOnClickListener(v -> saveProfile());
 
-        rowChangePassword.setOnClickListener(v -> {
-        startActivity(new Intent(this, ChangePass.class));
-        });
+        rowChangePassword.setOnClickListener(v ->
+                startActivity(new Intent(this, ChangePass.class)));
 
         rowLogOut.setOnClickListener(v -> {
             mAuth.signOut();
@@ -107,46 +111,54 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Load user data from Firebase
+    // ─────────────────────────────────────────────────────────────
     private void loadUserData() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
 
-        String userId = currentUser.getUid();
+        database.child(currentUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot snapshot) {
+                        if (!snapshot.exists()) return;
 
-        database.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot snapshot) {
-                if (!snapshot.exists()) return;
+                        String firstName = snapshot.child("firstName").getValue(String.class);
+                        String username  = snapshot.child("username").getValue(String.class);
+                        String email     = snapshot.child("email").getValue(String.class);
 
-                String firstName = snapshot.child("firstName").getValue(String.class);
-                String username  = snapshot.child("username").getValue(String.class);
-                String email     = snapshot.child("email").getValue(String.class);
+                        // Resolve display name
+                        String displayName;
+                        if (username != null && !username.isEmpty()) {
+                            displayName = username;
+                        } else if (firstName != null && !firstName.isEmpty()) {
+                            displayName = firstName;
+                        } else {
+                            displayName = "User";
+                        }
 
-                // resolve display name
-                String displayName;
-                if (username != null && !username.isEmpty()) {
-                    displayName = username;
-                } else if (firstName != null && !firstName.isEmpty()) {
-                    displayName = firstName;
-                } else {
-                    displayName = "User";
-                }
+                        // Fallback to Firebase Auth email
+                        String displayEmail = (email != null && !email.isEmpty())
+                                ? email
+                                : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
 
-                // fallback to Firebase Auth email
-                String displayEmail = (email != null && !email.isEmpty())
-                        ? email
-                        : (currentUser.getEmail() != null ? currentUser.getEmail() : "");
+                        // Remember the current email so saveProfile() can detect a change
+                        currentEmailBeforeEdit = displayEmail;
 
-                populateViews(displayName, displayEmail);
-            }
+                        populateViews(displayName, displayEmail);
+                    }
 
-            @Override
-            public void onCancelled(DatabaseError error) {
-                populateViews("User", "");
-            }
-        });
+                    @Override
+                    public void onCancelled(DatabaseError error) {
+                        populateViews("User", "");
+                    }
+                });
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Populate all views with loaded data
+    // ─────────────────────────────────────────────────────────────
     private void populateViews(String name, String email) {
         String initial = (name != null && !name.isEmpty())
                 ? String.valueOf(name.charAt(0)).toUpperCase()
@@ -161,6 +173,9 @@ public class ProfileActivity extends AppCompatActivity {
         etEmail.setText(email);
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Edit mode helpers
+    // ─────────────────────────────────────────────────────────────
     private void openEditMode() {
         layoutViewMode.setVisibility(View.GONE);
         layoutEditMode.setVisibility(View.VISIBLE);
@@ -171,9 +186,14 @@ public class ProfileActivity extends AppCompatActivity {
         layoutViewMode.setVisibility(View.VISIBLE);
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Save profile — with email change notification
+    // ─────────────────────────────────────────────────────────────
     private void saveProfile() {
         String newName  = etName.getText().toString().trim();
         String newEmail = etEmail.getText().toString().trim();
+
+        // ── Validation ────────────────────────────────────────────
 
         if (newName.isEmpty()) {
             etName.setError("Name is required");
@@ -196,33 +216,53 @@ public class ProfileActivity extends AppCompatActivity {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
 
-        String userId = currentUser.getUid();
+        // Detect whether the email actually changed
+        boolean emailChanged = !newEmail.equalsIgnoreCase(currentEmailBeforeEdit);
 
-        // ── SAVE TO FIREBASE ──────────────────────────────────────
+        // ── Save to Firebase Realtime Database ────────────────────
 
         Map<String, Object> updates = new HashMap<>();
         updates.put("username", newName);
-        updates.put("email", newEmail);
+        updates.put("email",    newEmail);
 
-        database.child(userId).updateChildren(updates)
+        database.child(currentUser.getUid()).updateChildren(updates)
             .addOnSuccessListener(unused -> {
-                // update Firebase Auth email too
+
+                // ── Update Firebase Auth email ─────────────────────
                 currentUser.updateEmail(newEmail)
                     .addOnSuccessListener(unused2 -> {
                         populateViews(newName, newEmail);
+
+                        // Update the tracked email so future edits
+                        // in the same session compare against the new value
+                        currentEmailBeforeEdit = newEmail;
+
                         closeEditMode();
                         Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show();
+
+                        // ── Send email change notification ─────────
+                        // Only fires when the user actually changed their email
+                        if (emailChanged) {
+                            EmailHelper.sendEmailChangedEmail(this, newName, newEmail);
+                        }
                     })
                     .addOnFailureListener(e -> {
-                        // database updated but Auth email failed
-                        // still update UI since DB was saved
+                        // DB was saved but Firebase Auth email update failed.
+                        // Still update UI — the DB value is the source of truth.
                         populateViews(newName, newEmail);
+                        currentEmailBeforeEdit = newEmail;
                         closeEditMode();
                         Toast.makeText(this, "Profile updated!", Toast.LENGTH_SHORT).show();
+
+                        // Still send the notification since the DB email changed
+                        if (emailChanged) {
+                            EmailHelper.sendEmailChangedEmail(this, newName, newEmail);
+                        }
                     });
             })
-            .addOnFailureListener(e -> {
-                Toast.makeText(this, "Failed to update profile. Try again.", Toast.LENGTH_SHORT).show();
-            });
+            .addOnFailureListener(e ->
+                    Toast.makeText(this,
+                            "Failed to update profile. Try again.",
+                            Toast.LENGTH_SHORT).show());
     }
 }
