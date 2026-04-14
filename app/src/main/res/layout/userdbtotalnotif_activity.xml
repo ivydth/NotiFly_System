@@ -16,7 +16,7 @@
         android:scaleType="centerCrop"
         android:contentDescription="@null" />
 
-    <!-- SwipeRefreshLayout: user must pull-to-refresh to see new notifications -->
+    <!-- SwipeRefreshLayout -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
@@ -81,24 +81,153 @@
 
                     </LinearLayout>
 
-                    <!-- Live letter avatar -->
-                    <TextView
-                        android:id="@+id/btnProfile"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
+                    <!-- SEARCH ICON (replaces profile avatar) -->
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/btnSearch"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:text="U"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:background="@drawable/avatar_teal"
-                        android:contentDescription="Profile"
-                        android:clickable="true"
-                        android:focusable="true" />
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Search"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_search"
+                        app:tint="#FFFFFF" />
 
                 </RelativeLayout>
+
+                <!-- SEARCH BAR (hidden by default) -->
+                <LinearLayout
+                    android:id="@+id/searchBarContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="10dp"
+                    android:gravity="center_vertical"
+                    android:visibility="gone">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_search"
+                        android:contentDescription="@null"
+                        app:tint="#AACCDD"
+                        android:layout_marginEnd="10dp" />
+
+                    <EditText
+                        android:id="@+id/etSearch"
+                        android:layout_width="0dp"
+                        android:layout_height="42dp"
+                        android:layout_weight="1"
+                        android:background="@android:color/transparent"
+                        android:hint="Search notifications..."
+                        android:textColorHint="#AACCDD"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:imeOptions="actionSearch"
+                        android:inputType="text"
+                        android:singleLine="true"
+                        android:maxLines="1" />
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/btnClearSearch"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_close"
+                        android:contentDescription="Clear"
+                        android:padding="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        app:tint="#AACCDD"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+
+                <!-- SEARCH BAR DIVIDER -->
+                <View
+                    android:id="@+id/searchDivider"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="#22FFFFFF"
+                    android:visibility="gone" />
+
+                <!-- FILTER ROW -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="4dp"
+                    android:gravity="center_vertical">
+
+                    <!-- Date filter chip -->
+                    <LinearLayout
+                        android:id="@+id/btnDateFilter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:background="@drawable/chip_outline"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <androidx.appcompat.widget.AppCompatImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:src="@drawable/ic_calendar"
+                            android:contentDescription="@null"
+                            app:tint="#AACCDD"
+                            android:layout_marginEnd="6dp" />
+
+                        <TextView
+                            android:id="@+id/tvDateFilterLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Pick date"
+                            android:textColor="#AACCDD"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+                    <!-- Clear date chip -->
+                    <TextView
+                        android:id="@+id/btnClearDateFilter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="8dp"
+                        android:gravity="center"
+                        android:text="Clear"
+                        android:textColor="#00C9B1"
+                        android:textSize="12sp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:visibility="gone" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
+
+                    <!-- Count label -->
+                    <TextView
+                        android:id="@+id/tvNotifCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:textColor="#AACCDD"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
 
                 <!-- Section Label -->
                 <TextView
@@ -109,6 +238,7 @@
                     android:textSize="11sp"
                     android:letterSpacing="0.15"
                     android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
                     android:layout_marginBottom="6dp" />
 
                 <!-- Notification card -->
@@ -137,7 +267,7 @@
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- BOTTOM NAV -->
+    <!-- BOTTOM NAV — Home + Bell only -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="60dp"
@@ -145,51 +275,35 @@
         android:background="@drawable/bottom_nav_bg"
         android:orientation="horizontal"
         android:gravity="center"
-        android:weightSum="3"
+        android:weightSum="2"
         android:clipChildren="false"
         android:clipToPadding="false">
 
+        <!-- HOME -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center">
+
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/ivHome"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_home"
                 android:contentDescription="Home"
-                app:tint="#FFFFFF" />
+                app:tint="#AACCDD" />
+
         </LinearLayout>
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="80dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:clipChildren="false"
-            android:clipToPadding="false">
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/ivSearch"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:layout_gravity="center"
-                android:layout_marginBottom="20dp"
-                android:src="@drawable/ic_search"
-                android:background="@drawable/fab_teal_circle"
-                android:contentDescription="Search"
-                android:padding="12dp"
-                android:elevation="8dp"
-                app:tint="#FFFFFF" />
-        </FrameLayout>
-
+        <!-- BELL -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical">
+
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/ivBell"
                 android:layout_width="24dp"
@@ -197,6 +311,7 @@
                 android:src="@drawable/ic_notif_bell"
                 android:contentDescription="Notifications"
                 app:tint="#FFFFFF" />
+
         </LinearLayout>
 
     </LinearLayout>
