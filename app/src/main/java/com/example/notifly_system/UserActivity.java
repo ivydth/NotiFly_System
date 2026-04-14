@@ -80,6 +80,9 @@ public class UserActivity extends AppCompatActivity
 
     private boolean initialLoadDone = false;
 
+    // How many rows to show on the home screen before "See All" takes over
+    private static final int HOME_PREVIEW_LIMIT = 4;
+
     private static final String[] SECTION_TITLES = {
             "Unread", "Announcements", "Events", "Starred"
     };
@@ -261,7 +264,6 @@ public class UserActivity extends AppCompatActivity
     private void refreshAll() {
         refreshSummaryCounts();
         refreshBellBadge();
-        // Use currentCategory so the list always redraws what is actually shown
         showNotificationsForCategory(currentCategory);
     }
 
@@ -335,11 +337,6 @@ public class UserActivity extends AppCompatActivity
             startActivity(new Intent(this, NotifActivity1.class));
         });
 
-        // ── FIX: pass currentCategory to SeeAllActivity so it always shows
-        //         exactly what is visible in the notification list right now.
-        //         e.g. user tapped "Announcements" card → See All opens
-        //         SeeAllActivity filtered to Announcements only.
-        //         No card selected → See All shows everything ("All").
         tvSeeAll.setOnClickListener(v -> {
             String categoryForSeeAll = (currentCategory != null) ? currentCategory : "All";
             Intent intent = new Intent(this, SeeAllActivity.class);
@@ -353,12 +350,10 @@ public class UserActivity extends AppCompatActivity
     private void onCardTapped(int position) {
         selectedCardPosition = position;
         if (position < 0) {
-            // Card de-selected — show all notifications
             currentCategory = null;
             tvSectionTitle.setText("New");
             showNotificationsForCategory(null);
         } else {
-            // Card selected — filter to that category
             currentCategory = SECTION_TITLES[position];
             tvSectionTitle.setText(SECTION_TITLES[position]);
             showNotificationsForCategory(SECTION_TITLES[position]);
@@ -368,16 +363,6 @@ public class UserActivity extends AppCompatActivity
     // ── Notification list ─────────────────────────────────────────────────────
 
     private void showNotificationsForCategory(String category) {
-        // ── FIX: use removeAllViews() then re-add tvEmptyState manually.
-        //
-        //    OLD CODE used removeViewAt(1) which kept index 0 (tvEmptyState)
-        //    and removed everything from index 1 onward. But on re-draw it
-        //    added new rows starting after index 0, so the FIRST notification
-        //    row was always orphaned/missing because it was treated as index 0
-        //    and protected by the old removal logic.
-        //
-        //    NEW CODE clears everything then puts tvEmptyState back as the
-        //    only permanent child, so notification rows always start cleanly.
         notificationsContainer.removeAllViews();
         notificationsContainer.addView(tvEmptyState);
 
@@ -392,16 +377,27 @@ public class UserActivity extends AppCompatActivity
             items = NotificationStore.getInstance().getByCategory(category);
         }
 
+        // Empty state
         if (items.isEmpty()) {
             tvEmptyState.setVisibility(View.VISIBLE);
             int idx = category == null ? -1 : indexOf(SECTION_TITLES, category);
             tvEmptyState.setText(idx >= 0 ? EMPTY_MESSAGES[idx] : "No new notifications");
+            // Nothing to show — hide See All
+            if (tvSeeAll != null) tvSeeAll.setVisibility(View.GONE);
             return;
         }
 
         tvEmptyState.setVisibility(View.GONE);
-        for (NotificationItem item : items) {
-            notificationsContainer.addView(buildNotificationRow(item));
+
+        // Show only the first 4 rows on the home screen
+        int previewCount = Math.min(items.size(), HOME_PREVIEW_LIMIT);
+        for (int i = 0; i < previewCount; i++) {
+            notificationsContainer.addView(buildNotificationRow(items.get(i)));
+        }
+
+        // Show "See All" only when there are more than 4 items — hide it otherwise
+        if (tvSeeAll != null) {
+            tvSeeAll.setVisibility(items.size() > HOME_PREVIEW_LIMIT ? View.VISIBLE : View.GONE);
         }
     }
 
