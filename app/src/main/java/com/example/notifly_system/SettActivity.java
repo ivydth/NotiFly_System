@@ -23,33 +23,23 @@ public class SettActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "notifly_prefs";
 
-    // Top bar
     private CardView btnBack;
-
-    // Notification toggles
     private SwitchMaterial switchMaster;
     private SwitchMaterial switchSound;
     private SwitchMaterial switchVibration;
-
-    // Notification type checkboxes
     private CheckBox checkAnnouncements;
     private CheckBox checkEvents;
     private CheckBox checkAlerts;
-
-    // Frequency chips
     private ChipGroup chipGroupFreq;
     private Chip chipLow;
     private Chip chipMed;
     private Chip chipHigh;
-
-    // Save button
     private MaterialButton btnSave;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
-
         initViews();
         loadSavedPreferences();
         setListeners();
@@ -57,28 +47,22 @@ public class SettActivity extends AppCompatActivity {
 
     private void initViews() {
         btnBack            = findViewById(R.id.btnBack);
-
         switchMaster       = findViewById(R.id.switchMaster);
         switchSound        = findViewById(R.id.switchSound);
         switchVibration    = findViewById(R.id.switchVibration);
-
         checkAnnouncements = findViewById(R.id.checkAnnouncements);
         checkEvents        = findViewById(R.id.checkEvents);
         checkAlerts        = findViewById(R.id.checkAlerts);
-
         chipGroupFreq      = findViewById(R.id.chipGroupFreq);
         chipLow            = findViewById(R.id.chipLow);
         chipMed            = findViewById(R.id.chipMed);
         chipHigh           = findViewById(R.id.chipHigh);
-
         btnSave            = findViewById(R.id.btnSave);
     }
 
     private void setListeners() {
-
         btnBack.setOnClickListener(v -> finish());
 
-        // Master switch — disables all sub-settings when turned off
         switchMaster.setOnCheckedChangeListener((buttonView, isChecked) -> {
             switchSound.setEnabled(isChecked);
             switchVibration.setEnabled(isChecked);
@@ -91,13 +75,10 @@ public class SettActivity extends AppCompatActivity {
             chipHigh.setEnabled(isChecked);
         });
 
-        // Row clicks toggle their checkbox
         findViewById(R.id.rowAnnouncements).setOnClickListener(v ->
                 checkAnnouncements.setChecked(!checkAnnouncements.isChecked()));
-
         findViewById(R.id.rowEvents).setOnClickListener(v ->
                 checkEvents.setChecked(!checkEvents.isChecked()));
-
         findViewById(R.id.rowAlerts).setOnClickListener(v ->
                 checkAlerts.setChecked(!checkAlerts.isChecked()));
 
@@ -120,7 +101,6 @@ public class SettActivity extends AppCompatActivity {
         else if (freq.equals("high")) chipHigh.setChecked(true);
         else                          chipMed.setChecked(true);
 
-        // Apply master switch state to sub-settings on load
         switchSound.setEnabled(master);
         switchVibration.setEnabled(master);
         checkAnnouncements.setEnabled(master);
@@ -145,7 +125,6 @@ public class SettActivity extends AppCompatActivity {
         if (checkedChipId == R.id.chipLow)       frequency = "low";
         else if (checkedChipId == R.id.chipHigh) frequency = "high";
 
-        // Save to SharedPreferences
         SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
         editor.putBoolean("master",        masterOn);
         editor.putBoolean("sound",         soundOn);
@@ -156,59 +135,48 @@ public class SettActivity extends AppCompatActivity {
         editor.putString("frequency",      frequency);
         editor.apply();
 
-        // Recreate notification channels so sound/vibration changes take effect immediately
+        // Recreate BOTH channels with new IDs so Android doesn't use cached settings
         recreateNotificationChannels(soundOn, vibrationOn);
 
         Toast.makeText(this, "Preferences saved!", Toast.LENGTH_SHORT).show();
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // Deletes and recreates channels so new sound/vibration prefs apply.
-    // Android caches channel settings — deletion + recreation is required.
-    // ─────────────────────────────────────────────────────────────────
     private void recreateNotificationChannels(boolean soundOn, boolean vibrationOn) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
 
         NotificationManager manager =
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-        // Delete existing channels first so settings are not cached
+        // Delete both old channels
         manager.deleteNotificationChannel(NotiflyMessagingService.CHANNEL_ID);
         manager.deleteNotificationChannel(NotiflyMessagingService.CHANNEL_ID_SILENT);
 
-        String channelId = soundOn
-                ? NotiflyMessagingService.CHANNEL_ID
-                : NotiflyMessagingService.CHANNEL_ID_SILENT;
+        // Recreate SOUND channel
+        NotificationChannel soundChannel = new NotificationChannel(
+                NotiflyMessagingService.CHANNEL_ID,
+                "NotiFly (Sound)",
+                NotificationManager.IMPORTANCE_HIGH
+        );
+        Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        AudioAttributes audioAttr = new AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .build();
+        soundChannel.setSound(soundOn ? soundUri : null, soundOn ? audioAttr : null);
+        soundChannel.setDescription("NotiFly notification channel with sound");
+        soundChannel.enableVibration(vibrationOn);
+        if (vibrationOn) soundChannel.setVibrationPattern(new long[]{0, 300, 150, 300});
+        manager.createNotificationChannel(soundChannel);
 
-        NotificationChannel channel;
-
-        if (soundOn) {
-            channel = new NotificationChannel(
-                    channelId,
-                    "NotiFly (Sound)",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-            AudioAttributes audioAttr = new AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                    .build();
-            channel.setSound(soundUri, audioAttr);
-        } else {
-            channel = new NotificationChannel(
-                    channelId,
-                    "NotiFly (Silent)",
-                    NotificationManager.IMPORTANCE_DEFAULT
-            );
-            channel.setSound(null, null);
-        }
-
-        channel.setDescription("NotiFly notification channel");
-        channel.enableVibration(vibrationOn);
-        if (vibrationOn) {
-            channel.setVibrationPattern(new long[]{0, 300, 150, 300});
-        }
-
-        manager.createNotificationChannel(channel);
+        // Recreate SILENT channel
+        NotificationChannel silentChannel = new NotificationChannel(
+                NotiflyMessagingService.CHANNEL_ID_SILENT,
+                "NotiFly (Silent)",
+                NotificationManager.IMPORTANCE_DEFAULT
+        );
+        silentChannel.setSound(null, null);
+        silentChannel.setDescription("NotiFly silent notification channel");
+        silentChannel.enableVibration(false);
+        manager.createNotificationChannel(silentChannel);
     }
 }
