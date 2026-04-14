@@ -10,6 +10,11 @@ import androidx.cardview.widget.CardView;
 
 import com.google.android.material.button.MaterialButton;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
 public class NotifActivity extends AppCompatActivity {
 
     public static final String EXTRA_NOTIF_ID = "extra_notif_id";
@@ -20,7 +25,7 @@ public class NotifActivity extends AppCompatActivity {
     private TextView       tvNotifTitle;
     private TextView       tvFullMessage;
     private TextView       tvFullDate;
-    private TextView       tvAvatar;       // ✅ sender avatar circle
+    private TextView       tvAvatar;
     private View           unreadDot;
     private MaterialButton btnMarkRead;
     private MaterialButton btnArchive;
@@ -46,7 +51,7 @@ public class NotifActivity extends AppCompatActivity {
         tvNotifTitle  = findViewById(R.id.tvNotifTitle);
         tvFullMessage = findViewById(R.id.tvFullMessage);
         tvFullDate    = findViewById(R.id.tvFullDate);
-        tvAvatar      = findViewById(R.id.tvAvatar);   // ✅ avatar letter
+        tvAvatar      = findViewById(R.id.tvAvatar);
         unreadDot     = findViewById(R.id.unreadDot);
         btnMarkRead   = findViewById(R.id.btnMarkRead);
         btnArchive    = findViewById(R.id.btnDelete);
@@ -82,9 +87,8 @@ public class NotifActivity extends AppCompatActivity {
             return;
         }
 
-        // ✅ FIX: The message field is stored as "title: body" merged together.
-        //    Split on the first ": " to get title and body separately for display.
-        String rawMessage   = currentItem.message != null ? currentItem.message : "";
+        // Split "title: body" merged message into separate parts
+        String rawMessage = currentItem.message != null ? currentItem.message : "";
         String displayTitle;
         String displayBody;
 
@@ -93,32 +97,61 @@ public class NotifActivity extends AppCompatActivity {
             displayTitle = rawMessage.substring(0, separatorIdx);
             displayBody  = rawMessage.substring(separatorIdx + 2);
         } else {
-            // No separator — treat the whole thing as the body
             displayTitle = currentItem.senderName != null ? currentItem.senderName : "Notification";
             displayBody  = rawMessage;
         }
 
-        // ✅ FIX: Sender name goes in the sender row (not the title field)
+        // ── Format timestamps in Philippine Time (Asia/Manila, UTC+8) ─────────
+        String shortDate = formatShortDate(currentItem.timestamp);   // e.g. "Apr 14"
+        String fullDate  = formatFullDate(currentItem.timestamp);    // e.g. "April 14, 2026 — 10:45 AM"
+
         tvSenderName.setText(currentItem.senderName);
-        tvDate.setText(currentItem.dateLabel);
-        tvFullDate.setText(currentItem.dateLabel);
-
-        // ✅ FIX: Title shows the actual notification title, NOT the sender name
+        tvDate.setText(shortDate);          // sender row — short date + time
+        tvFullDate.setText(fullDate);       // DATE RECEIVED section — full date + time
         tvNotifTitle.setText(displayTitle);
-
-        // ✅ FIX: Body shows just the message body
         tvFullMessage.setText(displayBody);
 
-        // ✅ FIX: Avatar shows first letter of sender name
+        // Avatar — first letter of sender name
         if (tvAvatar != null) {
-            String name   = (currentItem.senderName != null && !currentItem.senderName.isEmpty())
+            String name = (currentItem.senderName != null && !currentItem.senderName.isEmpty())
                     ? currentItem.senderName : "N";
             tvAvatar.setText(String.valueOf(name.charAt(0)).toUpperCase());
         }
 
-        // No auto-mark — user must press the button
         updateReadState(currentItem.isRead);
         updateArchiveButton(currentItem.isArchived);
+    }
+
+    // ── Philippine Time formatters ─────────────────────────────────────────────
+
+    /**
+     * Short label shown in the sender row.
+     * e.g.  "Apr 14, 10:45 AM"
+     */
+    private String formatShortDate(long timestamp) {
+        if (timestamp <= 0) return currentItem.dateLabel != null ? currentItem.dateLabel : "—";
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM d, h:mm a", Locale.getDefault());
+            sdf.setTimeZone(TimeZone.getTimeZone("Asia/Manila"));
+            return sdf.format(new Date(timestamp));
+        } catch (Exception e) {
+            return currentItem.dateLabel != null ? currentItem.dateLabel : "—";
+        }
+    }
+
+    /**
+     * Full label shown in the DATE RECEIVED section.
+     * e.g.  "April 14, 2026 — 10:45 AM"
+     */
+    private String formatFullDate(long timestamp) {
+        if (timestamp <= 0) return currentItem.dateLabel != null ? currentItem.dateLabel : "—";
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMMM d, yyyy — h:mm a", Locale.getDefault());
+            sdf.setTimeZone(TimeZone.getTimeZone("Asia/Manila"));
+            return sdf.format(new Date(timestamp));
+        } catch (Exception e) {
+            return currentItem.dateLabel != null ? currentItem.dateLabel : "—";
+        }
     }
 
     // ── Click listeners ───────────────────────────────────────────────────────
