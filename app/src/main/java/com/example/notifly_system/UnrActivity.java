@@ -388,7 +388,7 @@ public class UnrActivity extends AppCompatActivity {
 
     private void showEmptyState() {
         TextView empty = new TextView(this);
-        empty.setText("No Announcements notifications.");
+        empty.setText("No Unread notifications.");
         empty.setTextColor(0xFFAACCDD);
         empty.setTextSize(14);
         empty.setGravity(android.view.Gravity.CENTER);
