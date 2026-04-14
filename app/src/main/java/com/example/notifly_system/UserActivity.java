@@ -74,8 +74,10 @@ public class UserActivity extends AppCompatActivity
     String currentEmail         = "";
     int    selectedCardPosition = -1;
 
-    // Only auto-fetch+apply once on first launch so existing notifications
-    // are visible immediately. After that, only pull-to-refresh reveals new ones.
+    // Tracks the currently displayed category so "See All" always matches
+    // what is shown. null = all notifications (no card selected).
+    private String currentCategory = null;
+
     private boolean initialLoadDone = false;
 
     private static final String[] SECTION_TITLES = {
@@ -201,22 +203,6 @@ public class UserActivity extends AppCompatActivity
 
     // ── Parse Firebase snapshot ───────────────────────────────────────────────
 
-    /**
-     * Reads every notification from Firebase.
-     *
-     * Firebase fields written by the admin HTML:
-     *   target      → "all" | "topic" | "single"
-     *   topicOrUser → "announcements" | "events"  (when target == "topic")
-     *                 user email                   (when target == "single")
-     *                 ""                           (when target == "all")
-     *
-     * Category mapping:
-     *   target == "all"    → "Announcements"   (broadcast to everyone)
-     *   target == "topic"  + topicOrUser == "announcements" → "Announcements"
-     *   target == "topic"  + topicOrUser == "events"        → "Events"
-     *   target == "single" → "Unread"          (direct message)
-     *   anything else      → "Unread"
-     */
     private List<NotificationItem> parseSnapshot(DataSnapshot snapshot) {
         List<NotificationItem> incoming = new ArrayList<>();
 
@@ -231,9 +217,7 @@ public class UserActivity extends AppCompatActivity
             if (title == null) title = "Notification";
             if (body  == null) body  = "";
 
-            // ── FIX: derive category from BOTH target and topicOrUser ──
-            String category = mapTargetToCategory(target, topicOrUser);
-
+            String category  = mapTargetToCategory(target, topicOrUser);
             String dateLabel = formatTimestamp(ts);
 
             NotificationItem item = new NotificationItem(
@@ -277,9 +261,8 @@ public class UserActivity extends AppCompatActivity
     private void refreshAll() {
         refreshSummaryCounts();
         refreshBellBadge();
-        String category = selectedCardPosition >= 0
-                ? SECTION_TITLES[selectedCardPosition] : null;
-        showNotificationsForCategory(category);
+        // Use currentCategory so the list always redraws what is actually shown
+        showNotificationsForCategory(currentCategory);
     }
 
     private void refreshSummaryCounts() {
@@ -352,12 +335,15 @@ public class UserActivity extends AppCompatActivity
             startActivity(new Intent(this, NotifActivity1.class));
         });
 
+        // ── FIX: pass currentCategory to SeeAllActivity so it always shows
+        //         exactly what is visible in the notification list right now.
+        //         e.g. user tapped "Announcements" card → See All opens
+        //         SeeAllActivity filtered to Announcements only.
+        //         No card selected → See All shows everything ("All").
         tvSeeAll.setOnClickListener(v -> {
-            String category = selectedCardPosition >= 0
-                    ? SECTION_TITLES[selectedCardPosition]
-                    : "All";
+            String categoryForSeeAll = (currentCategory != null) ? currentCategory : "All";
             Intent intent = new Intent(this, SeeAllActivity.class);
-            intent.putExtra(SeeAllActivity.EXTRA_CATEGORY, category);
+            intent.putExtra(SeeAllActivity.EXTRA_CATEGORY, categoryForSeeAll);
             startActivity(intent);
         });
     }
@@ -367,9 +353,13 @@ public class UserActivity extends AppCompatActivity
     private void onCardTapped(int position) {
         selectedCardPosition = position;
         if (position < 0) {
+            // Card de-selected — show all notifications
+            currentCategory = null;
             tvSectionTitle.setText("New");
             showNotificationsForCategory(null);
         } else {
+            // Card selected — filter to that category
+            currentCategory = SECTION_TITLES[position];
             tvSectionTitle.setText(SECTION_TITLES[position]);
             showNotificationsForCategory(SECTION_TITLES[position]);
         }
@@ -378,9 +368,18 @@ public class UserActivity extends AppCompatActivity
     // ── Notification list ─────────────────────────────────────────────────────
 
     private void showNotificationsForCategory(String category) {
-        while (notificationsContainer.getChildCount() > 1) {
-            notificationsContainer.removeViewAt(1);
-        }
+        // ── FIX: use removeAllViews() then re-add tvEmptyState manually.
+        //
+        //    OLD CODE used removeViewAt(1) which kept index 0 (tvEmptyState)
+        //    and removed everything from index 1 onward. But on re-draw it
+        //    added new rows starting after index 0, so the FIRST notification
+        //    row was always orphaned/missing because it was treated as index 0
+        //    and protected by the old removal logic.
+        //
+        //    NEW CODE clears everything then puts tvEmptyState back as the
+        //    only permanent child, so notification rows always start cleanly.
+        notificationsContainer.removeAllViews();
+        notificationsContainer.addView(tvEmptyState);
 
         List<NotificationItem> items;
         if (category == null) {
@@ -487,40 +486,21 @@ public class UserActivity extends AppCompatActivity
                 : Color.parseColor("#44AACCDD"));
     }
 
-    /**
-     * Maps the Firebase fields [target, topicOrUser] to a UI category.
-     *
-     * Admin HTML writes:
-     *   "All Users"               → target="all",    topicOrUser=""
-     *   "By Topic → Announcements"→ target="topic",  topicOrUser="announcements"
-     *   "By Topic → Events"       → target="topic",  topicOrUser="events"
-     *   "Single User"             → target="single", topicOrUser=<email>
-     *
-     * UI categories: "Announcements" | "Events" | "Unread"
-     */
     private String mapTargetToCategory(String target, String topicOrUser) {
         if (target == null) return "Unread";
-
         switch (target.toLowerCase()) {
             case "all":
-                // Broadcast to everyone → Announcements card
                 return "Announcements";
-
             case "topic":
-                // Check which topic was chosen by the admin
                 if (topicOrUser != null) {
                     switch (topicOrUser.toLowerCase()) {
                         case "announcements": return "Announcements";
                         case "events":        return "Events";
                     }
                 }
-                // topicOrUser missing or unknown → default to Announcements
                 return "Announcements";
-
             case "single":
-                // Direct message to one user → Unread card
                 return "Unread";
-
             default:
                 return "Unread";
         }
