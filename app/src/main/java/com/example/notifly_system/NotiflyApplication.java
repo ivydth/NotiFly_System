@@ -11,7 +11,10 @@ public class NotiflyApplication extends Application {
         // Create notification channels once at app startup
         NotiflyMessagingService.createChannels(this);
 
-        // Start listening to Firebase /notifications as soon as app launches
+        // Pass context to sync service BEFORE startListening()
+        FirebaseNotifSyncService.getInstance().init(this);
+
+        // Start listening to Firebase /notifications
         FirebaseNotifSyncService.getInstance().startListening();
     }
 }
