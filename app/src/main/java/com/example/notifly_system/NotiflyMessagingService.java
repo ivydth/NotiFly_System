@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.os.VibratorManager;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
@@ -22,7 +23,8 @@ import com.google.firebase.messaging.RemoteMessage;
 
 public class NotiflyMessagingService extends FirebaseMessagingService {
 
-    private static final String PREFS_NAME        = "notifly_prefs";
+    private static final String TAG           = "NotiflyFCM";
+    private static final String PREFS_NAME    = "notifly_prefs";
     public  static final String CHANNEL_ID        = "notifly_channel_sound";
     public  static final String CHANNEL_ID_SILENT = "notifly_channel_silent";
 
@@ -66,15 +68,24 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
 
     // ─────────────────────────────────────────────
     // Called every time an FCM message arrives
+    // NOTE: Only called when app is in FOREGROUND
+    // or when payload is DATA-ONLY (no notification block)
     // ─────────────────────────────────────────────
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
+        Log.d(TAG, "onMessageReceived fired");
+        Log.d(TAG, "Data payload: " + remoteMessage.getData());
+        Log.d(TAG, "Notification payload: " + remoteMessage.getNotification());
+
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
-        // 1. Master switch check — if off, drop the notification entirely
-        if (!prefs.getBoolean("master", true)) return;
+        // 1. Master switch check
+        if (!prefs.getBoolean("master", true)) {
+            Log.d(TAG, "Master switch OFF — notification dropped");
+            return;
+        }
 
         // 2. Notification type filter
         String type = remoteMessage.getData().get("type");
@@ -88,7 +99,9 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
         boolean soundOn     = prefs.getBoolean("sound",     true);
         boolean vibrationOn = prefs.getBoolean("vibration", false);
 
-        // 4. Get title & body (supports both notification + data payloads)
+        Log.d(TAG, "soundOn=" + soundOn + " vibrationOn=" + vibrationOn);
+
+        // 4. Get title & body
         String title = null;
         String body  = null;
         if (remoteMessage.getNotification() != null) {
@@ -103,7 +116,7 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
         // 5. Show the notification
         showNotification(title, body, soundOn, vibrationOn);
 
-        // 6. Trigger vibration independently (instant haptic feedback)
+        // 6. Trigger vibration independently
         if (vibrationOn) triggerVibration();
     }
 
@@ -116,10 +129,10 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
         NotificationManager manager =
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-        // Channels are already created — just pick the right one
         String channelId = soundOn ? CHANNEL_ID : CHANNEL_ID_SILENT;
 
-        // Tapping the notification opens MainActivity
+        Log.d(TAG, "Posting to channel: " + channelId);
+
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(
@@ -132,9 +145,10 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
                 .setContentTitle(title)
                 .setContentText(body)
                 .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH) // needed for heads-up on API < 26
                 .setContentIntent(pendingIntent);
 
-        // Fallback sound/vibration for API < 26
+        // Fallback for API < 26 (below Oreo, channels don't exist)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             if (soundOn) {
                 Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
@@ -142,7 +156,6 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
             } else {
                 builder.setSound(null);
             }
-
             if (vibrationOn) {
                 builder.setVibrate(new long[]{0, 300, 150, 300});
             } else {
@@ -184,6 +197,7 @@ public class NotiflyMessagingService extends FirebaseMessagingService {
     @Override
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
+        Log.d(TAG, "New FCM token: " + token);
         // TODO: Send this token to your server/Firebase if needed
     }
 }
