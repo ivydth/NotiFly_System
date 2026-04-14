@@ -23,18 +23,18 @@ public class SettActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "notifly_prefs";
 
-    private CardView btnBack;
-    private SwitchMaterial switchMaster;
-    private SwitchMaterial switchSound;
-    private SwitchMaterial switchVibration;
-    private CheckBox checkAnnouncements;
-    private CheckBox checkEvents;
-    private CheckBox checkAlerts;
-    private ChipGroup chipGroupFreq;
-    private Chip chipLow;
-    private Chip chipMed;
-    private Chip chipHigh;
-    private MaterialButton btnSave;
+    private CardView          btnBack;
+    private SwitchMaterial    switchMaster;
+    private SwitchMaterial    switchSound;
+    private SwitchMaterial    switchVibration;
+    private CheckBox          checkAnnouncements;
+    private CheckBox          checkEvents;
+    private CheckBox          checkAlerts;
+    private ChipGroup         chipGroupFreq;
+    private Chip              chipLow;
+    private Chip              chipMed;
+    private Chip              chipHigh;
+    private MaterialButton    btnSave;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,18 +63,11 @@ public class SettActivity extends AppCompatActivity {
     private void setListeners() {
         btnBack.setOnClickListener(v -> finish());
 
-        switchMaster.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            switchSound.setEnabled(isChecked);
-            switchVibration.setEnabled(isChecked);
-            checkAnnouncements.setEnabled(isChecked);
-            checkEvents.setEnabled(isChecked);
-            checkAlerts.setEnabled(isChecked);
-            chipGroupFreq.setEnabled(isChecked);
-            chipLow.setEnabled(isChecked);
-            chipMed.setEnabled(isChecked);
-            chipHigh.setEnabled(isChecked);
-        });
+        // Master switch controls all child settings
+        switchMaster.setOnCheckedChangeListener((buttonView, isChecked) ->
+                setChildrenEnabled(isChecked));
 
+        // Row taps toggle their checkboxes
         findViewById(R.id.rowAnnouncements).setOnClickListener(v ->
                 checkAnnouncements.setChecked(!checkAnnouncements.isChecked()));
         findViewById(R.id.rowEvents).setOnClickListener(v ->
@@ -90,26 +83,18 @@ public class SettActivity extends AppCompatActivity {
 
         boolean master = prefs.getBoolean("master", true);
         switchMaster.setChecked(master);
-        switchSound.setChecked(prefs.getBoolean("sound", true));
+        switchSound.setChecked(prefs.getBoolean("sound",         true));
         switchVibration.setChecked(prefs.getBoolean("vibration", false));
         checkAnnouncements.setChecked(prefs.getBoolean("announcements", true));
-        checkEvents.setChecked(prefs.getBoolean("events", true));
-        checkAlerts.setChecked(prefs.getBoolean("alerts", true));
+        checkEvents.setChecked(prefs.getBoolean("events",        true));
+        checkAlerts.setChecked(prefs.getBoolean("alerts",        true));
 
         String freq = prefs.getString("frequency", "med");
         if (freq.equals("low"))       chipLow.setChecked(true);
         else if (freq.equals("high")) chipHigh.setChecked(true);
         else                          chipMed.setChecked(true);
 
-        switchSound.setEnabled(master);
-        switchVibration.setEnabled(master);
-        checkAnnouncements.setEnabled(master);
-        checkEvents.setEnabled(master);
-        checkAlerts.setEnabled(master);
-        chipGroupFreq.setEnabled(master);
-        chipLow.setEnabled(master);
-        chipMed.setEnabled(master);
-        chipHigh.setEnabled(master);
+        setChildrenEnabled(master);
     }
 
     private void savePreferences() {
@@ -122,10 +107,13 @@ public class SettActivity extends AppCompatActivity {
 
         String frequency = "med";
         int checkedChipId = chipGroupFreq.getCheckedChipId();
-        if (checkedChipId == R.id.chipLow)       frequency = "low";
+        if      (checkedChipId == R.id.chipLow)  frequency = "low";
         else if (checkedChipId == R.id.chipHigh) frequency = "high";
 
-        SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
+        // Persist all prefs — FirebaseNotifSyncService reads these live on every
+        // new notification, so no restart needed for changes to take effect.
+        SharedPreferences.Editor editor =
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
         editor.putBoolean("master",        masterOn);
         editor.putBoolean("sound",         soundOn);
         editor.putBoolean("vibration",     vibrationOn);
@@ -135,11 +123,31 @@ public class SettActivity extends AppCompatActivity {
         editor.putString("frequency",      frequency);
         editor.apply();
 
-        // Recreate BOTH channels with new IDs so Android doesn't use cached settings
+        // Recreate notification channels so system respects updated sound/vibration
         recreateNotificationChannels(soundOn, vibrationOn);
 
         Toast.makeText(this, "Preferences saved!", Toast.LENGTH_SHORT).show();
     }
+
+    // ── Enable / disable all child controls based on master switch ────────────
+
+    private void setChildrenEnabled(boolean enabled) {
+        switchSound.setEnabled(enabled);
+        switchVibration.setEnabled(enabled);
+        checkAnnouncements.setEnabled(enabled);
+        checkEvents.setEnabled(enabled);
+        checkAlerts.setEnabled(enabled);
+        chipGroupFreq.setEnabled(enabled);
+        chipLow.setEnabled(enabled);
+        chipMed.setEnabled(enabled);
+        chipHigh.setEnabled(enabled);
+    }
+
+    // ── Recreate channels so Android picks up updated sound/vibration ─────────
+    //
+    // Android caches channel settings after first creation.
+    // Deleting and re-creating with a fresh config is the only reliable
+    // way to change sound/vibration on API 26+.
 
     private void recreateNotificationChannels(boolean soundOn, boolean vibrationOn) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
@@ -147,7 +155,7 @@ public class SettActivity extends AppCompatActivity {
         NotificationManager manager =
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-        // Delete both old channels
+        // Delete old channels
         manager.deleteNotificationChannel(NotiflyMessagingService.CHANNEL_ID);
         manager.deleteNotificationChannel(NotiflyMessagingService.CHANNEL_ID_SILENT);
 
