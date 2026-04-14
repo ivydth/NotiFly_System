@@ -1,6 +1,12 @@
-package com.example.notifly_system; // TODO: Replace with your actual package name
+package com.example.notifly_system;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.SharedPreferences;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.CheckBox;
 import android.widget.Toast;
@@ -139,6 +145,7 @@ public class SettActivity extends AppCompatActivity {
         if (checkedChipId == R.id.chipLow)       frequency = "low";
         else if (checkedChipId == R.id.chipHigh) frequency = "high";
 
+        // Save to SharedPreferences
         SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
         editor.putBoolean("master",        masterOn);
         editor.putBoolean("sound",         soundOn);
@@ -149,6 +156,59 @@ public class SettActivity extends AppCompatActivity {
         editor.putString("frequency",      frequency);
         editor.apply();
 
+        // Recreate notification channels so sound/vibration changes take effect immediately
+        recreateNotificationChannels(soundOn, vibrationOn);
+
         Toast.makeText(this, "Preferences saved!", Toast.LENGTH_SHORT).show();
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Deletes and recreates channels so new sound/vibration prefs apply.
+    // Android caches channel settings — deletion + recreation is required.
+    // ─────────────────────────────────────────────────────────────────
+    private void recreateNotificationChannels(boolean soundOn, boolean vibrationOn) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+
+        NotificationManager manager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        // Delete existing channels first so settings are not cached
+        manager.deleteNotificationChannel(NotiflyMessagingService.CHANNEL_ID);
+        manager.deleteNotificationChannel(NotiflyMessagingService.CHANNEL_ID_SILENT);
+
+        String channelId = soundOn
+                ? NotiflyMessagingService.CHANNEL_ID
+                : NotiflyMessagingService.CHANNEL_ID_SILENT;
+
+        NotificationChannel channel;
+
+        if (soundOn) {
+            channel = new NotificationChannel(
+                    channelId,
+                    "NotiFly (Sound)",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            AudioAttributes audioAttr = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .build();
+            channel.setSound(soundUri, audioAttr);
+        } else {
+            channel = new NotificationChannel(
+                    channelId,
+                    "NotiFly (Silent)",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            channel.setSound(null, null);
+        }
+
+        channel.setDescription("NotiFly notification channel");
+        channel.enableVibration(vibrationOn);
+        if (vibrationOn) {
+            channel.setVibrationPattern(new long[]{0, 300, 150, 300});
+        }
+
+        manager.createNotificationChannel(channel);
     }
 }
