@@ -1,13 +1,19 @@
 package com.example.notifly_system;
 
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -24,6 +30,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -35,16 +42,30 @@ public class SeeAllActivity extends AppCompatActivity
 
     // ── Views ─────────────────────────────────────────────────────────────────
 
-    private AppCompatImageView btnMenu;
-    private AppCompatImageView btnProfile;   // FIX: was TextView, must match XML ImageView
-    private AppCompatImageView ivHome, ivSearch, ivBell;
-    private TextView           tvSectionLabel;
-    private LinearLayout       notificationsContainer; // FIX: renamed to match XML id
+    private AppCompatImageView btnBack;
+    private AppCompatImageView btnSearch;
+    private AppCompatImageView ivHome, ivBell;
+
+    private LinearLayout  searchBarContainer;
+    private EditText      etSearch;
+    private AppCompatImageView btnClearSearch;
+    private View          searchDivider;
+
+    private LinearLayout  btnDateFilter;
+    private TextView      tvDateFilterLabel;
+    private TextView      btnClearDateFilter;
+    private TextView      tvNotifCount;
+
+    private TextView      tvSectionLabel;
+    private LinearLayout  notificationsContainer;
     private SwipeRefreshLayout swipeRefreshLayout;
 
     // ── State ─────────────────────────────────────────────────────────────────
 
-    private String            category = "All";
+    private String            category    = "All";
+    private String            searchQuery = "";
+    private Calendar          selectedDate = null;      // null = no date filter active
+    private boolean           searchOpen  = false;
     private DatabaseReference notificationsRef;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -60,6 +81,8 @@ public class SeeAllActivity extends AppCompatActivity
         bindViews();
         setupSectionLabel();
         setupSwipeRefresh();
+        setupSearchBar();
+        setupDateFilter();
         setupClickListeners();
 
         notificationsRef = FirebaseDatabase.getInstance(
@@ -90,14 +113,23 @@ public class SeeAllActivity extends AppCompatActivity
     // ── Bind views ────────────────────────────────────────────────────────────
 
     private void bindViews() {
-        btnMenu                = findViewById(R.id.btnMenu);
-        btnProfile             = findViewById(R.id.btnProfile);          // FIX: AppCompatImageView
+        btnBack                = findViewById(R.id.btnBack);
+        btnSearch              = findViewById(R.id.btnSearch);
         ivHome                 = findViewById(R.id.ivHome);
-        ivSearch               = findViewById(R.id.ivSearch);
         ivBell                 = findViewById(R.id.ivBell);
         tvSectionLabel         = findViewById(R.id.tvSectionLabel);
-        notificationsContainer = findViewById(R.id.notificationsContainer); // FIX: correct XML id
+        notificationsContainer = findViewById(R.id.notificationsContainer);
         swipeRefreshLayout     = findViewById(R.id.swipeRefreshLayout);
+
+        searchBarContainer     = findViewById(R.id.searchBarContainer);
+        etSearch               = findViewById(R.id.etSearch);
+        btnClearSearch         = findViewById(R.id.btnClearSearch);
+        searchDivider          = findViewById(R.id.searchDivider);
+
+        btnDateFilter          = findViewById(R.id.btnDateFilter);
+        tvDateFilterLabel      = findViewById(R.id.tvDateFilterLabel);
+        btnClearDateFilter     = findViewById(R.id.btnClearDateFilter);
+        tvNotifCount           = findViewById(R.id.tvNotifCount);
     }
 
     private void setupSectionLabel() {
@@ -117,6 +149,113 @@ public class SeeAllActivity extends AppCompatActivity
                 Color.parseColor("#1E3A4A")
         );
         swipeRefreshLayout.setOnRefreshListener(this::fetchAndApplyOnRefresh);
+    }
+
+    // ── Search bar setup ──────────────────────────────────────────────────────
+
+    private void setupSearchBar() {
+        if (etSearch == null) return;
+
+        etSearch.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void afterTextChanged(Editable s) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                searchQuery = s.toString().trim();
+                if (btnClearSearch != null) {
+                    btnClearSearch.setVisibility(
+                            searchQuery.isEmpty() ? View.GONE : View.VISIBLE);
+                }
+                renderFromStore();
+            }
+        });
+
+        etSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                hideKeyboard();
+                return true;
+            }
+            return false;
+        });
+
+        if (btnClearSearch != null) {
+            btnClearSearch.setOnClickListener(v -> {
+                etSearch.setText("");
+                searchQuery = "";
+                renderFromStore();
+            });
+        }
+    }
+
+    // ── Toggle search bar ─────────────────────────────────────────────────────
+
+    private void toggleSearchBar() {
+        searchOpen = !searchOpen;
+        if (searchBarContainer == null || searchDivider == null) return;
+
+        searchBarContainer.setVisibility(searchOpen ? View.VISIBLE : View.GONE);
+        searchDivider.setVisibility(searchOpen ? View.VISIBLE : View.GONE);
+
+        if (searchOpen) {
+            etSearch.requestFocus();
+            InputMethodManager imm =
+                    (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) imm.showSoftInput(etSearch, InputMethodManager.SHOW_IMPLICIT);
+        } else {
+            // Close: clear query too
+            if (etSearch != null) etSearch.setText("");
+            searchQuery = "";
+            hideKeyboard();
+            renderFromStore();
+        }
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager imm =
+                (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        if (imm != null && etSearch != null)
+            imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
+    }
+
+    // ── Date filter setup ─────────────────────────────────────────────────────
+
+    private void setupDateFilter() {
+        if (btnDateFilter == null) return;
+
+        btnDateFilter.setOnClickListener(v -> showDatePicker());
+
+        if (btnClearDateFilter != null) {
+            btnClearDateFilter.setOnClickListener(v -> {
+                selectedDate = null;
+                tvDateFilterLabel.setText("Pick date");
+                btnClearDateFilter.setVisibility(View.GONE);
+                renderFromStore();
+            });
+        }
+    }
+
+    private void showDatePicker() {
+        Calendar initial = selectedDate != null ? selectedDate : Calendar.getInstance();
+        new DatePickerDialog(
+                this,
+                (view, year, month, dayOfMonth) -> {
+                    selectedDate = Calendar.getInstance();
+                    selectedDate.set(year, month, dayOfMonth, 0, 0, 0);
+                    selectedDate.set(Calendar.MILLISECOND, 0);
+
+                    String label = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+                            .format(selectedDate.getTime());
+                    if (tvDateFilterLabel != null) tvDateFilterLabel.setText(label);
+                    if (btnClearDateFilter != null)
+                        btnClearDateFilter.setVisibility(View.VISIBLE);
+
+                    renderFromStore();
+                },
+                initial.get(Calendar.YEAR),
+                initial.get(Calendar.MONTH),
+                initial.get(Calendar.DAY_OF_MONTH)
+        ).show();
     }
 
     // ── Pull-to-refresh ───────────────────────────────────────────────────────
@@ -168,33 +307,44 @@ public class SeeAllActivity extends AppCompatActivity
     // ── Click listeners ───────────────────────────────────────────────────────
 
     private void setupClickListeners() {
-        if (btnMenu    != null) btnMenu.setOnClickListener(v -> {
-            startActivity(new Intent(this, UserMenu.class));
-            overridePendingTransition(0, 0);
-        });
-        if (btnProfile != null) btnProfile.setOnClickListener(v ->
-                startActivity(new Intent(this, ProfileActivity.class)));
-        if (ivHome     != null) ivHome.setOnClickListener(v -> {
-            startActivity(new Intent(this, UserActivity.class));
-            finish();
-        });
-        if (ivSearch   != null) ivSearch.setOnClickListener(v -> { /* TODO */ });
-        if (ivBell     != null) ivBell.setOnClickListener(v -> {
-            NotificationStore.getInstance().markAllSeen();
-            startActivity(new Intent(this, NotifActivity1.class));
-        });
+        // BACK BUTTON → UserActivity
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                startActivity(new Intent(this, UserActivity.class));
+                finish();
+            });
+        }
+
+        // SEARCH ICON → toggle search bar
+        if (btnSearch != null) {
+            btnSearch.setOnClickListener(v -> toggleSearchBar());
+        }
+
+        // HOME
+        if (ivHome != null) {
+            ivHome.setOnClickListener(v -> {
+                startActivity(new Intent(this, UserActivity.class));
+                finish();
+            });
+        }
+
+        // BELL
+        if (ivBell != null) {
+            ivBell.setOnClickListener(v -> {
+                NotificationStore.getInstance().markAllSeen();
+                startActivity(new Intent(this, NotifActivity1.class));
+            });
+        }
     }
 
     // ── Render from NotificationStore ─────────────────────────────────────────
 
     /**
-     * Reads the correct subset from the store based on the category passed
-     * from UserActivity via EXTRA_CATEGORY and builds rows programmatically.
-     *
-     * category == null or "All"          → show every notification
-     * category == "Unread"               → show only unread
-     * category == "Starred"              → show only starred
-     * category == "Announcements"/"Events" → filter by that category
+     * Steps:
+     *  1. Get list based on category tab.
+     *  2. Apply date filter if a date was picked.
+     *  3. Apply search query filter on notification title.
+     *  4. Render rows.
      */
     private void renderFromStore() {
         if (notificationsContainer == null) return;
@@ -203,6 +353,7 @@ public class SeeAllActivity extends AppCompatActivity
         NotificationStore store = NotificationStore.getInstance();
         List<NotificationItem> items;
 
+        // Step 1 — category
         if (category.equalsIgnoreCase("All")) {
             items = store.getAll();
         } else if (category.equalsIgnoreCase("Starred")) {
@@ -213,6 +364,19 @@ public class SeeAllActivity extends AppCompatActivity
             items = store.getByCategory(category);
         }
 
+        // Step 2 — date filter
+        if (selectedDate != null) {
+            items = filterByDate(items, selectedDate);
+        }
+
+        // Step 3 — search query (matches notification title, case-insensitive)
+        if (!searchQuery.isEmpty()) {
+            items = filterByTitle(items, searchQuery);
+        }
+
+        // Step 4 — update count label
+        updateCountLabel(items.size());
+
         if (items.isEmpty()) {
             showEmptyState();
             return;
@@ -221,6 +385,60 @@ public class SeeAllActivity extends AppCompatActivity
         for (int i = 0; i < items.size(); i++) {
             notificationsContainer.addView(buildRow(items.get(i), i < items.size() - 1));
         }
+    }
+
+    // ── Filters ───────────────────────────────────────────────────────────────
+
+    /**
+     * Keeps only items whose timestamp falls on the same calendar day
+     * as the selected date (in the device's local timezone).
+     */
+    private List<NotificationItem> filterByDate(
+            List<NotificationItem> source, Calendar day) {
+
+        List<NotificationItem> result = new ArrayList<>();
+
+        Calendar dayStart = (Calendar) day.clone();
+        dayStart.set(Calendar.HOUR_OF_DAY, 0);
+        dayStart.set(Calendar.MINUTE, 0);
+        dayStart.set(Calendar.SECOND, 0);
+        dayStart.set(Calendar.MILLISECOND, 0);
+
+        Calendar dayEnd = (Calendar) dayStart.clone();
+        dayEnd.add(Calendar.DAY_OF_MONTH, 1);
+
+        long start = dayStart.getTimeInMillis();
+        long end   = dayEnd.getTimeInMillis();
+
+        for (NotificationItem item : source) {
+            if (item.timestamp >= start && item.timestamp < end) {
+                result.add(item);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Keeps only items whose title contains the query string
+     * (case-insensitive). Matches against item.senderName (title field).
+     */
+    private List<NotificationItem> filterByTitle(
+            List<NotificationItem> source, String query) {
+
+        String lower = query.toLowerCase(Locale.getDefault());
+        List<NotificationItem> result = new ArrayList<>();
+        for (NotificationItem item : source) {
+            String title = item.senderName != null ? item.senderName : "";
+            if (title.toLowerCase(Locale.getDefault()).contains(lower)) {
+                result.add(item);
+            }
+        }
+        return result;
+    }
+
+    private void updateCountLabel(int count) {
+        if (tvNotifCount == null) return;
+        tvNotifCount.setText(count == 0 ? "" : count + " notification" + (count == 1 ? "" : "s"));
     }
 
     // ── Row builder ───────────────────────────────────────────────────────────
@@ -265,7 +483,7 @@ public class SeeAllActivity extends AppCompatActivity
         textParams.setMarginEnd(dpToPx(52));
         textBlock.setLayoutParams(textParams);
 
-        // Title row (sender name / notification title)
+        // Title
         TextView tvTitle = new TextView(this);
         tvTitle.setText(item.senderName != null && !item.senderName.isEmpty()
                 ? item.senderName : "Notification");
@@ -277,7 +495,7 @@ public class SeeAllActivity extends AppCompatActivity
         tvTitle.setEllipsize(TextUtils.TruncateAt.END);
         textBlock.addView(tvTitle);
 
-        // Body / message preview
+        // Body
         if (item.message != null && !item.message.isEmpty()) {
             TextView tvBody = new TextView(this);
             tvBody.setText(item.message);
@@ -312,13 +530,13 @@ public class SeeAllActivity extends AppCompatActivity
         tvDate.setGravity(Gravity.CENTER);
         rightCol.addView(tvDate);
 
-        // Blue dot — only for notifications the user hasn't seen yet
+        // Blue dot for unseen
         if (NotificationStore.getInstance().isNew(item.id)) {
             View dot = new View(this);
             LinearLayout.LayoutParams dotParams =
                     new LinearLayout.LayoutParams(dpToPx(8), dpToPx(8));
-            dotParams.topMargin = dpToPx(4);
-            dotParams.gravity = Gravity.CENTER_HORIZONTAL;
+            dotParams.topMargin  = dpToPx(4);
+            dotParams.gravity    = Gravity.CENTER_HORIZONTAL;
             dot.setLayoutParams(dotParams);
             dot.setBackgroundResource(R.drawable.dot_blue);
             rightCol.addView(dot);
@@ -326,7 +544,7 @@ public class SeeAllActivity extends AppCompatActivity
 
         row.addView(rightCol);
 
-        // Tap row → mark read + open detail
+        // Tap → mark read + open detail
         row.setOnClickListener(v -> {
             NotificationStore.getInstance().markRead(item.id);
             Intent intent = new Intent(this, NotifActivity.class);
@@ -336,7 +554,7 @@ public class SeeAllActivity extends AppCompatActivity
 
         wrapper.addView(row);
 
-        // Divider between rows
+        // Divider
         if (showDivider) {
             View divider = new View(this);
             LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
@@ -353,8 +571,14 @@ public class SeeAllActivity extends AppCompatActivity
     // ── Empty state ───────────────────────────────────────────────────────────
 
     private void showEmptyState() {
+        String msg = !searchQuery.isEmpty()
+                ? "No results for \"" + searchQuery + "\""
+                : selectedDate != null
+                        ? "No notifications on this date"
+                        : "No notifications here.";
+
         TextView empty = new TextView(this);
-        empty.setText("No notifications here.");
+        empty.setText(msg);
         empty.setTextColor(Color.parseColor("#AACCDD"));
         empty.setTextSize(14);
         empty.setGravity(Gravity.CENTER);
