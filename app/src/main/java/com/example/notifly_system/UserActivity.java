@@ -56,7 +56,7 @@ public class UserActivity extends AppCompatActivity
     TextView     tvEmptyState;
     LinearLayout notificationsContainer;
 
-    AppCompatImageView ivHome, ivSearch, ivBell;
+    AppCompatImageView ivHome, ivBell;   // ivSearch removed
     TextView           tvBellBadge;
 
     SwipeRefreshLayout swipeRefreshLayout;
@@ -99,7 +99,7 @@ public class UserActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.user_activity);
+        setContentView(R.layout.activity_user);
 
         btnMenu                = findViewById(R.id.btnMenu);
         btnProfile             = findViewById(R.id.btnProfile);
@@ -110,7 +110,7 @@ public class UserActivity extends AppCompatActivity
         tvEmptyState           = findViewById(R.id.tvEmptyState);
         notificationsContainer = findViewById(R.id.notificationsContainer);
         ivHome                 = findViewById(R.id.ivHome);
-        ivSearch               = findViewById(R.id.ivSearch);
+        // ivSearch removed — no longer in layout
         ivBell                 = findViewById(R.id.ivBell);
         tvBellBadge            = findViewById(R.id.tvBellBadge);
         swipeRefreshLayout     = findViewById(R.id.swipeRefreshLayout);
@@ -329,7 +329,7 @@ public class UserActivity extends AppCompatActivity
         ivHome.setOnClickListener(v ->
                 startActivity(new Intent(this, UserActivity.class)));
 
-        ivSearch.setOnClickListener(v -> { /* TODO */ });
+        // ivSearch click listener removed
 
         ivBell.setOnClickListener(v -> {
             NotificationStore.getInstance().markAllSeen();
@@ -382,7 +382,6 @@ public class UserActivity extends AppCompatActivity
             tvEmptyState.setVisibility(View.VISIBLE);
             int idx = category == null ? -1 : indexOf(SECTION_TITLES, category);
             tvEmptyState.setText(idx >= 0 ? EMPTY_MESSAGES[idx] : "No new notifications");
-            // Nothing to show — hide See All
             if (tvSeeAll != null) tvSeeAll.setVisibility(View.GONE);
             return;
         }
@@ -395,7 +394,7 @@ public class UserActivity extends AppCompatActivity
             notificationsContainer.addView(buildNotificationRow(items.get(i)));
         }
 
-        // Show "See All" only when there are more than 4 items — hide it otherwise
+        // Show "See All" only when there are more than 4 items
         if (tvSeeAll != null) {
             tvSeeAll.setVisibility(items.size() > HOME_PREVIEW_LIMIT ? View.VISIBLE : View.GONE);
         }
