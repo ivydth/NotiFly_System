@@ -36,10 +36,10 @@ public class SeeAllActivity extends AppCompatActivity
     // ── Views ─────────────────────────────────────────────────────────────────
 
     private AppCompatImageView btnMenu;
-    private TextView           btnProfile;
+    private AppCompatImageView btnProfile;   // FIX: was TextView, must match XML ImageView
     private AppCompatImageView ivHome, ivSearch, ivBell;
     private TextView           tvSectionLabel;
-    private LinearLayout       notifContainer;
+    private LinearLayout       notificationsContainer; // FIX: renamed to match XML id
     private SwipeRefreshLayout swipeRefreshLayout;
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -90,14 +90,14 @@ public class SeeAllActivity extends AppCompatActivity
     // ── Bind views ────────────────────────────────────────────────────────────
 
     private void bindViews() {
-        btnMenu            = findViewById(R.id.btnMenu);
-        btnProfile         = findViewById(R.id.btnProfile);
-        ivHome             = findViewById(R.id.ivHome);
-        ivSearch           = findViewById(R.id.ivSearch);
-        ivBell             = findViewById(R.id.ivBell);
-        tvSectionLabel     = findViewById(R.id.tvSectionLabel);
-        notifContainer     = findViewById(R.id.notifContainer);
-        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        btnMenu                = findViewById(R.id.btnMenu);
+        btnProfile             = findViewById(R.id.btnProfile);          // FIX: AppCompatImageView
+        ivHome                 = findViewById(R.id.ivHome);
+        ivSearch               = findViewById(R.id.ivSearch);
+        ivBell                 = findViewById(R.id.ivBell);
+        tvSectionLabel         = findViewById(R.id.tvSectionLabel);
+        notificationsContainer = findViewById(R.id.notificationsContainer); // FIX: correct XML id
+        swipeRefreshLayout     = findViewById(R.id.swipeRefreshLayout);
     }
 
     private void setupSectionLabel() {
@@ -188,13 +188,17 @@ public class SeeAllActivity extends AppCompatActivity
     // ── Render from NotificationStore ─────────────────────────────────────────
 
     /**
-     * Reads the correct subset from the store based on category passed from
-     * UserActivity and builds rows the same way NotifActivity1 does —
-     * programmatically into a LinearLayout so the visual style is identical.
+     * Reads the correct subset from the store based on the category passed
+     * from UserActivity via EXTRA_CATEGORY and builds rows programmatically.
+     *
+     * category == null or "All"          → show every notification
+     * category == "Unread"               → show only unread
+     * category == "Starred"              → show only starred
+     * category == "Announcements"/"Events" → filter by that category
      */
     private void renderFromStore() {
-        if (notifContainer == null) return;
-        notifContainer.removeAllViews();
+        if (notificationsContainer == null) return;
+        notificationsContainer.removeAllViews();
 
         NotificationStore store = NotificationStore.getInstance();
         List<NotificationItem> items;
@@ -215,11 +219,11 @@ public class SeeAllActivity extends AppCompatActivity
         }
 
         for (int i = 0; i < items.size(); i++) {
-            notifContainer.addView(buildRow(items.get(i), i < items.size() - 1));
+            notificationsContainer.addView(buildRow(items.get(i), i < items.size() - 1));
         }
     }
 
-    // ── Row builder — identical visual style to NotifActivity1 ────────────────
+    // ── Row builder ───────────────────────────────────────────────────────────
 
     private View buildRow(NotificationItem item, boolean showDivider) {
         LinearLayout wrapper = new LinearLayout(this);
@@ -261,7 +265,7 @@ public class SeeAllActivity extends AppCompatActivity
         textParams.setMarginEnd(dpToPx(52));
         textBlock.setLayoutParams(textParams);
 
-        // Title row (sender name)
+        // Title row (sender name / notification title)
         TextView tvTitle = new TextView(this);
         tvTitle.setText(item.senderName != null && !item.senderName.isEmpty()
                 ? item.senderName : "Notification");
@@ -354,7 +358,7 @@ public class SeeAllActivity extends AppCompatActivity
         empty.setTextColor(Color.parseColor("#AACCDD"));
         empty.setTextSize(14);
         empty.setGravity(Gravity.CENTER);
-        notifContainer.addView(empty, new LinearLayout.LayoutParams(
+        notificationsContainer.addView(empty, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(120)));
     }
 
