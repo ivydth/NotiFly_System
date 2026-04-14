@@ -2,10 +2,7 @@ package com.example.notifly_system;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.media.AudioAttributes;
-import android.media.AudioManager;
 import android.media.RingtoneManager;
-import android.media.SoundPool;
 import android.net.Uri;
 import android.media.Ringtone;
 import android.os.Build;
@@ -37,11 +34,7 @@ public class FirebaseNotifSyncService {
     private ValueEventListener listener;
     private boolean isListening = false;
 
-    // Keep track of IDs we've already seen so we only trigger
-    // sound/vibration for genuinely new notifications
     private final Set<String> seenIds = new HashSet<>();
-
-    // Context needed for sound/vibration — set from Application
     private Context appContext;
 
     private FirebaseNotifSyncService() {
@@ -61,8 +54,6 @@ public class FirebaseNotifSyncService {
     public void init(Context context) {
         this.appContext = context.getApplicationContext();
 
-        // Restore previously seen IDs from prefs so we don't
-        // re-trigger sound/vibration after an app restart
         SharedPreferences prefs = appContext.getSharedPreferences(
                 PREFS_SEEN_IDS, Context.MODE_PRIVATE);
         Set<String> saved = prefs.getStringSet("ids", new HashSet<>());
@@ -81,15 +72,15 @@ public class FirebaseNotifSyncService {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 List<NotificationItem> incoming = new ArrayList<>();
-                List<String> newIds = new ArrayList<>();
+                List<NotificationItem> newItems = new ArrayList<>();
 
                 for (DataSnapshot child : snapshot.getChildren()) {
-                    String id     = child.getKey();
-                    String title  = child.child("title").getValue(String.class);
-                    String body   = child.child("body").getValue(String.class);
-                    String target = child.child("target").getValue(String.class);
+                    String id          = child.getKey();
+                    String title       = child.child("title").getValue(String.class);
+                    String body        = child.child("body").getValue(String.class);
+                    String target      = child.child("target").getValue(String.class);
                     String topicOrUser = child.child("topicOrUser").getValue(String.class);
-                    Long   ts     = child.child("timestamp").getValue(Long.class);
+                    Long   ts          = child.child("timestamp").getValue(Long.class);
 
                     if (title == null) title = "Notification";
                     if (body  == null) body  = "";
@@ -104,18 +95,18 @@ public class FirebaseNotifSyncService {
                     if (ts != null) item.timestamp = ts;
                     incoming.add(item);
 
-                    // Track which IDs are new (not seen before)
+                    // Track genuinely new notifications
                     if (id != null && !seenIds.contains(id)) {
-                        newIds.add(id);
+                        newItems.add(item);
                     }
                 }
 
-                // Push to store — triggers UI refresh on all screens
+                // Always sync full list to store for UI display
                 NotificationStore.getInstance().syncFromFirebase(incoming);
 
-                // Trigger sound/vibration only for new notifications
-                if (!newIds.isEmpty() && appContext != null) {
-                    triggerAlertForNewNotifications(newIds);
+                // Trigger alert only for new notifications, filtered by prefs
+                if (!newItems.isEmpty() && appContext != null) {
+                    triggerAlertForNewNotifications(newItems);
                 }
             }
 
@@ -138,24 +129,59 @@ public class FirebaseNotifSyncService {
 
     // ── Alert trigger ─────────────────────────────────────────────────────────
 
-    private void triggerAlertForNewNotifications(List<String> newIds) {
-        // Read user preferences
+    private void triggerAlertForNewNotifications(List<NotificationItem> newItems) {
         SharedPreferences prefs = appContext.getSharedPreferences(
                 PREFS_NAME, Context.MODE_PRIVATE);
 
-        boolean masterOn    = prefs.getBoolean("master",    true);
-        boolean soundOn     = prefs.getBoolean("sound",     true);
-        boolean vibrationOn = prefs.getBoolean("vibration", false);
+        boolean masterOn        = prefs.getBoolean("master",        true);
+        boolean soundOn         = prefs.getBoolean("sound",         true);
+        boolean vibrationOn     = prefs.getBoolean("vibration",     false);
+        boolean allowAnnounce   = prefs.getBoolean("announcements", true);
+        boolean allowEvents     = prefs.getBoolean("events",        true);
+        boolean allowAlerts     = prefs.getBoolean("alerts",        true);
 
         // Mark all new IDs as seen BEFORE triggering so rapid
         // Firebase updates don't double-fire
-        seenIds.addAll(newIds);
+        for (NotificationItem item : newItems) {
+            if (item.id != null) seenIds.add(item.id);
+        }
         persistSeenIds();
 
+        // Master switch — if OFF, stop here for sound/vibration
+        // (UI still shows notifications via syncFromFirebase above)
         if (!masterOn) return;
+
+        // Check if at least one new notification passes the type filter
+        boolean shouldAlert = false;
+        for (NotificationItem item : newItems) {
+            if (passesTypeFilter(item.category, allowAnnounce, allowEvents, allowAlerts)) {
+                shouldAlert = true;
+                break;
+            }
+        }
+
+        if (!shouldAlert) return;
 
         if (soundOn)     triggerSound();
         if (vibrationOn) triggerVibration();
+    }
+
+    /**
+     * Returns true if the notification category is allowed by the user's settings.
+     * category comes from mapTargetToCategory() — values are:
+     *   "Announcements", "Events", "Alerts", "Unread"
+     */
+    private boolean passesTypeFilter(String category,
+                                     boolean allowAnnounce,
+                                     boolean allowEvents,
+                                     boolean allowAlerts) {
+        if (category == null) return true;
+        switch (category.toLowerCase()) {
+            case "announcements": return allowAnnounce;
+            case "events":        return allowEvents;
+            case "alerts":        return allowAlerts;
+            default:              return true; // "Unread" / unknown — allow through
+        }
     }
 
     // ── Sound ─────────────────────────────────────────────────────────────────
@@ -218,20 +244,35 @@ public class FirebaseNotifSyncService {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /**
+     * Maps the admin panel's target/topicOrUser fields to a category string
+     * that matches the user's settings checkboxes.
+     *
+     * Admin sends:
+     *   target="all"    → treat as Announcements
+     *   target="topic"  + topicOrUser="announcements" → Announcements
+     *   target="topic"  + topicOrUser="events"        → Events
+     *   target="single"                               → Alerts (direct/personal)
+     */
     private String mapTargetToCategory(String target, String topicOrUser) {
         if (target == null) return "Unread";
         switch (target.toLowerCase()) {
-            case "all":    return "Announcements";
+            case "all":
+                return "Announcements";
             case "topic":
                 if (topicOrUser != null) {
                     switch (topicOrUser.toLowerCase()) {
                         case "announcements": return "Announcements";
                         case "events":        return "Events";
+                        case "alerts":        return "Alerts";
                     }
                 }
                 return "Announcements";
-            case "single": return "Unread";
-            default:       return "Unread";
+            case "single":
+                // Single-user targeted messages map to Alerts
+                return "Alerts";
+            default:
+                return "Unread";
         }
     }
 
