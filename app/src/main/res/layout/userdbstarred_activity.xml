@@ -547,7 +547,7 @@
                 android:layout_height="52dp"
                 android:layout_gravity="center"
                 android:layout_marginBottom="20dp"
-                android:src="@drawable/ic_search"
+                android:src="@drawable/ic_search2"
                 android:background="@drawable/fab_teal_circle"
                 android:contentDescription="Search"
                 android:padding="12dp"

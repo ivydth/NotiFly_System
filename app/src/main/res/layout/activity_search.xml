@@ -45,7 +45,7 @@
             <ImageView
                 android:layout_width="18dp"
                 android:layout_height="18dp"
-                android:src="@drawable/ic_search"
+                android:src="@drawable/ic_search2"
                 app:tint="#8A9BB0"
                 android:contentDescription="Search" />
 

@@ -42,7 +42,7 @@ dependencies {
     implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.28")
     implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-auth") 
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-messaging")  // ← ADDED
     implementation("com.android.volley:volley:1.2.1")
