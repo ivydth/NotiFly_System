@@ -170,17 +170,37 @@
                         android:textSize="14sp"
                         android:layout_marginBottom="8dp" />
 
-                    <EditText
-                        android:id="@+id/etPassword"
+                    <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
-                        android:background="@drawable/input_field_bg"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:textColor="#FFFFFF"
-                        android:textColorHint="#88FFFFFF"
-                        android:inputType="textPassword"
-                        android:layout_marginBottom="16dp" />
+                        android:layout_marginBottom="16dp">
+
+                        <EditText
+                            android:id="@+id/etPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/input_field_bg"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="48dp"
+                            android:textColor="#FFFFFF"
+                            android:textColorHint="#88FFFFFF"
+                            android:inputType="textPassword"
+                            android:layout_alignParentStart="true"
+                            android:layout_alignParentEnd="true" />
+
+                        <ImageButton
+                            android:id="@+id/ibTogglePassword"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginEnd="4dp"
+                            android:background="@android:color/transparent"
+                            android:src="@drawable/ic_eye_off"
+                            android:tint="#FFFFFF"
+                            android:contentDescription="Toggle password visibility"
+                            android:padding="8dp" />
+                    </RelativeLayout>
 
                     <!-- Confirm Password -->
                     <TextView
@@ -191,17 +211,37 @@
                         android:textSize="14sp"
                         android:layout_marginBottom="8dp" />
 
-                    <EditText
-                        android:id="@+id/etConfirmPassword"
+                    <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
-                        android:background="@drawable/input_field_bg"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:textColor="#FFFFFF"
-                        android:textColorHint="#88FFFFFF"
-                        android:inputType="textPassword"
-                        android:layout_marginBottom="16dp" />
+                        android:layout_marginBottom="16dp">
+
+                        <EditText
+                            android:id="@+id/etConfirmPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/input_field_bg"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="48dp"
+                            android:textColor="#FFFFFF"
+                            android:textColorHint="#88FFFFFF"
+                            android:inputType="textPassword"
+                            android:layout_alignParentStart="true"
+                            android:layout_alignParentEnd="true" />
+
+                        <ImageButton
+                            android:id="@+id/ibToggleConfirmPassword"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginEnd="4dp"
+                            android:background="@android:color/transparent"
+                            android:src="@drawable/ic_eye_off"
+                            android:tint="#FFFFFF"
+                            android:contentDescription="Toggle confirm password visibility"
+                            android:padding="8dp" />
+                    </RelativeLayout>
 
                     <!-- Agree to Terms -->
                     <CheckBox
