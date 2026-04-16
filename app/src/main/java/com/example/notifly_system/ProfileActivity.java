@@ -30,7 +30,7 @@ public class ProfileActivity extends AppCompatActivity {
     View layoutViewMode;
     TextView tvViewName, tvViewEmail;
     TextView btnEditProfile;
-    CardView btnEditName, btnEditEmail;
+    CardView btnEditName;
 
     // Edit mode
     View layoutEditMode;
@@ -93,7 +93,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         btnEditProfile.setOnClickListener(v -> openEditMode());
         btnEditName.setOnClickListener(v -> openEditMode());
-        btnEditEmail.setOnClickListener(v -> openEditMode());
 
         btnCancelEdit.setOnClickListener(v -> closeEditMode());
 
