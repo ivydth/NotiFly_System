@@ -66,8 +66,6 @@ public class ProfileActivity extends AppCompatActivity {
         tvViewEmail      = findViewById(R.id.tvViewEmail);
         btnEditProfile   = findViewById(R.id.btnEditProfile);
         btnEditName      = findViewById(R.id.btnEditName);
-        btnEditEmail     = findViewById(R.id.btnEditEmail);
-
         layoutEditMode   = findViewById(R.id.layoutEditMode);
         etName           = findViewById(R.id.etName);
         etEmail          = findViewById(R.id.etEmail);
