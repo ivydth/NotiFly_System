@@ -2,9 +2,12 @@ package com.example.notifly_system;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
@@ -15,10 +18,14 @@ import java.util.HashMap;
 public class RegisterActivity extends AppCompatActivity {
 
     EditText etLastName, etFirstName, etEmail, etPassword, etConfirmPassword, etUsername;
+    ImageButton ibTogglePassword, ibToggleConfirmPassword;
     CheckBox cbTerms;
     Button btnRegister;
     FirebaseAuth mAuth;
     DatabaseReference database;
+
+    boolean isPasswordVisible = false;
+    boolean isConfirmPasswordVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,10 +41,40 @@ public class RegisterActivity extends AppCompatActivity {
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
         cbTerms = findViewById(R.id.cbTerms);
         btnRegister = findViewById(R.id.btnRegister);
+        ibTogglePassword = findViewById(R.id.ibTogglePassword);
+        ibToggleConfirmPassword = findViewById(R.id.ibToggleConfirmPassword);
 
         // initialize Firebase
         mAuth = FirebaseAuth.getInstance();
         database = FirebaseDatabase.getInstance("https://notifly-94dba-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("users");
+
+        // Toggle Password visibility
+        ibTogglePassword.setOnClickListener(v -> {
+            isPasswordVisible = !isPasswordVisible;
+            if (isPasswordVisible) {
+                etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                ibTogglePassword.setImageResource(R.drawable.ic_eye_on);
+            } else {
+                etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                ibTogglePassword.setImageResource(R.drawable.ic_eye_off);
+            }
+            // Move cursor to end after toggling
+            etPassword.setSelection(etPassword.getText().length());
+        });
+
+        // Toggle Confirm Password visibility
+        ibToggleConfirmPassword.setOnClickListener(v -> {
+            isConfirmPasswordVisible = !isConfirmPasswordVisible;
+            if (isConfirmPasswordVisible) {
+                etConfirmPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                ibToggleConfirmPassword.setImageResource(R.drawable.ic_eye_on);
+            } else {
+                etConfirmPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                ibToggleConfirmPassword.setImageResource(R.drawable.ic_eye_off);
+            }
+            // Move cursor to end after toggling
+            etConfirmPassword.setSelection(etConfirmPassword.getText().length());
+        });
 
         btnRegister.setOnClickListener(v -> registerUser());
     }
@@ -51,8 +88,8 @@ public class RegisterActivity extends AppCompatActivity {
         String username = etUsername.getText().toString().trim();
 
         // ─── NAME VALIDATIONS ───────────────────────────────────────
-        
-        //Username
+
+        // Username
         if (username.isEmpty()) {
             etUsername.setError("Username is required");
             etUsername.requestFocus();
@@ -63,7 +100,8 @@ public class RegisterActivity extends AppCompatActivity {
             etUsername.requestFocus();
             return;
         }
-        // last name
+
+        // Last name
         if (lastName.isEmpty()) {
             etLastName.setError("Last name is required");
             etLastName.requestFocus();
@@ -80,7 +118,7 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        // first name
+        // First name
         if (firstName.isEmpty()) {
             etFirstName.setError("First name is required");
             etFirstName.requestFocus();
@@ -175,9 +213,9 @@ public class RegisterActivity extends AppCompatActivity {
                     database.child(userId).setValue(userMap)
                         .addOnCompleteListener(task2 -> {
                             if (task2.isSuccessful()) {
-                                //Send welcome email
+                                // Send welcome email
                                 EmailHelper.sendWelcomeEmail(this, firstName, email);
-                                
+
                                 Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show();
                                 mAuth.signOut();
                                 startActivity(new Intent(this, MainActivity.class));
