@@ -53,7 +53,7 @@ public class RegisterActivity extends AppCompatActivity {
             isPasswordVisible = !isPasswordVisible;
             if (isPasswordVisible) {
                 etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
-                ibTogglePassword.setImageResource(R.drawable.ic_eye_on);
+                ibTogglePassword.setImageResource(R.drawable.ic_eye_on2);
             } else {
                 etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
                 ibTogglePassword.setImageResource(R.drawable.ic_eye_off);
@@ -67,7 +67,7 @@ public class RegisterActivity extends AppCompatActivity {
             isConfirmPasswordVisible = !isConfirmPasswordVisible;
             if (isConfirmPasswordVisible) {
                 etConfirmPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
-                ibToggleConfirmPassword.setImageResource(R.drawable.ic_eye_on);
+                ibToggleConfirmPassword.setImageResource(R.drawable.ic_eye_on2);
             } else {
                 etConfirmPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
                 ibToggleConfirmPassword.setImageResource(R.drawable.ic_eye_off);
